@@ -98,10 +98,7 @@ def relative_absolute_error(y_true, y_pred):
 
 
 def log_cosh_loss(y_true, y_pred):
-    diff = y_pred - y_true
-
-    diff_clipped = np.clip(diff, -100, 100)  # adjust bounds if needed
-    return np.mean(np.log(np.cosh(diff_clipped)))
+    return np.mean(np.log(np.cosh(y_pred - y_true)))
 
 
 def calculate_mv(y_pred, y_true):
@@ -609,15 +606,7 @@ def getAllMetric(measured, predicted):
     EVS = explained_variance_score(measured, predicted)
     MARD = median_absolute_relative_deviation(measured, predicted)
     COV_value = calculate_cov_ratio(measured, predicted)
-    return {
-        "R2": R,
-        "RMSE": RMSE,
-        "SMAPE": SMAPE,
-        "Explained Variance Score": EVS,
-        "FE": FE,
-        "GRI100": gri100,
-        "GRI125": gri125,
-    }
+    return {"R2": R, "RMSE": RMSE, "MAE": MAE, "RAE": RAE, "n10_index": n10_index}
 
 
 train_size = 0.8
@@ -652,7 +641,7 @@ def REC(y_true, y_pred):
 
         Accuracy.append(count / len(y_true))
 
-    # Calculating Area Under Curve using Simpson's rule
+    # Calculating Area Under Curve using Simpsosimpsonon's rule
     AUC = simpson(Accuracy, Epsilon) / End_Range
 
     # returning epsilon , accuracy , area under curve
