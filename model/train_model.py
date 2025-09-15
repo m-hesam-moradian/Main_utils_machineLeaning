@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import AdaBoostRegressor
-from model.metrics.getAllMetric import getAllMetric
+from model.metrics.Metrics_classification import getAllMetric
 
 
 def train_model(X_train, y_train, X_test, y_test, params=None):

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from Metrics import getAllMetric
+from model.metrics.Metrics_regression import getAllMetric
 
 # Example: load your values and predictions
 value_path = "fakeValue.npt"

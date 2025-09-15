@@ -1,5 +1,5 @@
 import pandas as pd
-from Metrics import getAllMetric
+from model.metrics.Metrics_regression import getAllMetric
 
 
 # File paths

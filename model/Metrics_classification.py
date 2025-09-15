@@ -747,12 +747,9 @@ for thresh in thresholds:
 
     precisions.append(precision)
     recalls.append(recall)
-list_df = pd.DataFrame({
-    "Recall": recall_list,
-    "Precision": precision_list,
-    "F1-score": f1,
-    "MCC": mcc
-})
+list_df = pd.DataFrame(
+    {"Recall": recall_list, "Precision": precision_list, "F1-score": f1, "MCC": mcc}
+)
 auc_prc = pd.DataFrame(auc_prc)
 convergence_rmse = get_conv(
     count=200, high=0.957733813, low=0.45765563643, minPhase=24, maxPhase=32
