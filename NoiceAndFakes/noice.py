@@ -1,7 +1,7 @@
 import numpy as np
 import random
-from getMetricsForNoice import getMetrics
-from getAllMetric import get_conv
+from NoiceAndFakes.getMetricsForNoice import getMetrics
+from Metrics import get_conv
 
 
 def change_value(y, min_d, max_d, status):

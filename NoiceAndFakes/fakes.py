@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from getAllMetric import getAllMetric
+from Metrics import getAllMetric
 
 # Example: load your values and predictions
 value_path = "fakeValue.npt"

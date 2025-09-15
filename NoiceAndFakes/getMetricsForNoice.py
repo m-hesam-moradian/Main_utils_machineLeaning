@@ -1,5 +1,5 @@
 import pandas as pd
-from getAllMetric import getAllMetric
+from Metrics import getAllMetric
 
 
 # File paths
