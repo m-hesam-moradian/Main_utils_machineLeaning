@@ -61,11 +61,11 @@ def Fast_function(X, predictions):
 
 
 # Path & target
-DATA_PATH = r"D:\ML\M(RIDGE,DT,LASSO#O(EEFO,NRO)#FAST#WILCOXON\data\data.xlsx"
-TARGET = "Vehicle Speed"
+DATA_PATH = r"D:\ML\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\data\data.xlsx"
+TARGET = "attack"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="DATA")
+df = pd.read_excel(DATA_PATH, sheet_name="data")
 
 # Separate features and target
 X = df.drop(columns=[TARGET])

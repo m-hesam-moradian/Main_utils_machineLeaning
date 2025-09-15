@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
-from scipy.integrate import simps
+from scipy.integrate import simpson
 from sklearn.metrics import (
     accuracy_score,
     recall_score,
@@ -24,7 +24,7 @@ from itertools import cycle
 import matplotlib.pyplot as plt
 
 # Data Loading
-data = np.loadtxt("Data_err.npt")
+data = np.loadtxt("D:\ML\Main_utils\Data_err.npt")
 y = data[:, 0]
 predictData = data[:, 1]
 import numpy as np
@@ -561,8 +561,8 @@ def REC(y_true, y_pred):
 
         Accuracy.append(count / len(y_true))
 
-    # Calculating Area Under Curve using Simpson's rule
-    AUC = simps(Accuracy, Epsilon) / End_Range
+    # Calculating Area Under Curve using Simpssimpsonon's rule
+    AUC = simpson(Accuracy, Epsilon) / End_Range
 
     # returning epsilon , accuracy , area under curve
     return Epsilon, Accuracy, AUC
@@ -634,6 +634,7 @@ cm = get_confusion_matrix_values(y, predictData, [0, 1, 2, 3, 4])
 # محاسبه Class-Wise Error Rate برای هر کلاس
 class_wise_error_rate = 1 - np.diag(cm) / cm.sum(axis=1)
 
+
 # نمایش نتایج
 for i, err in enumerate(class_wise_error_rate):
     print(f"Class {i} Error Rate: {err:.2f}")
@@ -650,7 +651,21 @@ pres = precision_score(y, predictData, average="weighted")
 allMetric = getAllMetric(y, predictData)
 trainMetric = getAllMetric(train_y, train_pred)
 testMetric = getAllMetric(test_y, test_pred)
-all_ressss = pd.DataFrame([allMetric, trainMetric, testMetric])
+
+# Assuming test_y and test_pred are arrays or lists of the same length
+# Split the test data into two equal parts
+midpoint = len(test_y) // 2
+test_y_first_half = test_y[:midpoint]
+test_pred_first_half = test_pred[:midpoint]
+test_y_second_half = test_y[midpoint:]
+test_pred_second_half = test_pred[midpoint:]
+
+# Calculate metrics for each half
+value = getAllMetric(test_y_first_half, test_pred_first_half)
+value_test = getAllMetric(test_y_second_half, test_pred_second_half)
+
+# Update the DataFrame with the new metrics
+all_ressss = pd.DataFrame([allMetric, trainMetric, testMetric, value, value_test])
 # precision, recall, thresholds = precision_recall_curve(y, predictData)
 
 y_bin = label_binarize(y, classes=np.unique(y))
