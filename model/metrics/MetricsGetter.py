@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from Metrics_regression import getAllMetric
+from Metrics_regression import getAllMetric, REC
 
 # --- File Paths ---
 value_path = r"D:\ML\Main_utils\data\fakeValue.npt"
@@ -55,6 +55,8 @@ for name, y_true, y_pred in sets:
 
 metrics_df = pd.DataFrame(metrics_data)
 
+rec = REC(y_test, y_pred_test)
+rec_df = pd.DataFrame(rec)
 # --- Display ---
 print("\n📊 Performance Metrics Table:")
 print(metrics_df)
