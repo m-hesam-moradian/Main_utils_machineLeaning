@@ -1,99 +1,89 @@
-# D:\ML\Project-2\src\model\gbr_regression_metrics.py
-
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
+import numpy as np
 
-# --- Path & target ---
-DATA_PATH = (
-    r"D:\ML\Main_utils\Task\Original Dataset- Concrete (elevated temperature).xlsx"
-)
-SHEET_NAME = "Standard_Normalized"
-TARGET = "Compressive Strength"
+# --- Parameters ---
 
-# --- Load dataset ---
-df = pd.read_excel(DATA_PATH, sheet_name=SHEET_NAME).dropna()
+excel_path = r"D:\ML\Main_utils\Task\Original Dataset- Concrete (elevated temperature).xlsx"  # Replace with your Excel file path
+sheet_name = "data after K-Fold GBR"  # Replace with your sheet name
+target_column = "Compressive Strength"  # Replace with your target column name
 
-# --- Features & target ---
-X = df.drop(columns=[TARGET])
-y = df[TARGET]
+# --- Load Data ---
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
-# --- Train/test split ---
+# --- Features and Target ---
+X = df.drop(columns=[target_column])
+y = df[target_column]
+
+# --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.3, random_state=42
 )
 
-# --- Define GBR Model ---
-model = GradientBoostingRegressor(
-    n_estimators=150, learning_rate=0.1, max_depth=5, random_state=42
-)
-
-# --- Train model ---
+# --- GBR Model ---
+model = GradientBoostingRegressor()
 model.fit(X_train, y_train)
 
 # --- Predictions ---
-y_train_pred = model.predict(X_train)
-y_test_pred = model.predict(X_test)
+y_pred_all = model.predict(X)
+y_pred_train = model.predict(X_train)
+y_pred_test = model.predict(X_test)
 
-# --- Split test into halves ---
-half = len(X_test) // 2
-y_test_first_half, y_test_first_pred = y_test.iloc[:half], y_test_pred[:half]
-y_test_second_half, y_test_second_pred = y_test.iloc[half:], y_test_pred[half:]
+# --- Split Test Predictions ---
+mid_index = len(y_pred_test) // 2
+y_test_first_half = y_test.iloc[:mid_index]
+y_test_second_half = y_test.iloc[mid_index:]
+y_pred_test_first_half = y_pred_test[:mid_index]
+y_pred_test_second_half = y_pred_test[mid_index:]
 
-# --- Collect metrics using your custom function ---
-all_metrics = getAllMetric(y, model.predict(X))
-train_metrics = getAllMetric(y_train, y_train_pred)
-test_metrics = getAllMetric(y_test, y_test_pred)
-value_metrics = getAllMetric(y_test_first_half, y_test_first_pred)
-test_half_metrics = getAllMetric(y_test_second_half, y_test_second_pred)
 
-metrics_df = pd.DataFrame(
+# --- Metrics Calculation ---
+def get_metrics(y_true, y_pred):
+    r2 = r2_score(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    return r2, rmse
+
+
+# --- Build Metrics Table ---
+# --- Build Metrics Table Using getAllMetric ---
+metrics_data = {"Set": [], "R2": [], "RMSE": [], "MAE": [], "RSE": [], "SMAPE": []}
+
+# Define each set
+sets = [
+    ("All", y, y_pred_all),
+    ("Train", y_train, y_pred_train),
+    ("Test", y_test, y_pred_test),
+    ("Value", y_test_first_half, y_pred_test_first_half),
+    ("Test-Value", y_test_second_half, y_pred_test_second_half),
+]
+
+# Populate metrics
+for name, y_true, y_pred in sets:
+    R, RMSE, MAE, RSE, SMAPE = getAllMetric(y_true, y_pred)
+    metrics_data["Set"].append(name)
+    metrics_data["R2"].append(R)
+    metrics_data["RMSE"].append(RMSE)
+    metrics_data["MAE"].append(MAE)
+    metrics_data["RSE"].append(RSE)
+    metrics_data["SMAPE"].append(SMAPE)
+
+# Create DataFrame
+metrics_df = pd.DataFrame(metrics_data)
+
+df_train = pd.DataFrame({"y_train_real": y_train.values, "y_train_pred": y_pred_train})
+
+df_test = pd.DataFrame({"y_test_real": y_test.values, "y_test_pred": y_pred_test})
+
+df_all = pd.concat(
     [
-        {
-            "Dataset": "All",
-            "R": all_metrics[0],
-            "RMSE": all_metrics[1],
-            "MAE": all_metrics[2],
-            "RSE": all_metrics[3],
-            "SMAPE": all_metrics[4],
-        },
-        {
-            "Dataset": "Train",
-            "R": train_metrics[0],
-            "RMSE": train_metrics[1],
-            "MAE": train_metrics[2],
-            "RSE": train_metrics[3],
-            "SMAPE": train_metrics[4],
-        },
-        {
-            "Dataset": "Test",
-            "R": test_metrics[0],
-            "RMSE": test_metrics[1],
-            "MAE": test_metrics[2],
-            "RSE": test_metrics[3],
-            "SMAPE": test_metrics[4],
-        },
-        {
-            "Dataset": "Value",
-            "R": value_metrics[0],
-            "RMSE": value_metrics[1],
-            "MAE": value_metrics[2],
-            "RSE": value_metrics[3],
-            "SMAPE": value_metrics[4],
-        },
-        {
-            "Dataset": "Test_Half",
-            "R": test_half_metrics[0],
-            "RMSE": test_half_metrics[1],
-            "MAE": test_half_metrics[2],
-            "RSE": test_half_metrics[3],
-            "SMAPE": test_half_metrics[4],
-        },
-    ]
+        pd.DataFrame({"y_real": y_train.values, "y_pred": y_pred_train}),
+        pd.DataFrame({"y_real": y_test.values, "y_pred": y_pred_test}),
+    ],
+    ignore_index=True,
 )
 
-# --- Show results ---
-print("\n--- Performance Metrics (Gradient Boosting Regressor) ---")
+print("\n📋 Performance Metrics Table:")
 print(metrics_df)
