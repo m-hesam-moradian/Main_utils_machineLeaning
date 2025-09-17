@@ -6,11 +6,9 @@ from Metrics_regression import getAllMetric
 import numpy as np
 
 # --- Parameters ---
-
-excel_path = r"D:\ML\Main_utils\Task\Original Dataset- Concrete (elevated temperature).xlsx"  # Replace with your Excel file path
-sheet_name = "data after K-Fold GBR"  # Replace with your sheet name
-target_column = "Compressive Strength"  # Replace with your target column name
-
+excel_path = r"D:\ML\Main_utils\Task\Concrete (elevated temperature)- Original result.xlsx"  # Replace with your Excel file path
+sheet_name = "GBR_DATA"  # Replace with your sheet name
+target_column = "CS"
 # --- Load Data ---
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,9 +17,7 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Train-Test Split ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
 
 # --- GBR Model ---
 model = GradientBoostingRegressor()

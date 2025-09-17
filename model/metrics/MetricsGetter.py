@@ -56,7 +56,7 @@ for name, y_true, y_pred in sets:
 metrics_df = pd.DataFrame(metrics_data)
 
 rec = REC(y_test, y_pred_test)
-rec_df = pd.DataFrame(rec)
+#rec_df = pd.DataFrame(rec)
 # --- Display ---
 print("\n📊 Performance Metrics Table:")
 print(metrics_df)

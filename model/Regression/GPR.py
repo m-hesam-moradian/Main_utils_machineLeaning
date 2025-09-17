@@ -9,9 +9,9 @@ import numpy as np
 
 # --- Parameters ---
 
-excel_path = r"D:\ML\Main_utils\Task\Original Dataset- Concrete (elevated temperature).xlsx"  # Replace with your Excel file path
-sheet_name = "data after K-Fold GBR"  # Replace with your sheet name
-target_column = "Compressive Strength"  # Replace with your target column name
+excel_path = r"D:\ML\Main_utils\Task\Concrete (elevated temperature)- Original result.xlsx"  # Replace with your Excel file path
+sheet_name = "GPR_DATA"  # Replace with your sheet name
+target_column = "CS"  # Replace with your target column name
 
 # --- Load Data ---
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -24,15 +24,17 @@ X = scaler.fit_transform(X)
 
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42
+    X,
+    y,
+    test_size=0.2,
+    shuffle=False  # 🚀 keeps row order intact
 )
+
 
 # --- GBR Model ---
 
 kernel = ConstantKernel(1.0) * RBF(length_scale=1.0) + WhiteKernel()
-model = GaussianProcessRegressor(
-    kernel=kernel, n_restarts_optimizer=10, random_state=42
-)
+model = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
 model.fit(X_train, y_train)
 
 
