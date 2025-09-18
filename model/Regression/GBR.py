@@ -207,6 +207,6 @@ care_pred_table = generate_care_predictions(model, X_new_df)
 care_pred_table["Original_Predicted_CS"] = y_pred_new
 care_pred_table["Original_Actual_CS"] = y_new.values
 
-# --- Display CARE prediction table ---
+
 print("\n📊 CARE What-if Scenario Predictions:")
 print(care_pred_table.head())
