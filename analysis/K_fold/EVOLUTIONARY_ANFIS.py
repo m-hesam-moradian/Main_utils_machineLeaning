@@ -101,7 +101,6 @@ class EVOLUTIONARY_ANFIS:
             for i in range(1, X.shape[1]):
                 L2[:, j] = L1[i - 1, :, j] * L1[i, :, j]
 
-        # Normalize rule weights
         summ = np.sum(L2, axis=1).reshape(-1, 1)
 
         epsilon = 1e-10
