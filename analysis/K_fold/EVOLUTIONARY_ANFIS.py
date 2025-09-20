@@ -104,7 +104,7 @@ class EVOLUTIONARY_ANFIS:
         # Normalize rule weights
         summ = np.sum(L2, axis=1).reshape(-1, 1)
         # Replace in EVOLUTIONARY_ANFIS.py
-        epsilon = 1e-10  # small number to avoid division by zero
+        epsilon = 1e-10
         L3 = L2 / (np.repeat(summ, functions, axis=1) + epsilon)
 
         L3 = np.round(L3, 5)
