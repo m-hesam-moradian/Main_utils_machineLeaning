@@ -6,11 +6,9 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 
 # --- Load dataset ---
-file_path = (
-    r"D:\ML\Main_utils\Task\Original Dataset- Concrete (elevated temperature).xlsx"
-)
-sheet_name = "Standard_Normalized"
-target_col = "Compressive Strength"  # replace with your target column
+file_path = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
+sheet_name = "Global_AI_Content_Impact_Datase"
+target_col = "Market Share of AI Companies (%)"  # replace with your target column
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
