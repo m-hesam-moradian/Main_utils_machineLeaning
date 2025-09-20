@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.metrics import r2_score, mean_squared_error
+from copy import deepcopy
+from EVOLUTIONARY_ANFIS import EVOLUTIONARY_ANFIS  # Make sure the class is in this path
+
+# Import your EVOLUTIONARY_ANFIS class here
+
 
 # --- Load dataset ---
 file_path = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
@@ -15,12 +19,29 @@ df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 # Features and target
 X = df.drop(columns=[target_col])
 y = df[target_col]
+from sklearn.preprocessing import LabelEncoder
+
+for col in X.select_dtypes(include=["object", "category"]).columns:
+    le = LabelEncoder()
+    X[col] = le.fit_transform(X[col].astype(str))
+
 
 # --- Define models ---
+# --- Define models ---
 models = {
-    "GPR": GaussianProcessRegressor(),
+    "ANFIS": EVOLUTIONARY_ANFIS(
+        functions=5,
+        generations=10,
+        offsprings=5,
+        mutationRate=0.2,
+        learningRate=0.1,
+        chance=0.5,
+        ruleComb="simple",
+    ),
     "GBR": GradientBoostingRegressor(random_state=42),
+    "ADAR": AdaBoostRegressor(random_state=42),
 }
+
 
 # --- K-Fold setup ---
 n_splits = 5
@@ -44,8 +65,16 @@ for model_name, model in models.items():
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
         # Fit model
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        if model_name == "ANFIS":
+            model.fit(
+                X_train.values, y_train.values
+            )  # convert DataFrame/Series to ndarray
+            y_pred = model.predict(
+                X_test.values, *model.fit(X_train.values, y_train.values)
+            )
+        else:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
 
         # Compute metrics
         r2 = r2_score(y_test, y_pred)
