@@ -27,7 +27,6 @@ for col in X.select_dtypes(include=["object", "category"]).columns:
 
 
 # --- Define models ---
-# --- Define models ---
 models = {
     "ANFIS": EVOLUTIONARY_ANFIS(
         functions=5,
