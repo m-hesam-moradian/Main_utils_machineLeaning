@@ -35,7 +35,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 pca = PCA(n_components=10)  # or whatever number you choose
 X_pca = pca.fit_transform(X)
 
-# Get component loadings (how much each original feature contributes to each PC)
 loadings = pd.DataFrame(pca.components_.T, index=X.columns)
 
 
