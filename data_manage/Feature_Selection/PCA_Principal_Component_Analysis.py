@@ -45,7 +45,6 @@ for i in range(pca.n_components):
     top_features_per_pc[f"PC{i+1}"] = pc_loadings.index.tolist()
 
 
-# Visualize PCA
 plt.figure(figsize=(8, 6))
 plt.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.6)
 plt.title(f"PCA Projection for {sheet_name}")
