@@ -11,34 +11,29 @@ from EVOLUTIONARY_ANFIS import EVOLUTIONARY_ANFIS  # Make sure the class is in t
 
 # --- Load dataset ---
 file_path = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
-sheet_name = "Global_AI_Content_Impact_Datase"
+sheet_name = "LabelEncoded"
 target_col = "Market Share of AI Companies (%)"  # replace with your target column
+
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
 # Features and target
 X = df.drop(columns=[target_col])
 y = df[target_col]
-from sklearn.preprocessing import LabelEncoder
-
-for col in X.select_dtypes(include=["object", "category"]).columns:
-    le = LabelEncoder()
-    X[col] = le.fit_transform(X[col].astype(str))
-
 
 # --- Define models ---
 models = {
     "ANFIS": EVOLUTIONARY_ANFIS(
-        functions=5,
-        generations=10,
-        offsprings=5,
-        mutationRate=0.2,
-        learningRate=0.1,
-        chance=0.5,
+        functions=5,  # More fuzzy rules for richer representation
+        generations=10,  # Deeper evolution for better convergence
+        offsprings=5,  # Larger population for broader search
+        mutationRate=0.2,  # More aggressive mutation
+        learningRate=0.1,  # Faster adaptation
+        chance=0.5,  # Favor mean mutation over std
         ruleComb="simple",
     ),
-    "GBR": GradientBoostingRegressor(random_state=42),
-    "ADAR": AdaBoostRegressor(random_state=42),
+    "GBR": GradientBoostingRegressor(),
+    "ADAR": AdaBoostRegressor(),
 }
 
 
