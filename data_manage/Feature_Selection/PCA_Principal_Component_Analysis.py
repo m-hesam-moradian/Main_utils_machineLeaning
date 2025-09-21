@@ -38,7 +38,7 @@ X_pca = pca.fit_transform(X)
 # Get component loadings (how much each original feature contributes to each PC)
 loadings = pd.DataFrame(pca.components_.T, index=X.columns)
 
-# For each principal component, list top contributing original features
+
 top_features_per_pc = {}
 for i in range(pca.n_components):
     pc_loadings = loadings.iloc[:, i].abs().sort_values(ascending=False)
