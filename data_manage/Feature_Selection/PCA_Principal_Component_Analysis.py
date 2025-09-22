@@ -1,13 +1,9 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.impute import SimpleImputer
 
-# Load data
+# Step 1: Load data
 sheet_name = "LabelEncoded"
 data = pd.read_excel(
     r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx",
@@ -16,65 +12,47 @@ data = pd.read_excel(
 X = data.drop("Market Share of AI Companies (%)", axis=1)
 y = data["Market Share of AI Companies (%)"]
 
-# Impute missing values
-imputer = SimpleImputer(strategy="mean")
-X_imputed = imputer.fit_transform(X)
+# Step 2: Preprocess data (handle missing values, if any)
+if X.isnull().sum().sum() > 0:
+    print("Missing values detected. Filling with mean...")
+    X = X.fillna(X.mean())
 
-# Drop rows with NaN in target
-if y.isnull().any():
-    mask = ~y.isnull()
-    X_imputed = X_imputed[mask]
-    y = y[mask].reset_index(drop=True)
+# Step 3: Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# Rename columns
-X = pd.DataFrame(X_imputed, columns=[f"V {i+1}" for i in range(X_imputed.shape[1])])
+# Step 4: Apply PCA to get feature importance
+pca = PCA()
+pca.fit(X_scaled)
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
-n_components = 10
-pca = PCA(n_components=10)  # or whatever number you choose
-X_pca = pca.fit_transform(X)
+# Step 5: Calculate feature importance based on absolute loadings
+# Sum absolute loadings across components that explain 95% of variance
+explained_variance_ratio = pca.explained_variance_ratio_
+cumulative_variance = np.cumsum(explained_variance_ratio)
+n_components_95 = np.argmax(cumulative_variance >= 0.95) + 1
+print(f"Number of components to explain 95% of variance: {n_components_95}")
 
-loadings = pd.DataFrame(pca.components_.T, index=X.columns)
-
-
-top_features_per_pc = {}
-for i in range(pca.n_components):
-    pc_loadings = loadings.iloc[:, i].abs().sort_values(ascending=False)
-    top_features_per_pc[f"PC{i+1}"] = pc_loadings.index.tolist()
-
-
-plt.figure(figsize=(8, 6))
-plt.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.6)
-plt.title(f"PCA Projection for {sheet_name}")
-plt.xlabel("PC 1")
-plt.ylabel("PC 2")
-plt.grid(True)
-plt.show()
-
-# KMeans clustering on PCA-reduced data
-k_values = [2, 3, 4, 5]
-fig, axes = plt.subplots(1, len(k_values), figsize=(15, 4))
-for i, k in enumerate(k_values):
-    kmeans = KMeans(n_clusters=k, random_state=0)
-    labels = kmeans.fit_predict(X_pca)
-    axes[i].scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap="viridis", edgecolor="k")
-    axes[i].set_title(f"KMeans (k={k})")
-plt.show()
-
-# RandomForest on PCA-selected features
-rf = RandomForestRegressor(n_estimators=100, random_state=0)
-rf.fit(X_pca, y)
-importances = rf.feature_importances_
-
-# Visualize PCA component importances
-plt.figure(figsize=(8, 6))
-plt.bar(
-    range(n_components),
-    importances,
-    tick_label=[f"PC{i+1}" for i in range(n_components)],
+# Get absolute loadings for the first n_components_95
+loadings = np.abs(pca.components_[:n_components_95])
+feature_importance = np.sum(loadings, axis=0)
+feature_importance_df = pd.DataFrame(
+    {"Feature": X.columns, "Importance": feature_importance}
 )
-plt.title("Feature Importance via PCA Components")
-plt.xlabel("Principal Component")
-plt.ylabel("Importance")
-plt.show()
+feature_importance_df = feature_importance_df.sort_values(
+    by="Importance", ascending=True
+)
+
+# Step 6: Identify least important features (e.g., bottom 10%)
+n_features = X.shape[1]
+n_remove = max(1, int(0.1 * n_features))  # Remove bottom 10% of features
+least_important_features = feature_importance_df.head(n_remove)["Feature"].tolist()
+print(f"Least important features to remove: {least_important_features}")
+
+# Step 7: Remove least important features from original dataset
+X_reduced = X.drop(columns=least_important_features)
+print(f"Original dataset shape: {X.shape}")
+print(f"Reduced dataset shape: {X_reduced.shape}")
+
+# Step 8: Save the reduced dataset
+reduced_data = X_reduced.copy()
+reduced_data["Market Share of AI Companies (%)"] = y
