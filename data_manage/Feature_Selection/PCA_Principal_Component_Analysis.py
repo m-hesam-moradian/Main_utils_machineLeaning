@@ -31,7 +31,7 @@ X = pd.DataFrame(X_imputed, columns=[f"V {i+1}" for i in range(X_imputed.shape[1
 
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
-
+n_components = 10
 pca = PCA(n_components=10)  # or whatever number you choose
 X_pca = pca.fit_transform(X)
 
