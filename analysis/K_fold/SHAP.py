@@ -33,13 +33,14 @@ def shap_analysis(
 
     # Fit the model (if not already fitted)
     try:
-        model.predict(X_train)
+        model.predict(X_test.values, *model.fit(X_train.values, y_train.values))
     except:
-        model.fit(X_train, y_train)
+        model.fit(X_train.values, y_train.values)
 
     # Create SHAP explainer
     explainer = shap.KernelExplainer(
-        model.predict, shap.sample(X_train, 100)
+        model.predict(X_test.values, *model.fit(X_train.values, y_train.values)),
+        shap.sample(X_train, 100),
     )  # نمونه 100 تا از X_train
 
     shap_values = explainer.shap_values(X_test)
@@ -89,7 +90,7 @@ def shap_analysis(
 
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.model_selection import train_test_split
-
+from EVOLUTIONARY_ANFIS import EVOLUTIONARY_ANFIS
 
 sheet_name = "Data after K-Fold (ADAR)"
 DATA_PATH = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
@@ -108,7 +109,15 @@ y = df[target_column]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
 
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=AdaBoostRegressor(),
+    model=EVOLUTIONARY_ANFIS(
+        functions=5,  # More fuzzy rules for richer representation
+        generations=10,  # Deeper evolution for better convergence
+        offsprings=5,  # Larger population for broader search
+        mutationRate=0.2,  # More aggressive mutation
+        learningRate=0.1,  # Faster adaptation
+        chance=0.5,  # Favor mean mutation over std
+        ruleComb="simple",
+    ),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
