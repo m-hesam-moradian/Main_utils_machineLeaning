@@ -235,10 +235,10 @@ X = scaler.transform(X)
 model = EVOLUTIONARY_ANFIS(
     functions=3,
     generations=50,
-    offsprings=10,
-    mutationRate=0.1,
-    learningRate=0.01,
-    chance=0.5,
+    offsprings=35,
+    mutationRate=0.0543,
+    learningRate=0.42,
+    chance=0.375,
     ruleComb="simple",
 )
 bestParam, bestModel = model.fit(

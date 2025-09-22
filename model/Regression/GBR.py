@@ -22,7 +22,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 
 # --- GBR Model ---
 model = GradientBoostingRegressor(
-    learning_rate=0.1, n_estimators=100, max_depth=3, alpha=0.9
+    learning_rate=0.0328, n_estimators=214, max_depth=2, alpha=0.64
 )
 model.fit(X_train, y_train)
 
@@ -38,12 +38,6 @@ y_test_second_half = y_test.iloc[mid_index:]
 y_pred_test_first_half = y_pred_test[:mid_index]
 y_pred_test_second_half = y_pred_test[mid_index:]
 
-
-# --- Metrics Calculation ---
-def get_metrics(y_true, y_pred):
-    r2 = r2_score(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    return r2, rmse
 
 
 # --- Build Metrics Table Using getAllMetric ---

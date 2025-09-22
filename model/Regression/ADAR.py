@@ -8,7 +8,7 @@ from sklearn.impute import SimpleImputer
 from Metrics_regression import getAllMetric
 
 # --- Data Loading ---
-sheet_name = "Data after K-Fold (GBR & ANFIS)"
+sheet_name = "Data after K-Fold (ADAR)"
 excel_path = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = "Market Share of AI Companies (%)"
@@ -28,8 +28,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 
 # --- AdaBoostRegressor Model ---
 model = AdaBoostRegressor(
-    learning_rate=0.1,
-    n_estimators=100,
+    learning_rate=0.311,
+    n_estimators=311,
     random_state=42,
     loss="linear",
 )
