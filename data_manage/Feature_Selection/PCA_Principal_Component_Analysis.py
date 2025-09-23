@@ -6,11 +6,11 @@ from sklearn.decomposition import PCA
 # Step 1: Load data
 sheet_name = "LabelEncoded"
 data = pd.read_excel(
-    r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx",
+    r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
     sheet_name=sheet_name,
 )
-X = data.drop("Market Share of AI Companies (%)", axis=1)
-y = data["Market Share of AI Companies (%)"]
+X = data.drop("offload_ratio", axis=1)
+y = data["offload_ratio"]
 
 # Step 2: Preprocess data (handle missing values, if any)
 if X.isnull().sum().sum() > 0:
@@ -44,7 +44,7 @@ feature_importance_df = feature_importance_df.sort_values(
 
 # Step 6: Identify least important features (e.g., bottom 10%)
 n_features = X.shape[1]
-n_remove = max(1, int(0.1 * n_features))  # Remove bottom 10% of features
+n_remove = max(3, int(0.1 * n_features))  # Remove bottom 10% of features
 least_important_features = feature_importance_df.head(n_remove)["Feature"].tolist()
 print(f"Least important features to remove: {least_important_features}")
 
