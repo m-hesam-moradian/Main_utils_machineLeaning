@@ -5,12 +5,12 @@ from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
 import numpy as np
 
-sheet_name = "Data after K-Fold (GBR & ANFIS)"
+sheet_name = "Data after K-FOLD"
 df = pd.read_excel(
-    r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx",
+    r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
     sheet_name=sheet_name,
 )
-target_column = "Market Share of AI Companies (%)"
+target_column = "offload_ratio"
 
 # --- Features and Target ---
 X = df.drop(columns=[target_column])
@@ -19,7 +19,6 @@ y = df[target_column]
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
 
-# --- Ridge Model ---
 model = Ridge(
     alpha=22,
     fit_intercept=True,
