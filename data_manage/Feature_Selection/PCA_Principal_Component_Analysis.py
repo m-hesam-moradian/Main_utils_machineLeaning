@@ -32,7 +32,7 @@ cumulative_variance = np.cumsum(explained_variance_ratio)
 n_components_95 = np.argmax(cumulative_variance >= 0.95) + 1
 print(f"Number of components to explain 95% of variance: {n_components_95}")
 
-# Get absolute loadings for the first n_components_95
+# Get absolute loadings for the first n_components
 loadings = np.abs(pca.components_[:n_components_95])
 feature_importance = np.sum(loadings, axis=0)
 feature_importance_df = pd.DataFrame(
