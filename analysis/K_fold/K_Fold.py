@@ -1,18 +1,19 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.ensemble import GradientBoostingRegressor, AdaBoostRegressor
+from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.metrics import r2_score, mean_squared_error
 from copy import deepcopy
-from EVOLUTIONARY_ANFIS import EVOLUTIONARY_ANFIS  # Make sure the class is in this path
+
+# Make sure the class is in this path
 
 # Import your EVOLUTIONARY_ANFIS class here
 
 
 # --- Load dataset ---
-file_path = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
-sheet_name = "LabelEncoded"
-target_col = "Market Share of AI Companies (%)"  # replace with your target column
+file_path = r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx"
+sheet_name = "PCA"
+target_col = "offload_ratio"  # replace with your target column
 
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
@@ -23,17 +24,12 @@ y = df[target_col]
 
 # --- Define models ---
 models = {
-    "ANFIS": EVOLUTIONARY_ANFIS(
-        functions=5,  # More fuzzy rules for richer representation
-        generations=10,  # Deeper evolution for better convergence
-        offsprings=5,  # Larger population for broader search
-        mutationRate=0.2,  # More aggressive mutation
-        learningRate=0.1,  # Faster adaptation
-        chance=0.5,  # Favor mean mutation over std
-        ruleComb="simple",
+    "Elastic": ElasticNet(
+        alpha=0.005,
     ),
-    "GBR": GradientBoostingRegressor(),
-    "ADAR": AdaBoostRegressor(),
+    "StocR": Ridge(
+        alpha=22,
+    ),
 }
 
 
