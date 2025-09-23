@@ -5,7 +5,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
 import numpy as np
 
-sheet_name = "Data after K-FOLD"
+sheet_name = "Data After K-FOLD"
 df = pd.read_excel(
     r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
     sheet_name=sheet_name,
@@ -21,7 +21,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 
 # --- ElasticNet Model ---
 model = ElasticNet(
-    alpha=0.005,
+    alpha=0.00263,
     l1_ratio=0.5,
     fit_intercept=True,
     max_iter=1000,

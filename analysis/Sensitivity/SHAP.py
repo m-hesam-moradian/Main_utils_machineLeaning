@@ -87,18 +87,17 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 
-from sklearn.ensemble import AdaBoostRegressor
+from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.model_selection import train_test_split
 
 
-sheet_name = "Data after K-Fold (ADAR)"
-DATA_PATH = r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx"
-df = pd.read_excel(
-    DATA_PATH,
-    sheet_name=sheet_name,
-)
-target_column = "Market Share of AI Companies (%)"
+# --- Load dataset ---
+sheet_name = "Data After K-FOLD"
+file_path = r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx"
 
+target_column = "offload_ratio"
+
+df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
 # --- Features and Target ---
 X = df.drop(columns=[target_column])
@@ -106,12 +105,18 @@ y = df[target_column]
 
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
-
+# models = {
+#     "Elastic": ElasticNet(
+#         alpha=0.005,
+#     ),
+#     "StocR": Ridge(
+#         alpha=22,
+#     ),
+# }
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=AdaBoostRegressor(),
+    model=ElasticNet(alpha=0.001),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
     y_test=y_test,
-    sheet_name=sheet_name,
 )

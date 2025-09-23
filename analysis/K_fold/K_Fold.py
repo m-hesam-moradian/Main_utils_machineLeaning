@@ -11,9 +11,12 @@ from copy import deepcopy
 
 
 # --- Load dataset ---
-file_path = r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx"
-sheet_name = "PCA"
-target_col = "offload_ratio"  # replace with your target column
+sheet_name = "Data After K-FOLD"
+df = pd.read_excel(
+    r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
+    sheet_name=sheet_name,
+)
+target_column = "offload_ratio"
 
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()

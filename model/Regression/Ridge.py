@@ -5,7 +5,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
 import numpy as np
 
-sheet_name = "Data after K-FOLD"
+sheet_name = "Data After K-FOLD"
 df = pd.read_excel(
     r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
     sheet_name=sheet_name,
@@ -20,7 +20,7 @@ y = df[target_column]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
 
 model = Ridge(
-    alpha=22,
+    alpha=10,
     fit_intercept=True,
     solver="auto",
     max_iter=None,
