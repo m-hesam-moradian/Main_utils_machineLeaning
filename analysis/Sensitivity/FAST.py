@@ -61,18 +61,18 @@ def Fast_function(X, predictions):
 
 
 # Path & target
-DATA_PATH = r"D:\ML\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\data\data.xlsx"
-TARGET = "attack"
+DATA_PATH = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
+TARGET = "Market_Size_Billion_USD"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="data")
+df = pd.read_excel(DATA_PATH, sheet_name="Data after K-FOLD")
 
 # Separate features and target
 X = df.drop(columns=[TARGET])
 
 
 # Read the text file into a DataFrame
-y = pd.read_csv("D:\ML\Main_utils\predictions.txt")
+y = pd.read_csv(r"D:\ML\Main_utils\data\predictions.txt")
 
 # Display the DataFrame
 print(df)
