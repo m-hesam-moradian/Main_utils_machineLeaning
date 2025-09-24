@@ -11,19 +11,18 @@ from copy import deepcopy
 
 
 # --- Load dataset ---
-sheet_name = "Data After K-FOLD"
+
+sheet_name = "F-Static"
 df = pd.read_excel(
-    r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx",
+    r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx",
     sheet_name=sheet_name,
 )
-target_column = "offload_ratio"
+target_column = "Market_Size_Billion_USD"
 
-
-df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
 # Features and target
-X = df.drop(columns=[target_col])
-y = df[target_col]
+X = df.drop(columns=[target_column])
+y = df[target_column]
 
 # --- Define models ---
 models = {
