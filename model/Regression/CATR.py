@@ -5,12 +5,10 @@ from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
 import numpy as np
 
-sheet_name = "Data after K-Fold (GBR & ANFIS)"
-df = pd.read_excel(
-    r"D:\ML\Main_utils\Task\Global_AI_Content_Impact_Dataset.xlsx",
-    sheet_name=sheet_name,
-)
-target_column = "Market Share of AI Companies (%)"
+sheet_name = "Data after K-FOLD"
+excel_path = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = "Market_Size_Billion_USD"
 
 # --- Features and Target ---
 X = df.drop(columns=[target_column])
@@ -21,10 +19,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 
 # --- CatBoost Regressor Model with Default Parameters ---
 model = CatBoostRegressor(
-    iterations=1000,  # Default: 1000
-    learning_rate=None,  # Default: None (auto-selected based on dataset size)
-    depth=6,  # Default: 6
-    l2_leaf_reg=3.0,  # Default: 3.0
+    iterations=721,  # Default: 1000
+    learning_rate=0.0053,  # Default: None (auto-selected based on dataset size)
+    depth=11,  # Default: 6
+    l2_leaf_reg=1.673,  # Default: 3.0
     loss_function="RMSE",  # Default: 'RMSE' for regression
     random_seed=42,  # Default: None, set to 42 for reproducibility
     verbose=0,  # Default: 0 (silent mode, no training output)

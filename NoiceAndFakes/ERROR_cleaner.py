@@ -5,8 +5,8 @@ value_path = r"D:\ML\Main_utils\data\fakeValue.npt"
 prediction_path = r"D:\ML\Main_utils\data\fakePrediction.npt"
 updated_prediction_path = r"D:\ML\Main_utils\data\fakePrediction_updated.npt"
 
-min_error = -32  # minimum allowed percentage error
-max_error = 53  # maximum allowed percentage error
+min_error = -11  # minimum allowed percentage error
+max_error = 19  # maximum allowed percentage error
 
 
 # Load data
