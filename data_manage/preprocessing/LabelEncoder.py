@@ -7,7 +7,7 @@ df = pd.read_excel(
 )  # Replace with your actual filename
 
 # Create a copy to avoid modifying original
-df=df.dropna()
+df = df.fillna(0)
 df_encoded = df.copy()
 
 # Initialize encoder

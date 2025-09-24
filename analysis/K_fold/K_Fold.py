@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.linear_model import Ridge, ElasticNet
+from sklearn.ensemble import AdaBoostRegressor  # Changed to AdaBoostRegressor
+from catboost import CatBoostRegressor
 from sklearn.metrics import r2_score, mean_squared_error
 from copy import deepcopy
 
@@ -12,7 +13,7 @@ from copy import deepcopy
 
 # --- Load dataset ---
 
-sheet_name = "F-Static"
+sheet_name = "F-static"
 df = pd.read_excel(
     r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx",
     sheet_name=sheet_name,
@@ -25,12 +26,23 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
+from sklearn.tree import DecisionTreeRegressor
+
 models = {
-    "Elastic": ElasticNet(
-        alpha=0.005,
+    "ADAR": AdaBoostRegressor(
+        n_estimators=50,  # Default: 50
+        learning_rate=1.0,  # Default: 1.0
+        loss="linear",  # Default: linear
+        random_state=42,
     ),
-    "StocR": Ridge(
-        alpha=22,
+    "CATR": CatBoostRegressor(
+        iterations=1000,  # Default: 1000
+        learning_rate=None,  # Default: None (auto-selected based on dataset size)
+        depth=6,  # Default: 6
+        l2_leaf_reg=3.0,  # Default: 3.0
+        loss_function="RMSE",  # Default: 'RMSE' for regression
+        random_seed=42,  # Default: None, set to 42 for reproducibility
+        verbose=0,
     ),
 }
 
@@ -46,7 +58,6 @@ fold_indices_dict = {}  # Stores fold indices for each model
 
 # --- Loop through models ---
 for model_name, model in models.items():
-    print(f"\n--- Evaluating {model_name} ---")
 
     fold_metrics_list = []
     fold_indices_list = []
@@ -94,13 +105,3 @@ for model_name, model in models.items():
 # Now you have two tables per model
 # metrics_df_dict[model_name] → fold metrics
 # df_reordered_dict[model_name] → reordered dataset
-
-# Example: print metrics tables
-for model_name, metrics_df in metrics_df_dict.items():
-    print(f"\nMetrics table for {model_name}:")
-    print(metrics_df)
-
-# Example: print head of reordered datasets
-for model_name, df_reordered in df_reordered_dict.items():
-    print(f"\nReordered dataset for {model_name} (best fold moved to end):")
-    print(df_reordered.head())  # just first 5 rows
