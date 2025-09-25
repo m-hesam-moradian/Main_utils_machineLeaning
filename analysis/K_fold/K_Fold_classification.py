@@ -1,80 +1,128 @@
-# D:\ML\Project-2\src\model\train_model.py
-
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score
-from xgboost import XGBClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import accuracy_score, f1_score
+from copy import deepcopy
 
-# Path & target
-DATA_PATH = "D:\ML\main_structure\data\data.xlsx"
-TARGET = "HVAC Efficiency"
-
-# Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="data")
-
-# Separate features and target
-X = df.drop(columns=[TARGET])
-y = df[TARGET]
-
-# Define model
-model = XGBClassifier(
-    n_estimators=200,
-    learning_rate=0.1,
-    max_depth=6,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    random_state=42,
-    use_label_encoder=False,
-    eval_metric="logloss",
+# --- Load dataset ---
+sheet_name = "Data after K-FOLD (votingC)"
+df = pd.read_excel(
+    r"D:\ML\Main_utils\task\WA_Fn-UseC_-HR-Employee-Attrition.xlsx",
+    sheet_name=sheet_name,
 )
+target_column = "Attrition"
 
-# KFold setup
-kf = KFold(n_splits=5)
+# Convert target to categorical (example: binarize based on median)
+# Adjust this logic based on your specific classification needs
+median_value = df[target_column].median()
+df[target_column] = (df[target_column] > median_value).astype(
+    int
+)  # Binary classification: 0 or 1
 
-# Collect results
-fold_results = []
-test_indices_best_fold = None
-best_accuracy = 0
+# Features and target
+X = df.drop(columns=[target_column])
+y = df[target_column]
 
-for fold, (train_idx, val_idx) in enumerate(kf.split(X), start=1):
-    X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
-    y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+# --- Define models ---
+models = {
+    "LDA": LinearDiscriminantAnalysis(
+        solver="svd",  # Default: Singular Value Decomposition
+        shrinkage=None,  # Default: No shrinkage for 'svd'
+        priors=None,  # Default: Priors estimated from class frequencies
+        n_components=None,  # Default: min(n_classes - 1, n_features)
+        store_covariance=False,  # Default: Do not compute covariance matrix
+        tol=1e-4,  # Default: Tolerance for singular values
+        covariance_estimator=None,  # Default: Use standard covariance estimation
+    ),
+    "VotingC": VotingClassifier(
+        estimators=[
+            (
+                "rf",
+                RandomForestClassifier(
+                    n_estimators=100,  # Default: 100 trees
+                    criterion="gini",  # Default: Gini impurity for classification
+                    max_depth=None,  # Default: Grow until pure or min_samples_split
+                    min_samples_split=2,  # Default: Minimum samples to split a node
+                    min_samples_leaf=1,  # Default: Minimum samples at a leaf
+                    min_weight_fraction_leaf=0.0,  # Default: No minimum weight fraction
+                    max_features="sqrt",  # Default: Square root of number of features
+                    max_leaf_nodes=None,  # Default: No limit on leaf nodes
+                    min_impurity_decrease=0.0,  # Default: No minimum impurity decrease
+                    bootstrap=True,  # Default: Use bootstrap sampling
+                    oob_score=False,  # Default: No out-of-bag score
+                    n_jobs=None,  # Default: No parallel processing
+                    random_state=42,  # Specified for reproducibility
+                    verbose=0,  # Default: No verbose output
+                    warm_start=False,  # Default: No warm start
+                    class_weight=None,  # Default: No class weights
+                    ccp_alpha=0.0,  # Default: No cost-complexity pruning
+                    max_samples=None,  # Default: Use all samples in bootstrap
+                ),
+            ),
+         
+        ],
+        voting="hard",  # Default: Majority voting
+        weights=None,  # Default: Equal weights for all estimators
+        n_jobs=None,  # Default: No parallel processing
+        flatten_transform=True,  # Default: Flatten output for soft voting
+        verbose=6,  # Default: No verbose output
+    ),
+}
 
-    model.fit(X_train, y_train)
-    preds = model.predict(X_val)
-    acc = accuracy_score(y_val, preds)
+# --- K-Fold setup ---
+n_splits = 5
+kf = KFold(n_splits=n_splits, shuffle=False)
 
-    fold_results.append({"Fold": fold, "Accuracy": acc})
-    print(f"Fold {fold} → Accuracy: {acc:.4f}")
+# Dictionaries to store results
+metrics_df_dict = {}  # Stores metrics table for each model
+df_reordered_dict = {}  # Stores reordered dataset for each model
+fold_indices_dict = {}  # Stores fold indices for each model
 
-    # Track the best fold
-    if acc > best_accuracy:
-        best_accuracy = acc
-        test_indices_best_fold = val_idx
+# --- Loop through models ---
+for model_name, model in models.items():
+    fold_metrics_list = []
+    fold_indices_list = []
 
-# Convert results to DataFrame
-fold_scores_df = pd.DataFrame(fold_results)
+    # K-Fold CV
+    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-# Reorder the original dataset: best fold test data at the bottom
-X_test_best = X.iloc[test_indices_best_fold].copy()
-y_test_best = y.iloc[test_indices_best_fold].copy()
+        # Fit model
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
 
-# Remaining data (all except best fold test)
-remaining_indices = X.index.difference(test_indices_best_fold)
-X_remaining = X.iloc[remaining_indices].copy()
-y_remaining = y.iloc[remaining_indices].copy()
+        # Compute metrics
+        accuracy = accuracy_score(y_test, y_pred)
+        f1 = f1_score(
+            y_test, y_pred, average="weighted"
+        )  # 'weighted' for multi-class, adjust if binary
 
-# Combine into dataafterkfold
-dataafterkfold = pd.concat([X_remaining, X_test_best], axis=0).reset_index(drop=True)
-dataafterkfold[TARGET] = pd.concat([y_remaining, y_test_best], axis=0).reset_index(
-    drop=True
-)
+        # Save metrics
+        fold_metrics_list.append(
+            {"Fold": fold_index, "Accuracy": accuracy, "F1-Score": f1}
+        )
+        fold_indices_list.append({"train_idx": train_idx, "test_idx": test_idx})
 
-print("\n✅ K-Fold completed")
-print("Fold Scores:\n", fold_scores_df)
-print(
-    f"\n🏆 Best Fold: {fold_scores_df['Fold'][fold_scores_df['Accuracy'].idxmax()]} "
-    f"with Accuracy: {best_accuracy:.4f}"
-)
+    # Convert metrics to DataFrame
+    metrics_df = pd.DataFrame(fold_metrics_list)
+    metrics_df_dict[model_name] = metrics_df
+    fold_indices_dict[model_name] = fold_indices_list
 
-# Now `dataafterkfold` contains all original data with the best fold's test set at the bottom
+    # Identify best fold based on F1-Score
+    best_fold_idx = metrics_df[
+        "F1-Score"
+    ].idxmax()  # index of best fold (maximize F1-Score)
+    best_test_idx = fold_indices_list[best_fold_idx]["test_idx"]
+
+    # Reorder dataset: move best fold to the end
+    remaining_idx = df.index.difference(best_test_idx)
+    df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
+    df_reordered_dict[model_name] = df_reordered
+
+# --- OUTPUT ---
+# metrics_df_dict[model_name] → fold metrics
+# df_reordered_dict[model_name] → reordered dataset

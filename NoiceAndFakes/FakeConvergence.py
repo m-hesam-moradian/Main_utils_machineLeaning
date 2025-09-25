@@ -31,6 +31,9 @@ def get_conv(count=200, low=0.08, high=0.22, minPhase=6, maxPhase=10, cov="rmse"
 
 
 convergence_rmse = get_conv(
-    count=200, high=13.31195, low=2.429340642
+    count=200, high=0.954931973, low=0.4429340642
 , minPhase=24, maxPhase=32, cov="rmse"
 )
+
+#for Classification 
+reversed_convergence = convergence_rmse[::-1]

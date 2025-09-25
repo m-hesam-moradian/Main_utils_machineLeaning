@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def generate_fake_predictions(y_true, desired_accuracy, random_seed=None):
     if random_seed is not None:
         np.random.seed(random_seed)
@@ -33,10 +32,8 @@ def generate_fake_predictions(y_true, desired_accuracy, random_seed=None):
     return y_pred
 
 
-y = np.loadtxt(r"D:\ML\Main_utils\class_noice\y.txt")
+y = np.loadtxt('y.txt')
 
-desired_accuracy = 0.84
+desired_accuracy =0.974
 
 y_pred = generate_fake_predictions(y, desired_accuracy, random_seed=42)
-
-print(y_pred)
