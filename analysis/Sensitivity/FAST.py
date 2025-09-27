@@ -74,7 +74,7 @@ X = df.drop(columns=[TARGET])
 # Read the text file into a DataFrame
 y = pd.read_csv(r"D:\ML\Main_utils\data\predictions.txt")
 
-# Display the DataFrame
+
 print(df)
 
 
