@@ -62,7 +62,6 @@ models = {
                     max_samples=None,  # Default: Use all samples in bootstrap
                 ),
             ),
-         
         ],
         voting="hard",  # Default: Majority voting
         weights=None,  # Default: Equal weights for all estimators
