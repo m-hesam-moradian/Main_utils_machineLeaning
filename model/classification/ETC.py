@@ -45,14 +45,16 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Voting Classifier Model ---
 model = ExtraTreesClassifier(
-    random_state=42,
-    n_estimators=100,
-    max_depth=None,  # You can tune this
-    min_samples_split=2,  # Default, can be adjusted
-    min_samples_leaf=1,  # Default
-    max_features="auto",  # Try "sqrt" or "log2" for variation
+    n_estimators=200,  # More trees for stability
+    criterion="gini",  # Standard split criterion
+    max_depth=15,  # Limit tree depth to prevent overfitting
+    min_samples_split=5,  # Require more samples to split
+    min_samples_leaf=3,  # Ensure leaves have enough samples
+    max_features="log2",  # Smaller feature subset per split
+    bootstrap=True,  # Enable bootstrapping for diversity
+    random_state=42,  # Reproducibility
     n_jobs=-1,  # Use all cores
-    verbose=1,
+    verbose=0,
 )
 
 
