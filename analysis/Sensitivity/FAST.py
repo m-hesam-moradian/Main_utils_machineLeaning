@@ -61,11 +61,11 @@ def Fast_function(X, predictions):
 
 
 # Path & target
-DATA_PATH = r"D:\ML\Main_utils\task\WA_Fn-UseC_-HR-Employee-Attrition.xlsx"
-TARGET = "Attrition"
+DATA_PATH = r"D:\ML\Main_utils\task\136_Seismic_ETC_RTHA, BO.xlsx"
+TARGET = "Class"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Data after K-FOLD (LDA)")
+df = pd.read_excel(DATA_PATH, sheet_name="Balanced_resample_Data")
 
 # Separate features and target
 X = df.drop(columns=[TARGET])

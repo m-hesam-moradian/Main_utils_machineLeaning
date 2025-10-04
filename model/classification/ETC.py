@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from getAllMetrics_Classification import getAllMetric
 
 # Load data
-sheet_name = "Data after K-FOLD"
+sheet_name = "Balanced_resample_Data"
 excel_path = r"D:\ML\Main_utils\task\136_Seismic_ETC_RTHA, BO.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = "Class"
@@ -45,16 +45,19 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Voting Classifier Model ---
 model = ExtraTreesClassifier(
-    n_estimators=200,  # More trees for stability
-    criterion="gini",  # Standard split criterion
-    max_depth=15,  # Limit tree depth to prevent overfitting
-    min_samples_split=5,  # Require more samples to split
-    min_samples_leaf=3,  # Ensure leaves have enough samples
-    max_features="log2",  # Smaller feature subset per split
-    bootstrap=True,  # Enable bootstrapping for diversity
-    random_state=42,  # Reproducibility
-    n_jobs=-1,  # Use all cores
-    verbose=0,
+    n_estimators=893,            # High ensemble stability
+    max_depth=19,              # Full depth for expressive splits
+    min_samples_split=2,         # Slightly more aggressive splits
+    min_samples_leaf=1,          # Allow fine-grained leaf nodes
+
+
+    # Ensure leaves have enough samples
+    # criterion="gini",  # Standard split criterion
+    # max_features="log2",  # Smaller feature subset per split
+    # bootstrap=True,  # Enable bootstrapping for diversity
+    # random_state=42,  # Reproducibility
+    # n_jobs=-1,  # Use all cores
+    # verbose=0,
 )
 
 

@@ -4,11 +4,11 @@ import pandas as pd
 from imblearn.under_sampling import EditedNearestNeighbours
 
 # Path & target
-DATA_PATH = r"D:\ML\main_structure\data\data.xlsx"
-TARGET = "HVAC Efficiency"
+DATA_PATH = r"D:\ML\Main_utils\task\136_Seismic_ETC_RTHA, BO.xlsx"
+TARGET = "Class"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="data_after_k_fold")
+df = pd.read_excel(DATA_PATH, sheet_name="Data after K-FOLD")
 
 # Separate features and target
 X = df.drop(columns=[TARGET])
