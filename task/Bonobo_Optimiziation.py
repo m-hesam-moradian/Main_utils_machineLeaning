@@ -99,4 +99,4 @@ def bonobo_optimizer(X_train, y_train, X_test, y_test, dim=4, N=50, max_it=50):
             f"🦍 Iter {it+1}/{max_it} - Best Precision: {-pop[0]['obj'][0]:.4f}, Recall: {-pop[0]['obj'][1]:.4f}"
         )
 
-    return pop[0]["pos"], -pop[0]["obj"]
+    return pop[0]["pos"], -pop[0]["obj"]  # Return best params and their scores
