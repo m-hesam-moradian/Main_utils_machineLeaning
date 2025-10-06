@@ -22,8 +22,22 @@ y = df[target_column]
 
 # --- Define models ---
 models = {
-    "SVC": SVC(kernel="linear", C=1.0, gamma="scale", random_state=42),
-    "LGBC": LGBMClassifier(n_estimators=100, learning_rate=0.01, max_depth=2),
+    "SVC": SVC(
+        C=15.7956,
+        degree=700,
+        coef0=0.696,
+        tol=0.953,
+        max_iter=781,
+        cache_size=63,
+    ),
+    "LGBC": LGBMClassifier(
+        n_estimators=259,
+        learning_rate=0.00044023,
+        max_depth=12,
+        subsample=0.561,
+        colsample_bytree=0.813,
+        random_state=42,
+    ),
 }
 
 # --- K-Fold setup ---

@@ -24,7 +24,7 @@ from itertools import cycle
 import matplotlib.pyplot as plt
 
 # Data Loading
-data = np.loadtxt(r"D:\ML\main_structure\data\Data_err.npt")
+data = np.loadtxt(r"D:\ML\Main_utils\data\Data_err.npt")
 y = data[:, 0]
 predictData = data[:, 1]
 import numpy as np
@@ -95,21 +95,20 @@ def calculate_hss(cm):
 import math
 from sklearn.metrics import confusion_matrix
 
+# def FM(y, y_pred):
+#     # Generate confusion matrix
+#     tn, fp, fn, tp = confusion_matrix(y, y_pred).ravel()
 
-def FM(y, y_pred):
-    # Generate confusion matrix
-    tn, fp, fn, tp = confusion_matrix(y, y_pred).ravel()
+#     # Calculate Precision (PPV)
+#     precision = tp / (tp + fp) if (tp + fp) != 0 else 0
 
-    # Calculate Precision (PPV)
-    precision = tp / (tp + fp) if (tp + fp) != 0 else 0
+#     # Calculate Recall (TPR)
+#     recall = tp / (tp + fn) if (tp + fn) != 0 else 0
 
-    # Calculate Recall (TPR)
-    recall = tp / (tp + fn) if (tp + fn) != 0 else 0
+#     # Calculate F-Measure (FM)
+#     f_measure = math.sqrt(precision * recall)
 
-    # Calculate F-Measure (FM)
-    f_measure = math.sqrt(precision * recall)
-
-    return f_measure
+#     return f_measure
 
 
 def balanced_accuracy(y_true, y_pred):
@@ -241,7 +240,7 @@ def calculate_metrics(y_true, y_pred):
                 "F-Measure": f_measure,
             }
 
-    return f_measure
+    return metrics
 
 
 def specificity_metric(y_true, y_pred):
@@ -519,12 +518,12 @@ def getAllMetric(measured, predicted):
     recall = recall_score(measured, predicted, average="macro")
     f1 = f1_score(measured, predicted, average="macro")
     f2 = fbeta_score(measured, predicted, beta=2, average="weighted")
-    specificity = specificity_metric(measured, predicted)
+    # specificity = specificity_metric(measured, predicted)
     fm = calculate_metrics(measured, predicted)
     # logloss = log_loss(measured, predicted)
     hss = heidke_skill_score(measured, predicted)
     ci_brier, ci_ece = ci(measured, predicted, n_bins=10, plot=False)
-    g_mean = np.sqrt(specificity * recall)
+    # g_mean=np.sqrt(specificity*recall)
     metrics = [acc, precision_single, recall, f1]
     return metrics
 
@@ -561,7 +560,7 @@ def REC(y_true, y_pred):
 
         Accuracy.append(count / len(y_true))
 
-    # Calculating Area Under Curve using Simpssimpsonon's rule
+    # Calculating Area Under Curve using Simpson's rule
     AUC = simpson(Accuracy, Epsilon) / End_Range
 
     # returning epsilon , accuracy , area under curve
@@ -629,7 +628,7 @@ def get_mcc_per_class(actual_val, pred_val):
 
 # hss=average_precision_score(y, predictData,average=None)
 # average_precision_score
-cm = get_confusion_matrix_values(y, predictData, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+cm = get_confusion_matrix_values(y, predictData, [0, 1, 2])
 
 # محاسبه Class-Wise Error Rate برای هر کلاس
 class_wise_error_rate = 1 - np.diag(cm) / cm.sum(axis=1)
@@ -637,12 +636,12 @@ class_wise_error_rate = 1 - np.diag(cm) / cm.sum(axis=1)
 # نمایش نتایج
 for i, err in enumerate(class_wise_error_rate):
     print(f"Class {i} Error Rate: {err:.2f}")
-csi = calculate_csi(cm, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+csi = calculate_csi(cm, [0, 1, 2])
 hss = calculate_hss(cm)
-fb = calculate_fb(cm, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-far = calculate_far(cm, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-pod = calculate_pod(cm, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-acc_balance_list = calculate_acc_balance(cm, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+fb = calculate_fb(cm, [0, 1, 2])
+far = calculate_far(cm, [0, 1, 2])
+pod = calculate_pod(cm, [0, 1, 2])
+acc_balance_list = calculate_acc_balance(cm, [0, 1, 2])
 f2 = fbeta_score(y, predictData, beta=2, average=None)
 f1 = f1_score(y, predictData, average=None)
 mcc = get_mcc_per_class(y, predictData)
@@ -665,7 +664,7 @@ for i in range(n_classes):
     precision_pcr[i], recall_pcr[i], prc_thresholds[i] = precision_recall_curve(
         y_bin[:, i], predictData
     )
-pd.DataFrame()
+
 
 for j in range(len(precision_pcr)):
 
@@ -714,7 +713,7 @@ def get_conv(count=200, low=0.08, high=0.22, minPhase=6, maxPhase=10):
 # # Example usage
 convergence = get_conv(
     count=200,
-    high=0.99174522,
+    high=0.84174522,
     low=0.76408088135749867626486863,
     minPhase=24,
     maxPhase=32,
@@ -747,13 +746,7 @@ for thresh in thresholds:
 
     precisions.append(precision)
     recalls.append(recall)
-list_df = pd.DataFrame(
-    {"Recall": recall_list, "Precision": precision_list, "F1-score": f1, "MCC": mcc}
-)
-auc_prc = pd.DataFrame(auc_prc)
-convergence_rmse = get_conv(
-    count=200, high=0.957733813, low=0.45765563643, minPhase=24, maxPhase=32
-)
+
 # رسم نمودار
 plt.figure(figsize=(8, 6))
 plt.plot(recalls, precisions, marker="o")
