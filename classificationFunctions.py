@@ -523,8 +523,9 @@ def getAllMetric(measured, predicted):
     # logloss = log_loss(measured, predicted)
     hss = heidke_skill_score(measured, predicted)
     ci_brier, ci_ece = ci(measured, predicted, n_bins=10, plot=False)
+    empty = ""
     # g_mean=np.sqrt(specificity*recall)
-    metrics = [acc, precision_single, recall, f1]
+    metrics = [acc, precision_single, recall, f1, empty]
     return metrics
 
 
@@ -747,11 +748,77 @@ for thresh in thresholds:
     precisions.append(precision)
     recalls.append(recall)
 
-# رسم نمودار
-plt.figure(figsize=(8, 6))
-plt.plot(recalls, precisions, marker="o")
-plt.xlabel("Recall")
-plt.ylabel("Precision")
-plt.title("Approximate Precision-Recall Curve with stacking  ")
-plt.grid()
-plt.show()
+
+# Convert to numpy arrays
+y = np.array(y)
+predictData = np.array(predictData)
+
+# Compute confusion matrix
+labels = np.unique(np.concatenate([y, predictData]))
+cm = confusion_matrix(y, predictData, labels=labels)
+
+# --- Per-class metrics ---
+accuracy = np.diag(cm) / cm.sum(axis=1)
+recalls = recall_score(y, predictData, average=None, labels=labels)
+precisions = precision_score(y, predictData, average=None, labels=labels)
+f1s = f1_score(y, predictData, average=None, labels=labels)
+f2s = fbeta_score(y, predictData, beta=2, average=None, labels=labels)
+mccs = get_mcc_per_class(y, predictData)
+csis = calculate_csi(cm, labels)
+pods = calculate_pod(cm, labels)
+fars = calculate_far(cm, labels)
+fbs = calculate_fb(cm, labels)
+acc_balances = calculate_acc_balance(cm, labels)
+
+# --- Assemble DataFrame ---
+metrics_per_class = pd.DataFrame(
+    {
+        "Set": labels,
+        "Accuracy": accuracy,
+        "Recall": recalls,
+        "Precision": precisions,
+        "F1": f1s,
+        "MCC": mccs,
+    }
+)
+
+# Sort by class (optional)
+metrics_per_class = metrics_per_class.sort_values(by="Set").reset_index(drop=True)
+
+# --- Display ---
+print("\n===== Metrics per Class =====")
+print(metrics_per_class)
+
+# Optionally save to Excel or CSV
+metrics_per_class.to_csv("D:/ML/Main_utils/data/metrics_per_class.csv", index=False)
+
+import pandas as pd
+import numpy as np
+
+# --- Assume these already exist ---
+# all_ressss -> DataFrame for All/Train/Test metrics (without column names)
+# metrics_per_class -> DataFrame for per-class metrics
+
+# Step 1: Assign proper column names for all_ressss
+all_ressss.columns = [
+    "Accuracy",
+    "Precision",
+    "Recall",
+    "F1",
+    "MCC",
+]  # Adjust if needed
+all_ressss.index = ["All", "Train", "Test"]
+
+# Step 2: Reset index to make 'Set' column
+all_ressss = all_ressss.reset_index().rename(columns={"index": "Set"})
+
+# Step 3: Add empty row
+empty_row = pd.DataFrame([["Class"] * all_ressss.shape[1]], columns=all_ressss.columns)
+combined_df = pd.concat([all_ressss, empty_row], ignore_index=True)
+
+# Step 4: Add per-class metrics below, renaming 'Class' column
+metrics_per_class = metrics_per_class.rename(columns={"Class": "Class"})
+combined_df = pd.concat([combined_df, metrics_per_class], ignore_index=True)
+
+# --- Display ---
+print(combined_df)

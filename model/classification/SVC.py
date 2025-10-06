@@ -35,12 +35,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- SVC Model ---
 
 model = SVC(
-    C=15.7956,
-    degree=700,
-    coef0=0.696,
-    tol=0.953,
-    max_iter=781,
-    cache_size=63,
+    C=0.1,
+    degree=1,
+    coef0=0,
+    tol=1,
+    max_iter=100,
+    cache_size=50,
 )
 # --- Save SVC parameters to DataFrame ---
 svc_params = {

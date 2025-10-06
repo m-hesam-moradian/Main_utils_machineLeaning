@@ -108,4 +108,10 @@ def getAllMetric(measured, predicted):
     # ci_brier, ci_ece = ci(measured, predicted, n_bins=10, plot=False)
     # g_mean = np.sqrt(specificity * recall)
 
-    return [acc, precision_single, recall, f1, F2]
+    return [
+        acc,
+        precision_single,
+        recall,
+        f1,
+        F2
+    ]
