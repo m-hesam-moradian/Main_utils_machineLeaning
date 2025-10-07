@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.ensemble import AdaBoostRegressor  # Changed to AdaBoostRegressor
-from catboost import CatBoostRegressor
 from sklearn.metrics import r2_score, mean_squared_error
-from copy import deepcopy
+
 
 # Make sure the class is in this path
 
@@ -26,23 +24,24 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from lightgbm import LGBMRegressor
 
 models = {
-    "ADAR": AdaBoostRegressor(
-        n_estimators=50,  # Default: 50
-        learning_rate=1.0,  # Default: 1.0
-        loss="linear",  # Default: linear
+    "SGB": GradientBoostingRegressor(
+        n_estimators=100,
+        learning_rate=0.1,
+        subsample=0.8,  # stochastic element
+        max_depth=3,
         random_state=42,
     ),
-    "CATR": CatBoostRegressor(
-        iterations=1000,  # Default: 1000
-        learning_rate=None,  # Default: None (auto-selected based on dataset size)
-        depth=6,  # Default: 6
-        l2_leaf_reg=3.0,  # Default: 3.0
-        loss_function="RMSE",  # Default: 'RMSE' for regression
-        random_seed=42,  # Default: None, set to 42 for reproducibility
-        verbose=0,
+    "LGBR": LGBMRegressor(
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=6,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
     ),
 }
 
@@ -105,3 +104,44 @@ for model_name, model in models.items():
 # Now you have two tables per model
 # metrics_df_dict[model_name] → fold metrics
 # df_reordered_dict[model_name] → reordered dataset
+summary_df = []
+
+for model_name in models:
+    metrics_df = metrics_df_dict[model_name]
+    best_fold_idx = metrics_df["RMSE"].idxmin()
+    best_fold = metrics_df.loc[best_fold_idx]
+
+    summary_df.append(
+        {
+            "Model": model_name,
+            "Best Fold": best_fold["Fold"],
+            "Best R2": best_fold["R2"],
+            "Best RMSE": best_fold["RMSE"],
+            "Mean R2": metrics_df["R2"].mean(),
+            "Mean RMSE": metrics_df["RMSE"].mean(),
+        }
+    )
+excel_path = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
+
+with pd.ExcelWriter(
+    excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
+) as writer:
+    for model_name in models:
+        metrics_df_dict[model_name].to_excel(
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+        )
+        df_reordered_dict[model_name].to_excel(
+            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+        )
+    # pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+for model_name in models:
+    metrics_df = metrics_df_dict[model_name]
+    best_fold_idx = metrics_df["RMSE"].idxmin()
+    best_fold = metrics_df.loc[best_fold_idx]
+
+    print(f"\n🔹 Model: {model_name}")
+    print(f"   🏆 Best Fold: Fold {best_fold['Fold']}")
+    print(f"   R2: {best_fold['R2']:.4f}")
+    print(f"   RMSE: {best_fold['RMSE']:.4f}")
+    print(f"   📈 Mean R2: {metrics_df['R2'].mean():.4f}")
+    print(f"   📉 Mean RMSE: {metrics_df['RMSE'].mean():.4f}")
