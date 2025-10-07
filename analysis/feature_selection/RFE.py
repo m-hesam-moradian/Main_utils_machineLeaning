@@ -10,11 +10,13 @@ from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 
-data = pd.read_excel("./Dataset_Voids_Marshall.xlsx", sheet_name="numeriacl")
+data = pd.read_excel(
+    r"D:\ML\Main_utils\task\Resource_utilization.xlsx", sheet_name="CLEANED_DATA"
+)
 
 # Separate features (X) and target variable (y)
-X = data.drop(["Percentage of Voids in the Marshall Sample"], axis=1, errors="ignore")
-y = data["Percentage of Voids in the Marshall Sample"]
+X = data.drop(["cpu_utilization"], axis=1, errors="ignore")
+y = data["cpu_utilization"]
 
 
 col = X.columns
