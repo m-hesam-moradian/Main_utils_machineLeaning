@@ -3,7 +3,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 
-def csv_to_excel(csv_path, excel_path, sheet_name="Sheet1", header=True):
+def csv_to_excel(csv_path, excel_path, sheet_name="DATA", header=True):
     df = pd.read_csv(csv_path)
 
     if not os.path.exists(excel_path):
@@ -36,7 +36,7 @@ def csv_to_excel(csv_path, excel_path, sheet_name="Sheet1", header=True):
 
 
 csv_to_excel(
-    r"D:\ML\Main_utils\task\EI_No_3__Optimal Scheduling_Classification_DTC_RFR_XGBC_HOA_DOA_Data.csv",
-    r"D:\ML\Main_utils\task\EI_No_3__Optimal Scheduling_Classification_DTC_RFR_XGBC_HOA_DOA_Data.xlsx",
-    sheet_name="Logs",
+    r"D:\ML\Main_utils\task\Resource_utilization.csv",
+    r"D:\ML\Main_utils\task\Resource_utilization.xlsx",
+    sheet_name="DATA",
 )
