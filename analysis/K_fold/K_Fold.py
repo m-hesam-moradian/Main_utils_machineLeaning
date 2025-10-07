@@ -10,13 +10,13 @@ from sklearn.metrics import r2_score, mean_squared_error
 
 
 # --- Load dataset ---
-
-sheet_name = "F-static"
+excel_path = r"D:\ML\Main_utils\task\Resource_utilization.xlsx"
+sheet_name = "DATA_Normalized"
 df = pd.read_excel(
-    r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx",
+    excel_path,
     sheet_name=sheet_name,
 )
-target_column = "Market_Size_Billion_USD"
+target_column = "cpu_utilization"
 
 
 # Features and target
@@ -91,8 +91,8 @@ for model_name, model in models.items():
     metrics_df_dict[model_name] = metrics_df
     fold_indices_dict[model_name] = fold_indices_list
 
-    # Identify best fold based on RMSE
-    best_fold_idx = metrics_df["RMSE"].idxmin()  # index of best fold
+    # Identify best fold based on R2
+    best_fold_idx = metrics_df["R2"].idxmax()  # index of best fold
     best_test_idx = fold_indices_list[best_fold_idx]["test_idx"]
 
     # Reorder dataset: move best fold to the end
@@ -108,7 +108,7 @@ summary_df = []
 
 for model_name in models:
     metrics_df = metrics_df_dict[model_name]
-    best_fold_idx = metrics_df["RMSE"].idxmin()
+    best_fold_idx = metrics_df["R2"].idxmax()
     best_fold = metrics_df.loc[best_fold_idx]
 
     summary_df.append(
@@ -121,7 +121,7 @@ for model_name in models:
             "Mean RMSE": metrics_df["RMSE"].mean(),
         }
     )
-excel_path = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
+
 
 with pd.ExcelWriter(
     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
@@ -136,7 +136,7 @@ with pd.ExcelWriter(
     # pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 for model_name in models:
     metrics_df = metrics_df_dict[model_name]
-    best_fold_idx = metrics_df["RMSE"].idxmin()
+    best_fold_idx = metrics_df["R2"].idxmax()
     best_fold = metrics_df.loc[best_fold_idx]
 
     print(f"\n🔹 Model: {model_name}")
