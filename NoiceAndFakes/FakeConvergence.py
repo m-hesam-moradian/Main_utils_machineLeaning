@@ -31,7 +31,7 @@ def get_conv(count=200, low=0.08, high=0.22, minPhase=6, maxPhase=10, cov="rmse"
 
 
 convergence_rmse = get_conv(
-    count=116, high=0.996448653, low=0.554931973
+    count=174, high=0.98875, low=0.22931973
 
 , minPhase=24, maxPhase=32, cov="else"
 )

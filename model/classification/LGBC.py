@@ -34,11 +34,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- LGBC Model ---
 model = LGBMClassifier(
-    n_estimators=259,
-    learning_rate=0.00044023,
-    max_depth=12,
-    subsample=0.561,
-    colsample_bytree=0.813,
+    n_estimators=1162,
+    learning_rate=0.0001721,
+    max_depth=3,
+    subsample=0.0421,
+    colsample_bytree=0.64,
     random_state=42,
 )
 
