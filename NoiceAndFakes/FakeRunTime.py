@@ -1,13 +1,13 @@
 # Simulate and generate a detailed runtime performance report for the following classification models and optimizers on the specified device and dataset:
 
 # 📌 Models:
-# - Support Vector Classifier (SVC)
-# - Light Gradient Boosting Classifier (LGBC)
+# - Stochastic Gradient Boosting (SGB)
+# - Light Gradient Boosting Regression (LGBR).
 
 # 📌 Optimizers:
-# - Kepler Optimization Algorithm (KOA)
-# - Gazelle Optimization Algorithm (GOA)
-# - Coati Optimization Algorithm (COA)
+# - Botox Optimization Algorithm (BOA),
+# - Addax Optimization Algorithm (AOA),
+# - Football Optimization Algorithm (FOA).
 
 # 📌 Device Specifications:
 # - Device Name: hesam
@@ -40,4 +40,3 @@
 # 📌 Constraints:
 # - Simulate within realistic bounds of the device specs
 # - Ensure reproducibility by logging all parameters and random seeds
-#
