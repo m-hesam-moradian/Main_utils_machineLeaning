@@ -466,110 +466,111 @@ def calculate_cov_ratio(y_true, y_pred):
 
     return cov_value
 
+    # def getAllMetric(measured, predicted):
 
-# def getAllMetric(measured, predicted):
+    #     # Main Loop
+    #     N = len(measured)
+    #     S1, S2, S3, S4, S5, S6, S7, S8, S9 = (
+    #         0,
+    #         0,
+    #         np.zeros_like(measured),
+    #         np.zeros_like(measured),
+    #         0,
+    #         0,
+    #         0,
+    #         np.zeros_like(measured),
+    #         0,
+    #     )
+    #     R, R1, R2, R3, S10, S11, S12, S14, S15, S16, S17 = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    #     M, Z, T, TP = 0, 0, 0, 0
 
-#     # Main Loop
-#     N = len(measured)
-#     S1, S2, S3, S4, S5, S6, S7, S8, S9 = (
-#         0,
-#         0,
-#         np.zeros_like(measured),
-#         np.zeros_like(measured),
-#         0,
-#         0,
-#         0,
-#         np.zeros_like(measured),
-#         0,
-#     )
-#     R, R1, R2, R3, S10, S11, S12, S14, S15, S16, S17 = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-#     M, Z, T, TP = 0, 0, 0, 0
+    #     for i in range(N):
+    #         # MSE & RMSE
+    #         M += (predicted.iloc[i] - measured.iloc[i]) ** 2
+    #         T += measured.iloc[i] ** 2
+    #         TP += predicted.iloc[i] ** 2
+    #         # tu=
+    #         # TU1=
+    #         # MAE & WAPE
+    #         Z += abs(predicted.iloc[i] - measured.iloc[i])
+    #         # TU1+=(predicted[i] - measured[i])**2
+    #         # R2
+    #         R1 += (measured.iloc[i] - np.mean(measured)) * (
+    #             predicted.iloc[i] - np.mean(predicted)
+    #         )
+    #         R2 += (predicted.iloc[i] - np.mean(predicted)) ** 2
+    #         R3 += (measured.iloc[i] - np.mean(measured)) ** 2
 
-#     for i in range(N):
-#         # MSE & RMSE
-#         M += (predicted.iloc[i] - measured.iloc[i]) ** 2
-#         T += measured.iloc[i] ** 2
-#         TP += predicted.iloc[i] ** 2
-#         # tu=
-#         # TU1=
-#         # MAE & WAPE
-#         Z += abs(predicted.iloc[i] - measured.iloc[i])
-#         # TU1+=(predicted[i] - measured[i])**2
-#         # R2
-#         R1 += (measured.iloc[i] - np.mean(measured)) * (
-#             predicted.iloc[i] - np.mean(predicted)
-#         )
-#         R2 += (predicted.iloc[i] - np.mean(predicted)) ** 2
-#         R3 += (measured.iloc[i] - np.mean(measured)) ** 2
+    #         # MAPE
+    #         S7 += abs((predicted.iloc[i] - measured.iloc[i]) / predicted.iloc[i]) * 100
 
-#         # MAPE
-#         S7 += abs((predicted.iloc[i] - measured.iloc[i]) / predicted.iloc[i]) * 100
+    #         # MDAPE
+    #         S8[i] = abs((predicted.iloc[i] - measured.iloc[i]) / predicted.iloc[i]) * 100
 
-#         # MDAPE
-#         S8[i] = abs((predicted.iloc[i] - measured.iloc[i]) / predicted.iloc[i]) * 100
+    #         # NMSE
+    #         S9 += ((predicted.iloc[i] - measured.iloc[i]) ** 2) / (
+    #             measured.iloc[i] * predicted.iloc[i]
+    #         )
 
-#         # NMSE
-#         S9 += ((predicted.iloc[i] - measured.iloc[i]) ** 2) / (
-#             measured.iloc[i] * predicted.iloc[i]
-#         )
+    #         # MBE & FB
+    #         S2 += predicted.iloc[i] - measured.iloc[i]
+    #         S3[i] = predicted.iloc[i] - measured.iloc[i]
+    #         S12 += measured.iloc[i] - predicted.iloc[i]
+    #         S13 = measured.iloc[i] - predicted.iloc[i]
+    #         S10 += (2 * S13) / (predicted.iloc[i] + measured.iloc[i])
+    #         S11 += S13 / measured.iloc[i]
+    #         S14 += abs(S13) / abs(measured.iloc[i])
+    #         S15 += abs(S13) / (abs((measured.iloc[i]) - np.mean(measured)))
+    #         # IOA
+    #         S16 = S16 + (measured.iloc[i] - predicted.iloc[i]) ** 2
+    #         S17 = (
+    #             S17
+    #             + (
+    #                 (abs(predicted.iloc[i] - np.mean(measured)))
+    #                 + (abs(measured.iloc[i] - np.mean(measured)))
+    #             )
+    #             ** 2
+    #         )
 
-#         # MBE & FB
-#         S2 += predicted.iloc[i] - measured.iloc[i]
-#         S3[i] = predicted.iloc[i] - measured.iloc[i]
-#         S12 += measured.iloc[i] - predicted.iloc[i]
-#         S13 = measured.iloc[i] - predicted.iloc[i]
-#         S10 += (2 * S13) / (predicted.iloc[i] + measured.iloc[i])
-#         S11 += S13 / measured.iloc[i]
-#         S14 += abs(S13) / abs(measured.iloc[i])
-#         S15 += abs(S13) / (abs((measured.iloc[i]) - np.mean(measured)))
-#         # IOA
-#         S16 = S16 + (measured.iloc[i] - predicted.iloc[i]) ** 2
-#         S17 = (
-#             S17
-#             + (
-#                 (abs(predicted.iloc[i] - np.mean(measured)))
-#                 + (abs(measured.iloc[i] - np.mean(measured)))
-#             )
-#             ** 2
-#         )
+    #     for i in range(N - 1):
+    #         # CP
+    #         denominator = measured[i + 1] - measured[i]
+    #         if denominator != 0:
+    #             S1 += ((predicted[i + 1] - measured[i + 1]) ** 2) / (
+    #                 (measured[i + 1] - measured[i]) ** 2
+    #             )
+    #         else:
+    #             # Handle the case where the denominator is zero (as per your use case)
+    #             # You can choose to skip this iteration, set S1 to a default value, or handle it in another way
+    #             pass
+    #         # S1 += ((predicted[i + 1] - measured[i + 1]) ** 2) / ((measured[i + 1] - measured[i]) ** 2)
+    #     meanSquaredError = mean_squared_error(measured, predicted)
 
-#     for i in range(N - 1):
-#         # CP
-#         denominator = measured[i + 1] - measured[i]
-#         if denominator != 0:
-#             S1 += ((predicted[i + 1] - measured[i + 1]) ** 2) / (
-#                 (measured[i + 1] - measured[i]) ** 2
-#             )
-#         else:
-#             # Handle the case where the denominator is zero (as per your use case)
-#             # You can choose to skip this iteration, set S1 to a default value, or handle it in another way
-#             pass
-#         # S1 += ((predicted[i + 1] - measured[i + 1]) ** 2) / ((measured[i + 1] - measured[i]) ** 2)
-#     meanSquaredError = mean_squared_error(measured, predicted)
+    #     ratio = measured / predicted
+    #     num20 = np.logical_and(ratio < 1.2, ratio > 0.8)
+    #     num10 = np.logical_and(ratio < 1.1, ratio > 0.9)
+    #     n20 = np.sum(num20)
+    #     n10 = np.sum(num10)
+    #     MAGE = MAGEFunc(measured, predicted)
+    #     MSE = M / N
+    #     RMSE = np.sqrt(meanSquaredError)
+    #     NRMSE = RMSE / N
+    #     NMSE = MSE / N
+    #     R = r2_score_manual(measured, predicted)
+    #     MAPE = S7 / N
+    #     MDAPE = np.median(S8)
+    #     VAF = (1 - (np.var(predicted - measured) / np.var(predicted))) * 100
+    #     MAE = Z / N
+    #     SI = RMSE / np.mean(measured)  # Scatter index
+    #     RSR = RMSE / np.std(measured)  # ratio of RMSE to standard deviation
+    #     CP = 1 - S1  # coefficient of persistence
+    #     n20_index = n20 / N  # N20-INDEX
+    #     n10_index = n10 / N  # N10-INDEX
+    #     MBE = S2 / N  # Mean Error (Mean Bias Error)
+    #     Tstate = np.sqrt((N - 1) * MBE**2 / (RMSE**2 - MBE**2))  # T statistic test
+    U95 = 1.96 * np.sqrt(np.std(S3) ** 2 + RMSE**2)
 
-#     ratio = measured / predicted
-#     num20 = np.logical_and(ratio < 1.2, ratio > 0.8)
-#     num10 = np.logical_and(ratio < 1.1, ratio > 0.9)
-#     n20 = np.sum(num20)
-#     n10 = np.sum(num10)
-#     MAGE = MAGEFunc(measured, predicted)
-#     MSE = M / N
-#     RMSE = np.sqrt(meanSquaredError)
-#     NRMSE = RMSE / N
-#     NMSE = MSE / N
-#     R = r2_score_manual(measured, predicted)
-#     MAPE = S7 / N
-#     MDAPE = np.median(S8)
-#     VAF = (1 - (np.var(predicted - measured) / np.var(predicted))) * 100
-#     MAE = Z / N
-#     SI = RMSE / np.mean(measured)  # Scatter index
-#     RSR = RMSE / np.std(measured)  # ratio of RMSE to standard deviation
-#     CP = 1 - S1  # coefficient of persistence
-#     n20_index = n20 / N  # N20-INDEX
-#     n10_index = n10 / N  # N10-INDEX
-#     MBE = S2 / N  # Mean Error (Mean Bias Error)
-#     Tstate = np.sqrt((N - 1) * MBE**2 / (RMSE**2 - MBE**2))  # T statistic test
-#     U95 = 1.96 * np.sqrt(np.std(S3) ** 2 + RMSE**2)
+
 #     WAPE = Z / np.sum(np.abs(measured))  # Weighted Absolute Percentage Error (WAPE)
 #     SMAPE = (1 / N) * (
 #         Z / (np.sum(measured + predicted) / 2)
@@ -637,7 +638,7 @@ def getAllMetric(measured, predicted):
     denominator = (np.abs(measured) + np.abs(predicted)) / 2
     SMAPE = np.mean(np.abs(measured - predicted) / denominator) * 100
 
-    return [R, RMSE, MAE, RSE, SMAPE]
+    return [MAE, RMSE, R]
 
 
 train_size = 0.8
