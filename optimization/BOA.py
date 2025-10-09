@@ -20,11 +20,7 @@ def boa_optimize(objective_func, lb, ub, N=30, T=100):
 
     Parameters:
     - objective_func: function that takes a 1D array of parameters and returns a scalar value to minimize.
-    - lb: lower bounds (array of length D)
-    - ub: upper bounds (array of length D)
-    - N: population size
-    - T: number of iterations
-
+    - sldfjlb: lower bounds for each parameter (1D array).
     Returns:
     - best_params: optimized parameters
     - best_score: best objective value
