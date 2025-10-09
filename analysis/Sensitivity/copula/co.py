@@ -1,16 +1,15 @@
-import sys
-
-sys.path.append("/Users/pouya/Desktop/machin_learning_work")
 from couples_sensitivity_analysis import couples_sensitivity_analysis
 import pandas as pd
 from xgboost import XGBRegressor
 
 # Load the dataset
-dt = pd.read_excel("./5G6G_Optimization_Dataset.xlsx", sheet_name="LGBR_DATA")
+dt = pd.read_excel(
+    r"D:\ML\Main_utils\task\Resource_utilization.xlsx", sheet_name="Data_after_KFold"
+)
+target_column = "cpu_utilization"
+X = dt.drop(target_column, axis=1)
 
-X = dt.drop("Throughput_Mbps", axis=1)
-
-y = dt["Throughput_Mbps"]
+y = dt[target_column]
 
 
 features = X.columns
@@ -27,7 +26,7 @@ feature_pairs = [
 ]
 
 # Perform the couples sensitivity analysis
-c = couples_sensitivity_analysis(model, X, y, feature_pairs, "mse", 40)
+copula = couples_sensitivity_analysis(model, X, y, feature_pairs, "mse", 40)
 
 # Display the sensitivity report
-print(c)
+print(copula)

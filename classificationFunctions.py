@@ -629,7 +629,7 @@ def get_mcc_per_class(actual_val, pred_val):
 
 # hss=average_precision_score(y, predictData,average=None)
 # average_precision_score
-cm = get_confusion_matrix_values(y, predictData, [0, 1, 2])
+cm = get_confusion_matrix_values(y, predictData, [0, 1])
 
 # محاسبه Class-Wise Error Rate برای هر کلاس
 class_wise_error_rate = 1 - np.diag(cm) / cm.sum(axis=1)
@@ -637,12 +637,12 @@ class_wise_error_rate = 1 - np.diag(cm) / cm.sum(axis=1)
 # نمایش نتایج
 for i, err in enumerate(class_wise_error_rate):
     print(f"Class {i} Error Rate: {err:.2f}")
-csi = calculate_csi(cm, [0, 1, 2])
+csi = calculate_csi(cm, [0, 1])
 hss = calculate_hss(cm)
-fb = calculate_fb(cm, [0, 1, 2])
-far = calculate_far(cm, [0, 1, 2])
-pod = calculate_pod(cm, [0, 1, 2])
-acc_balance_list = calculate_acc_balance(cm, [0, 1, 2])
+fb = calculate_fb(cm, [0, 1])
+far = calculate_far(cm, [0, 1])
+pod = calculate_pod(cm, [0, 1])
+acc_balance_list = calculate_acc_balance(cm, [0, 1])
 f2 = fbeta_score(y, predictData, beta=2, average=None)
 f1 = f1_score(y, predictData, average=None)
 mcc = get_mcc_per_class(y, predictData)
