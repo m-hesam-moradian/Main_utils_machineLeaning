@@ -1,38 +1,60 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import AdaBoostRegressor  # Changed to AdaBoostRegressor
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.impute import SimpleImputer
-
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.tree import DecisionTreeRegressor
 from Metrics_regression import getAllMetric
 
-# --- Data Loading ---
-sheet_name = "Data after K-FOLD"
-excel_path = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
+# --- Load data ---
+sheet_name = "Data_after_KFold_ADAR"
+excel_path = (
+    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
+)
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Market_Size_Billion_USD"
+target_column = "Power"
 
-# --- Features and Target ---
-X = df.drop(columns=[target_column])
-y = df[target_column]
+y = df[target_column].astype(float)
 
-# --- Handle NaN Values ---
-imputer = SimpleImputer(strategy="mean")
-X = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
-y = y.fillna(y.mean())
+# --- Preprocess Features ---
+categorical_cols = df.select_dtypes(include=["object"]).columns.drop(
+    target_column, errors="ignore"
+)
+X = pd.get_dummies(
+    df.drop(columns=[target_column]), columns=categorical_cols, drop_first=True
+)
 
 # --- Train-Test Split ---
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
-
-
-# --- AdaBoostRegressor Model ---
-model = AdaBoostRegressor(
-    learning_rate=0.73,
-    n_estimators=421,
-    random_state=42,
-    loss="linear",
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, shuffle=False, random_state=42
 )
+
+# --- Define ADAR Model ---
+model = AdaBoostRegressor(
+    # base_estimator=DecisionTreeRegressor(max_depth=3),
+    # n_estimators=100,
+    # learning_rate=0.1,
+    # random_state=42,
+)
+
+# --- Save ADAR parameters to DataFrame ---
+adar_params = {
+    "base_estimator": "DecisionTreeRegressor(max_depth=3)",
+    "n_estimators": model.n_estimators,
+    "learning_rate": model.learning_rate,
+    "random_state": model.random_state,
+    "loss": model.loss,
+    "estimator": model.estimator,
+}
+horizantal_params_df = pd.DataFrame([adar_params])
+Vertical_params_df = pd.DataFrame(
+    {
+        "parameters": list(horizantal_params_df.columns),
+        "values": list(horizantal_params_df.iloc[0]),
+    }
+)
+
+# --- Fit Model ---
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -42,21 +64,18 @@ y_pred_test = model.predict(X_test)
 
 # --- Split Test Predictions ---
 mid_index = len(y_pred_test) // 2
-y_test_first_half = y_test.iloc[:mid_index]
-y_test_second_half = y_test.iloc[mid_index:]
+y_test_first_half = y_test[:mid_index]
+y_test_second_half = y_test[mid_index:]
 y_pred_test_first_half = y_pred_test[:mid_index]
 y_pred_test_second_half = y_pred_test[mid_index:]
 
-
-# --- Metrics Calculation ---
-def get_metrics(y_true, y_pred):
-    r2 = r2_score(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    return r2, rmse
-
-
 # --- Build Metrics Table Using getAllMetric ---
-metrics_data = {"Set": [], "R2": [], "RMSE": [], "MAE": [], "RSE": [], "SMAPE": []}
+metrics_data = {
+    "Set": [],
+    "MAE": [],
+    "RMSE": [],
+    "R2": [],
+}
 sets = [
     ("All", y, y_pred_all),
     ("Train", y_train, y_pred_train),
@@ -66,33 +85,25 @@ sets = [
 ]
 
 for name, y_true, y_pred in sets:
-    R, RMSE, MAE, RSE, SMAPE = getAllMetric(y_true, y_pred)
+    MAE, RMSE, R2 = getAllMetric(y_true, y_pred)
+    metrics_data["R2"].append(R2)
     metrics_data["Set"].append(name)
-    metrics_data["R2"].append(R)
-    metrics_data["RMSE"].append(RMSE)
     metrics_data["MAE"].append(MAE)
-    metrics_data["RSE"].append(RSE)
-    metrics_data["SMAPE"].append(SMAPE)
+    metrics_data["RMSE"].append(RMSE)
 
 metrics_df = pd.DataFrame(metrics_data)
 
-# --- Additional DataFrames ---
-df_train = pd.DataFrame({"y_train_real": y_train.values, "y_train_pred": y_pred_train})
-df_test = pd.DataFrame({"y_test_real": y_test.values, "y_test_pred": y_pred_test})
+# --- Create DataFrames for real vs predicted ---
+df_train = pd.DataFrame({"y_train_real": y_train, "y_train_pred": y_pred_train})
+df_test = pd.DataFrame({"y_test_real": y_test, "y_test_pred": y_pred_test})
 df_all = pd.concat(
     [
-        pd.DataFrame({"y_real": y_train.values, "y_pred": y_pred_train}),
-        pd.DataFrame({"y_real": y_test.values, "y_pred": y_pred_test}),
+        pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train}),
+        pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test}),
     ],
     ignore_index=True,
 )
 
-# --- Output Results ---
-print("\n📋 Performance Metrics Table:")
+# --- Print Metrics Table ---
+print("\n📊 Performance Metrics Table (AdaBoostRegressor):")
 print(metrics_df)
-print("\n📋 Training Data Predictions:")
-print(df_train.head())
-print("\n📋 Test Data Predictions:")
-print(df_test.head())
-print("\n📋 All Data Predictions:")
-print(df_all.head())
