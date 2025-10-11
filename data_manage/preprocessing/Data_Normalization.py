@@ -3,11 +3,13 @@ from sklearn.preprocessing import MinMaxScaler
 
 # --- Load dataset ---
 sheet_name = "DATA_Shuffled"
-excel_path = r"D:\ML\Main_utils\task\Resource_utilization.xlsx"
+excel_path = (
+    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
+)
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Target column ---
-target_column = "cpu_utilization"
+target_column = "Power"
 
 # --- Separate features and target ---
 features = df.drop(columns=[target_column])
