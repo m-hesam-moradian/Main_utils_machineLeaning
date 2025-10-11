@@ -7,10 +7,12 @@ from Metrics_regression import getAllMetric
 from lightgbm import LGBMRegressor
 
 # --- Load data ---
-sheet_name = "Data_after_KFold"
-excel_path = r"D:\ML\Main_utils\task\Resource_utilization.xlsx"
+sheet_name = "Data_after_KFold_LGBR"
+excel_path = (
+    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
+)
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "cpu_utilization"
+target_column = "Power"
 
 # --- Encode Target Variable if needed ---
 if df[target_column].dtype == object:
@@ -29,16 +31,16 @@ X = pd.get_dummies(
 
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, shuffle=False, random_state=42
+    X, y, test_size=0.2, shuffle=False, random_state=42
 )
 
 model = LGBMRegressor(
-    n_estimators=722,
-    learning_rate=0.0313,
-    max_depth=7,
-    subsample=0.96,
-    min_child_samples=8,
-
+    n_estimators=296,
+    learning_rate=0.138,
+    max_depth=6,
+    subsample=0.371,
+    min_child_samples=13,
+    random_state=42,
 )
 
 # --- Save LGBM parameters to DataFrame ---
@@ -48,7 +50,6 @@ lgbm_params = {
     "max_depth": model.max_depth,
     "subsample": model.subsample,
     "min_child_samples": model.min_child_samples,
-
 }
 horizantal_params_df = pd.DataFrame([lgbm_params])
 Vertical_params_df = pd.DataFrame(

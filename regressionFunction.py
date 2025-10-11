@@ -608,7 +608,7 @@ def getAllMetric(measured, predicted):
     MARD = median_absolute_relative_deviation(measured, predicted)
     COV_value = calculate_cov_ratio(measured, predicted)
 
-    return [R, U95, RMSE, AARD, SMAPE]
+    return [R, RMSE, RAE, n10_index, NSE]
 
 
 train_size = 0.8

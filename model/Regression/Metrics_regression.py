@@ -638,7 +638,11 @@ def getAllMetric(measured, predicted):
     denominator = (np.abs(measured) + np.abs(predicted)) / 2
     SMAPE = np.mean(np.abs(measured - predicted) / denominator) * 100
 
-    return [MAE, RMSE, R]
+    return [
+        MAE,
+        RMSE,
+        R,
+    ]
 
 
 train_size = 0.8
