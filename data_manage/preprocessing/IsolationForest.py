@@ -22,5 +22,5 @@ cleaned_df = df[df["outlier_flag"] == 1].drop(columns=["outlier_flag"])
 
 # Save cleaned data to a new sheet
 with pd.ExcelWriter(file_path, engine="openpyxl", mode="a") as writer:
-    cleaned_df.to_excel(writer, sheet_name="Isolation Forest outlier ", index=False)
+    cleaned_df.to_excel(writer, sheet_name="Isolation_Forest", index=False)
 print("Outliers detected and saved to new sheet.")
