@@ -15,6 +15,7 @@ excel_path = (
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = "Power"
 
+
 # --- Encode Target Variable if needed ---
 if df[target_column].dtype == object:
     le = LabelEncoder()
