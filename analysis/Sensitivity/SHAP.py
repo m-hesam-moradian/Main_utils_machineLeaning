@@ -38,9 +38,7 @@ def shap_analysis(
         model.fit(X_train, y_train)
 
     # Create SHAP explainer
-    explainer = shap.KernelExplainer(
-        model.predict, shap.sample(X_train, 100)
-    )  # نمونه 100 تا از X_train
+    explainer = shap.Explainer(model, X_train, feature_names=X_train.columns)
 
     shap_values = explainer.shap_values(X_test)
 
@@ -87,15 +85,16 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 
-from sklearn.linear_model import Ridge, ElasticNet
 from sklearn.model_selection import train_test_split
 
 
 # --- Load dataset ---
-sheet_name = "Data After K-FOLD"
-file_path = r"D:\ML\Main_utils\Task\GLEMETA_MADDPG_Final_IoT_MEC_UAV_Dataset.xlsx"
+sheet_name = "Data_after_KFold_LGBR"
+file_path = (
+    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
+)
 
-target_column = "offload_ratio"
+target_column = "Power"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -104,7 +103,7 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Train-Test Split ---
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 # models = {
 #     "Elastic": ElasticNet(
 #         alpha=0.005,
@@ -113,9 +112,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle
 #         alpha=22,
 #     ),
 # }
+from lightgbm import LGBMRegressor
+
 
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=ElasticNet(alpha=0.001),
+    model=LGBMRegressor(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
