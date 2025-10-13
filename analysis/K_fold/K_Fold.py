@@ -7,22 +7,22 @@ from sklearn.ensemble import AdaBoostRegressor
 from lightgbm import LGBMRegressor
 
 # --- Load dataset ---
-excel_path = (
-    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
-)
-sheet_name = "DATA_Normalized"
+excel_path = r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
+sheet_name = "String_labelEncoded"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Power"
+target_column = "allocated_bandwidth"
 
 # Features and target
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
+from sklearn.svm import SVR
+from sklearn.linear_model import ElasticNet
+
 models = {
-    "DTR": DecisionTreeRegressor(),
-    "LGBR": LGBMRegressor(),
-    "ADAR": AdaBoostRegressor(),
+    "SVR": SVR(kernel="rbf", C=1.0, epsilon=0.2),
+    "LGBR": ElasticNet(alpha=1.0, l1_ratio=0.5, random_state=42),
 }
 
 # --- K-Fold setup ---
@@ -82,17 +82,17 @@ for model_name in models:
     )
 
 # --- Save to Excel ---
-with pd.ExcelWriter(
-    excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-) as writer:
-    for model_name in models:
-        metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
-        )
-        df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
-        )
-    pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+# with pd.ExcelWriter(
+#     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
+# ) as writer:
+#     for model_name in models:
+#         metrics_df_dict[model_name].to_excel(
+#             writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+#         )
+#         df_reordered_dict[model_name].to_excel(
+#             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+#         )
+#     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 
 # --- Print Summary ---
 for model_name in models:

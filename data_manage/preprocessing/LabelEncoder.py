@@ -3,11 +3,11 @@ from sklearn.preprocessing import LabelEncoder
 
 # Load your Excel file
 df = pd.read_excel(
-    r"D:\ML\Main_utils\task\WA_Fn-UseC_-HR-Employee-Attrition.xlsx"
+    r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
 )  # Replace with your actual filename
 
 # Create a copy to avoid modifying original
-df = df.dropna()
+
 df_encoded = df.copy()
 
 # Initialize encoder

@@ -27,7 +27,7 @@ def clean_missing_samples(excel_path, source_sheet="DATA", target_sheet="CLEANED
 
 # Example usage
 clean_missing_samples(
-    excel_path=r"D:\ML\Main_utils\task\Resource_utilization.xlsx",
+    excel_path=r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx",
     source_sheet="DATA",
     target_sheet="CLEANED_DATA",
 )

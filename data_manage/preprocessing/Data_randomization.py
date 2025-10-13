@@ -1,10 +1,8 @@
 import pandas as pd
 
 # --- Load original dataset ---
-sheet_name = "Isolation_Forest"
-excel_path = (
-    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
-)
+sheet_name = "CLEANED_DATA"
+excel_path = r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Shuffle the dataset ---
