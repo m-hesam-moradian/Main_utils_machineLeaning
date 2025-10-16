@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, accuracy_score
-from xgboost import XGBRegressor  # Swap with ExtraTreesClassifier for classification
+from sklearn.ensemble import ExtraTreesClassifier  # Classification model
 import matplotlib.pyplot as plt
 from itertools import combinations
 
@@ -10,7 +10,7 @@ from itertools import combinations
 # 1. Define the sensitivity function
 # ----------------------------- #
 def couples_sensitivity_analysis(
-    model, X, y, feature_pairs, metric="mse", perturbation=0.1
+    model, X, y, feature_pairs, metric="accuracy", perturbation=0.1
 ):
     if metric == "mse":
         metric_func = mean_squared_error
@@ -55,11 +55,11 @@ df = pd.read_excel(
     r"D:\ML\Main_utils\task\Resource_utilization.xlsx", sheet_name="Data_after_KFold"
 )
 
-target_column = "cpu_utilization"
+target_column = "Cyberattack_Detected"
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-model = XGBRegressor()
+model = ExtraTreesClassifier()
 model.fit(X, y)
 
 # Generate feature pairs
@@ -72,7 +72,7 @@ feature_pairs = [
 
 # Run sensitivity analysis
 copula = couples_sensitivity_analysis(
-    model, X, y, feature_pairs, metric="mse", perturbation=0.1
+    model, X, y, feature_pairs, metric="accuracy", perturbation=0.1
 )
 
 # ----------------------------- #
@@ -98,3 +98,6 @@ print(copula)
 
 print("\n--- Aggregated Copula (Average by feature_1) ---")
 print(copula_average)
+with pd.ExcelWriter("copula_analysis.xlsx") as writer:
+    copula.to_excel(writer, sheet_name="Copula", index=False)
+    copula_average.to_excel(writer, sheet_name="Copula_Average", index=False)
