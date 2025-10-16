@@ -51,9 +51,8 @@ def couples_sensitivity_analysis(
 # ----------------------------- #
 # 2. Load data and run analysis
 # ----------------------------- #
-df = pd.read_excel(
-    r"D:\ML\Main_utils\task\Resource_utilization.xlsx", sheet_name="Data_after_KFold"
-)
+data_Path = r"D:\ML\Main_utils_machineLeaning\task\BSE. No.13-Dataset.xlsx"
+df = pd.read_excel(data_Path, sheet_name="Balanced_Shuffled")
 
 target_column = "Cyberattack_Detected"
 X = df.drop(columns=[target_column])
@@ -93,11 +92,13 @@ copula_average.rename(columns={"index": "feature_1"}, inplace=True)
 # ----------------------------- #
 # 4. Return both results
 # ----------------------------- #
-print("\n--- Copula Sensitivity Report ---")
-print(copula)
+# print("\n--- Copula Sensitivity Report ---")
+# print(copula)
 
-print("\n--- Aggregated Copula (Average by feature_1) ---")
-print(copula_average)
-with pd.ExcelWriter("copula_analysis.xlsx") as writer:
+# print("\n--- Aggregated Copula (Average by feature_1) ---")
+# print(copula_average)
+with pd.ExcelWriter(
+    data_Path, engine="openpyxl", mode="a", if_sheet_exists="replace"
+) as writer:
     copula.to_excel(writer, sheet_name="Copula", index=False)
     copula_average.to_excel(writer, sheet_name="Copula_Average", index=False)

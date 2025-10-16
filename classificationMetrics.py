@@ -9,7 +9,7 @@ from sklearn.metrics import (
 )
 
 # Load data
-data = np.loadtxt(r"D:\ML\ML\data\Data_err.npt")
+data = np.loadtxt(r"D:\ML\Main_utils_machineLeaning\data\Data_err.npt")
 y_real = data[:, 0]
 y_pred = data[:, 1]
 
