@@ -1,75 +1,70 @@
 import pandas as pd
-from scipy.stats import wilcoxon
 import numpy as np
+from scipy.stats import wilcoxon
+from itertools import combinations
 
-# Load the dataset
+# Load structured data from Excel
 df = pd.read_excel(
-    r"D:\ML\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\#M(XGBC&RFC)#O(LEOA)#RTIME#CI#WILCOXONN#FAST\data\data.xlsx",
-    sheet_name="predicts",
+    r"D:\ML\Main_utils_machineLeaning\task\BSE. No.13-Dataset.xlsx",
+    header=0,
+    sheet_name="Sheet2",
 )
 
-# Define the groups of columns based on their base methods
-group_cols = {
-    "main": [
-        "GBC",
-        "GBC Optimizer (PVSA)",
-        "LGBC",
-        "LGBC Optimizer (PVSA)",
-        "SC",
-        "SC Optimizer (PVSA)",
-    ],
+# Dynamically extract model names and predictions
+columns = df.columns.tolist()
+structured_data = []
+
+for i in range(0, len(columns), 2):
+    name = columns[i].strip()
+    y_real = df.iloc[:, i].tolist()
+    y_predict = df.iloc[:, i + 1].tolist()
+    structured_data.append({"name": name, "y_real": y_real, "y_predict": y_predict})
+
+# Build prediction dictionary for Wilcoxon
+predictions = {entry["name"]: np.array(entry["y_predict"]) for entry in structured_data}
+
+# Initialize results dictionary
+results = {
+    "stats": {},
+    "p_values": {},
 }
 
-# List to store results
-results = []
+# Perform Wilcoxon signed-rank test for all unique model pairs
+for model_a, model_b in combinations(predictions.keys(), 2):
+    try:
+        stat, p_value = wilcoxon(predictions[model_a], predictions[model_b])
+        results["stats"][f"{model_a} vs {model_b}"] = stat
+        results["p_values"][f"{model_a} vs {model_b}"] = p_value
+    except Exception as e:
+        results["stats"][f"{model_a} vs {model_b}"] = np.nan
+        results["p_values"][f"{model_a} vs {model_b}"] = np.nan
+        print(f"Error comparing {model_a} vs {model_b}: {e}")
 
-# Loop through each group and perform Wilcoxon test on all pairs within the group
-for group, cols in group_cols.items():
-    # Ensure the columns exist in the dataset
-    existing_cols = [col for col in cols if col in df.columns]
-    # Generate all unique pairs within this group
-    from itertools import combinations
-
-    pairs = list(combinations(existing_cols, 2))
-
-    for col1, col2 in pairs:
-        # Extract the samples from the dataset columns
-        sample1 = df[col1].dropna()  # Remove any NaN values
-        sample2 = df[col2].dropna()  # Remove any NaN values
-
-        # Ensure samples are the same length by aligning them (if needed)
-        min_length = min(len(sample1), len(sample2))
-        sample1 = sample1[:min_length]
-        sample2 = sample2[:min_length]
-
-        # Calculate differences (optional, included as per original code)
-        differences = sample1 - sample2
-
-        # Perform the Wilcoxon signed-rank test
-        stat, p = wilcoxon(sample1, sample2)
-
-        # Store the results
-        results.append(
-            {
-                "Column1": col1,
-                "Column2": col2,
-                "Statistic": stat,
-                "P-value": p,
-                #'Differences': differences.tolist()  # Optional: include differences
-            }
+# Print summary
+for key, value in results.items():
+    print(f"\n{key}:")
+    for sub_key, sub_value in value.items():
+        print(
+            f"  {sub_key}: {sub_value:.5f}"
+            if not pd.isna(sub_value)
+            else f"  {sub_key}: NaN"
         )
 
-# Convert results to a DataFrame for better display
-results_df = pd.DataFrame(results)
+# Convert results to DataFrame
+df_stats = pd.DataFrame(results["stats"].items(), columns=["Comparison", "Statistic"])
+df_p_values = pd.DataFrame(
+    results["p_values"].items(), columns=["Comparison", "P-Value"]
+)
+df_results = pd.merge(df_stats, df_p_values, on="Comparison")
 
-# Output the results
-print("Wilcoxon Signed-Rank Test Results:")
-for index, row in results_df.iterrows():
-    print(f"\nComparison between {row['Column1']} and {row['Column2']}:")
-    print(f"  Wilcoxon test statistic: {row['Statistic']}")
-    print(f"  p-value: {row['P-value']}")
-    # Uncomment the next line if you want to see the differences
-    # print(f"  Differences: {row['Differences']}")
+# Display final merged results
+print("\nWilcoxon Comparison Results:")
+print(df_results)
 
-# Optionally, save the results to a file
-# results_df.to_csv('wilcoxon_results.csv', index=False)
+# Optional: significance check for one pair
+alpha = 0.05
+first_pair = list(results["p_values"].keys())[0]
+if results["p_values"][first_pair] < alpha:
+    print(f"\n{first_pair} shows a significant difference.")
+else:
+    print(f"\nNo significant difference between {first_pair}.")
