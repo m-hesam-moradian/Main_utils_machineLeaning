@@ -6,10 +6,10 @@ from lightgbm import LGBMClassifier
 from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
-sheet_name = "DATA_Normalized"
-excel_path = r"D:\ML\Main_utils\task\EI_No_3__Optimal Scheduling_Classification_DTC_RFR_XGBC_HOA_DOA_Data.xlsx"
+excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
+sheet_name = "Balanced_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Target"
+target_column = "Cyberattack_Detected"
 
 # --- Ensure target is binary and not leaking ---
 if df[target_column].nunique() > 2:
@@ -20,25 +20,19 @@ if df[target_column].nunique() > 2:
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Define models ---
+from sklearn.linear_model import ElasticNet
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
+
 models = {
-    "SVC": SVC(
-        C=0.1,
-        degree=1,
-        coef0=0,
-        tol=1,
-        max_iter=100,
-        cache_size=50,
-    ),
-    "LGBC": LGBMClassifier(
-        n_estimators=100,
-        learning_rate=0.000969949,
-        max_depth=3,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-    ),
+    "ETC": ExtraTreesClassifier(),
+    "GBC": GradientBoostingClassifier(),
+    "RFC": RandomForestClassifier(),
 }
+
 
 # --- K-Fold setup ---
 n_splits = 5

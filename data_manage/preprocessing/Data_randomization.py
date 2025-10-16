@@ -1,8 +1,8 @@
 import pandas as pd
 
 # --- Load original dataset ---
-sheet_name = "CLEANED_DATA"
-excel_path = r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
+sheet_name = "SMOTE-ENC"
+excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Shuffle the dataset ---

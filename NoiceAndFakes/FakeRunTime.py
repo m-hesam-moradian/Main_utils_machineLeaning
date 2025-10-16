@@ -1,13 +1,9 @@
 # Simulate and generate a detailed runtime performance report for the following classification models and optimizers on the specified device and dataset:
 
 # 📌 Models:
-# - Stochastic Gradient Boosting (SGB)
-# - Light Gradient Boosting Regression (LGBR).
+# Extra Tree classification (ETC), Gaussian Boosting classification (GBC), and Random Forest Classification (RFC).
 
-# 📌 Optimizers:
-# - Botox Optimization Algorithm (BOA),
-# - Addax Optimization Algorithm (AOA),
-# - Football Optimization Algorithm (FOA).
+# 📌 Optimizers: Haze Optimization Algorithm (HOA) and Perfumer optimization algorithm (POA).
 
 # 📌 Device Specifications:
 # - Device Name: hesam

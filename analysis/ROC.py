@@ -4,7 +4,7 @@ from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
 # Load your data
-data = np.loadtxt(r"D:\ML\Main_utils\data\Data_err.npt")
+data = np.loadtxt(r"D:\ML\ML\data\Data_err.npt")
 y = data[:, 0]
 predictData = data[:, 1]
 

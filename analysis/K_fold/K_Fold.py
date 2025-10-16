@@ -7,22 +7,27 @@ from sklearn.ensemble import AdaBoostRegressor
 from lightgbm import LGBMRegressor
 
 # --- Load dataset ---
-excel_path = r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
-sheet_name = "String_labelEncoded"
+excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
+sheet_name = "Balanced_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "allocated_bandwidth"
+target_column = "Cyberattack_Detected"
 
 # Features and target
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.svm import SVR
 from sklearn.linear_model import ElasticNet
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 
 models = {
-    "SVR": SVR(kernel="rbf", C=1.0, epsilon=0.2),
-    "LGBR": ElasticNet(alpha=1.0, l1_ratio=0.5, random_state=42),
+    "ETC": ExtraTreesClassifier(),
+    "GBC": GradientBoostingClassifier(),
+    "RFC": RandomForestClassifier(),
 }
 
 # --- K-Fold setup ---

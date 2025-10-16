@@ -30,13 +30,12 @@ def get_conv(count=200, low=0.08, high=0.22, minPhase=6, maxPhase=10, cov="rmse"
     return np.array(convergence)
 
 
-convergence_rmse = get_conv(
-    count=169, high=2.22875, low=0.021420232
+convergence_df = get_conv(
+    count=200, high=0.986102257, low=0.6421420232
 
 
 
-, minPhase=24, maxPhase=32, cov="rmse"
+, minPhase=24, maxPhase=32, cov="d"
 )
 
-# for Classification
-reversed_convergence = convergence_rmse[::-1]
+

@@ -2,17 +2,14 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier  # Replace RandomForest import
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
 from sklearn.preprocessing import LabelEncoder
 from getAllMetrics_Classification import getAllMetric
 
 # Load data
-sheet_name = "Balanced_resample_Data"
-excel_path = r"D:\ML\Main_utils\task\136_Seismic_ETC_RTHA, BO.xlsx"
+excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
+sheet_name = "Data_after_KFold_ETC"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Class"
+target_column = "Cyberattack_Detected"
 
 # --- Encode Target Variable ---
 # If Attrition is categorical ("Yes"/"No"), encode it to 0/1
@@ -45,19 +42,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Voting Classifier Model ---
 model = ExtraTreesClassifier(
-    n_estimators=893,            # High ensemble stability
-    max_depth=19,              # Full depth for expressive splits
-    min_samples_split=2,         # Slightly more aggressive splits
-    min_samples_leaf=1,          # Allow fine-grained leaf nodes
-
-
-    # Ensure leaves have enough samples
-    # criterion="gini",  # Standard split criterion
-    # max_features="log2",  # Smaller feature subset per split
-    # bootstrap=True,  # Enable bootstrapping for diversity
-    # random_state=42,  # Reproducibility
-    # n_jobs=-1,  # Use all cores
-    # verbose=0,
+    n_estimators=500,  # High ensemble stability
+    max_depth=10,  # Full depth for expressive splits
+    min_samples_split=2,  # Slightly more aggressive splits
+    min_samples_leaf=1,  # Allow fine-grained leaf nodes
 )
 
 

@@ -24,7 +24,7 @@ from itertools import cycle
 import matplotlib.pyplot as plt
 
 # Data Loading
-data = np.loadtxt(r"D:\ML\Main_utils\data\Data_err.npt")
+data = np.loadtxt(r"D:\ML\ML\data\Data_err.npt")
 y = data[:, 0]
 predictData = data[:, 1]
 import numpy as np
@@ -524,8 +524,14 @@ def getAllMetric(measured, predicted):
     hss = heidke_skill_score(measured, predicted)
     ci_brier, ci_ece = ci(measured, predicted, n_bins=10, plot=False)
     empty = ""
+    from sklearn.metrics import roc_auc_score
+
+    # y_true: true labels, y_scores: predicted probabilities
+    auc_score = roc_auc_score(measured, predicted)
+    print("AUC Score:", auc_score)
+
     # g_mean=np.sqrt(specificity*recall)
-    metrics = [acc, precision_single, recall, f1, empty]
+    metrics = [acc, precision_single, recall, f1, auc_score, mcc]
     return metrics
 
 
@@ -757,6 +763,12 @@ predictData = np.array(predictData)
 labels = np.unique(np.concatenate([y, predictData]))
 cm = confusion_matrix(y, predictData, labels=labels)
 
+from sklearn.metrics import roc_auc_score
+
+# y_true: true labels, y_scores: predicted probabilities
+auc_score = roc_auc_score(y, predictData)
+print("AUC Score:", auc_score)
+
 # --- Per-class metrics ---
 accuracy = np.diag(cm) / cm.sum(axis=1)
 recalls = recall_score(y, predictData, average=None, labels=labels)
@@ -777,7 +789,8 @@ metrics_per_class = pd.DataFrame(
         "Accuracy": accuracy,
         "Recall": recalls,
         "Precision": precisions,
-        "F1": f1s,
+        "F1-Score": f1,
+        "AUC": auc_score,
         "MCC": mccs,
     }
 )
@@ -790,7 +803,7 @@ print("\n===== Metrics per Class =====")
 print(metrics_per_class)
 
 # Optionally save to Excel or CSV
-metrics_per_class.to_csv("D:/ML/Main_utils/data/metrics_per_class.csv", index=False)
+# metrics_per_class.to_csv("D:/ML/Main_utils/data/metrics_per_class.csv", index=False)
 
 import pandas as pd
 import numpy as np
@@ -804,7 +817,8 @@ all_ressss.columns = [
     "Accuracy",
     "Precision",
     "Recall",
-    "F1",
+    "F1-Score",
+    "AUC",
     "MCC",
 ]  # Adjust if needed
 all_ressss.index = ["All", "Train", "Test"]
