@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 # Load your Excel file
-file_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
+file_path = r"D:\ML\Main_utils_machineLeaning\task\BSE. No.14-Dataset.xlsx1"
 df = pd.read_excel(file_path)
 
 # Create a copy to avoid modifying original
