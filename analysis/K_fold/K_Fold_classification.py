@@ -6,10 +6,10 @@ from lightgbm import LGBMClassifier
 from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
-excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
-sheet_name = "Balanced_Shuffled"
+excel_path = r"D:\ML\Main_utils_machineLeaning\task\BSE. No.14-Dataset.xlsx"
+sheet_name = "DATA_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Cyberattack_Detected"
+target_column = "Anomaly_Detected"
 
 # --- Ensure target is binary and not leaking ---
 if df[target_column].nunique() > 2:
@@ -20,19 +20,13 @@ if df[target_column].nunique() > 2:
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from sklearn.linear_model import ElasticNet
-from sklearn.ensemble import (
-    ExtraTreesClassifier,
-    GradientBoostingClassifier,
-    RandomForestClassifier,
-)
+from sklearn.linear_model import SGDClassifier
+from sklearn.svm import SVC
 
 models = {
-    "ETC": ExtraTreesClassifier(),
-    "GBC": GradientBoostingClassifier(),
-    "RFC": RandomForestClassifier(),
+    "SGDC": SGDClassifier(),
+    "SVC": SVC(),
 }
-
 
 # --- K-Fold setup ---
 n_splits = 5
@@ -42,11 +36,15 @@ kf = KFold(n_splits=n_splits, shuffle=False)
 metrics_df_dict = {}
 df_reordered_dict = {}
 summary_df = []
+df_prediction_dict = {}
+
 
 # --- K-Fold loop ---
 for model_name, model in models.items():
     fold_metrics = []
     fold_indices = []
+    y_real_all = []
+    y_pred_all = []
 
     for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
@@ -62,13 +60,17 @@ for model_name, model in models.items():
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
+        # Save predictions
+        y_real_all.extend(y_test)
+        y_pred_all.extend(y_pred)
+
+        # Save metrics
         acc = accuracy_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred, average="weighted")
-
         fold_metrics.append({"Fold": fold_index, "Accuracy": acc, "F1-Score": f1})
         fold_indices.append({"train_idx": train_idx, "test_idx": test_idx})
 
-    # Save metrics
+    # Save metrics DataFrame
     metrics_df = pd.DataFrame(fold_metrics)
     metrics_df_dict[model_name] = metrics_df
 
@@ -91,6 +93,9 @@ for model_name, model in models.items():
         }
     )
 
+    # Save prediction DataFrame
+    prediction_df = pd.DataFrame({"y_real": y_real_all, "y_pred": y_pred_all})
+    df_prediction_dict[model_name] = prediction_df
 # --- Save results to Excel ---
 with pd.ExcelWriter(
     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
