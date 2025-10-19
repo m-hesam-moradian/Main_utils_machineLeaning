@@ -89,12 +89,10 @@ from sklearn.model_selection import train_test_split
 
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_LGBR"
-file_path = (
-    r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
-)
+sheet_name = "Data_after_KFold"
+file_path = r"D:\ML\Main_utils_machineLeaning\task\BSE. No.14-Dataset.xlsx"
 
-target_column = "Power"
+target_column = "Anomaly_Detected"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -112,11 +110,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle
 #         alpha=22,
 #     ),
 # }
-from lightgbm import LGBMRegressor
+
+from sklearn.svm import SVC
 
 
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=LGBMRegressor(),
+    model=SVC(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,

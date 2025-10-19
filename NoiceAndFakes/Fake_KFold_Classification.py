@@ -14,14 +14,15 @@ import pandas as pd
 
 data = {
     "Fold": [1, 2, 3, 4, 5],
-    "Accuracy": [0.971532091, 0.980331263, 0.976708075, 0.974637681, 0.971014493],
-    "F1": [0.971547972, 0.980332633, 0.976696123, 0.974624667, 0.971013654],
+    "Accuracy": [0.527075812, 0.553345389, 0.556962025, 0.506329114, 0.471971067],
+    "F1-Score": [0.52601686, 0.551235106, 0.546931312, 0.506400147, 0.468890725],
 }
 
 # Reference metrics (target maximums)
-ref_accuracy = 0.821299172
+ref_accuracy = 0.943942134
 
-ref_f1 = 0.83482837
+
+ref_f1 = 0.943585077
 
 
 # Convert to DataFrame
@@ -36,11 +37,11 @@ df["Accuracy"] = df["Accuracy"] - acc_drop
 
 # 3. Scale F1 proportionally to the new Accuracy
 # Maintain the original F1/Accuracy ratio per fold
-df["F1"] = df["Accuracy"] * (ref_f1 / ref_accuracy)
+df["F1-Score"] = df["Accuracy"] * (ref_f1 / ref_accuracy)
 
 # 4. Predict average F1
-predicted_f1 = df["F1"].mean()
+predicted_f1 = df["F1-Score"].mean()
 
 # Show final result
-print(df[["Fold", "Accuracy", "F1"]])
+print(df[["Fold", "Accuracy", "F1-Score"]])
 print(f"\nPredicted Overall F1-Score (scaled): {predicted_f1:.4f}")

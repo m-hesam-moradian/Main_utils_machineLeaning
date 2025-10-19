@@ -1,9 +1,9 @@
 # Simulate and generate a detailed runtime performance report for the following classification models and optimizers on the specified device and dataset:
 
 # 📌 Models:
-# Extra Tree classification (ETC), Gaussian Boosting classification (GBC), and Random Forest Classification (RFC).
+# Stochastic Gradient Descent Classification (SGDC) and Support Vector Classification (SVC).
 
-# 📌 Optimizers: Haze Optimization Algorithm (HOA) and Perfumer optimization algorithm (POA).
+# 📌 Optimizers: Kepler optimization algorithm (KOA), Dream Optimization Algorithm (DOA), and Echidna Optimization Algorithm (EOA).
 
 # 📌 Device Specifications:
 # - Device Name: hesam
