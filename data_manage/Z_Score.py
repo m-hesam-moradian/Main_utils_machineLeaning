@@ -1,31 +1,29 @@
 import pandas as pd
 import numpy as np
+from scipy.stats import zscore
 
+def replace_outliers_with_median(df):
+    df_cleaned = df.copy()
+    numeric_cols = df_cleaned.select_dtypes(include=[np.number]).columns
+    z_scores = df_cleaned[numeric_cols].apply(zscore)
 
-def remove_outliers_zscore(df, threshold=3):
-    """
-    Removes rows with outliers based on Z-score and reports Z-scores.
-    Additionally, removes the mirrored outliers (negative Z-scores).
+    for col in numeric_cols:
+        outliers = (z_scores[col] > 3) | (z_scores[col] < -3)
+        if outliers.any():
+            median_val = df_cleaned[col].median()
+            df_cleaned.loc[outliers, col] = median_val
 
-    Parameters:
-    df (pd.DataFrame): The input DataFrame.
-    threshold (float): The Z-score threshold to classify as an outlier.
+    return df_cleaned
 
-    Returns:
-    pd.DataFrame: The DataFrame without outliers.
-    pd.DataFrame: DataFrame containing the Z-scores.
-    """
-    # Calculate Z-scores
-    z_scores = (df - df.mean()) / df.std()
+# === CONFIGURATION ===
+input_file = 'your_file.xlsx'
+input_sheet = 'RawData'
+output_sheet = 'CleanedData'
 
-    z_scores = z_scores.dropna()
-    # Report Z-scores
-    print("Z-scores:")
-    print(z_scores)
+# === PROCESSING ===
+df = pd.read_excel(input_file, sheet_name=input_sheet)
+df_cleaned = replace_outliers_with_median(df)
 
-    # Filter rows where all Z-scores are within the threshold, including mirrored Z-scores
-    filtered_df = df[
-        (z_scores.abs() < threshold).all(axis=1) & (z_scores > -threshold).all(axis=1)
-    ]
-
-    return filtered_df, z_scores
+# === SAVE TO NEW SHEET ===
+with pd.ExcelWriter(input_file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
+    df_cleaned.to_excel(writer, sheet_name=output_sheet, index=False)
