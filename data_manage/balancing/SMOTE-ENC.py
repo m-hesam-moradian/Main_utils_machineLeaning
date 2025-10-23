@@ -5,8 +5,8 @@ from imblearn.over_sampling import SMOTENC, SMOTE
 from imblearn.under_sampling import EditedNearestNeighbours
 
 # -------------------- 1. Load the data --------------------
-file_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
-df = pd.read_excel(file_path, sheet_name="DAtA after VIF")
+file_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
+df = pd.read_excel(file_path, sheet_name="BSS.No.1-Target 1")
 
 # Display initial info
 print("Columns:", df.columns)

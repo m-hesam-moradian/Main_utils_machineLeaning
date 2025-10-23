@@ -99,7 +99,7 @@ metrics_df = pd.DataFrame(metrics_data)
 
 # --- Create DataFrames for real vs predicted ---
 df_train = pd.DataFrame({"y_train_real": y_train, "y_train_pred": y_pred_train})
-df_test = pd.DataFrame({"y_test_real": y_test, "y_test_pred": y_pred_test})
+df_test = pd.DataFrame({"y_test_real": y_test, "y_test_pred": y_pred})
 df_all = pd.concat(
     [
         pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train}),

@@ -1,15 +1,13 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.svm import SVC
-from lightgbm import LGBMClassifier
 from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
-excel_path = r"D:\ML\Main_utils_machineLeaning\task\BSE. No.14-Dataset.xlsx"
-sheet_name = "DATA_Shuffled"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
+sheet_name = "Balanced_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Anomaly_Detected"
+target_column = "Anomalous Load"
 
 # --- Ensure target is binary and not leaking ---
 if df[target_column].nunique() > 2:
@@ -20,12 +18,20 @@ if df[target_column].nunique() > 2:
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from sklearn.linear_model import SGDClassifier
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
 models = {
-    "SGDC": SGDClassifier(),
-    "SVC": SVC(),
+    "Random Forest":RandomForestClassifier(
+    n_estimators=250,         # Number of trees
+    max_depth=1,           # No limit on tree depth
+    min_samples_split=6,      # Minimum samples to split a node
+    min_samples_leaf=5,       # Minimum samples at a leaf
+    max_features="sqrt",      # Number of features to consider at each split
+    
+)
+,
+    "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
 }
 
 # --- K-Fold setup ---
@@ -121,3 +127,5 @@ print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
 print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
 print(f"📊 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
 print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
+
+df_prediction_dict["Random Forest"].to_clipboard(index=False)
