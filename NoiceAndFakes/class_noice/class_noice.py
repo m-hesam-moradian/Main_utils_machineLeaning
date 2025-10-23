@@ -1,17 +1,19 @@
 import random
 from sklearn.metrics import accuracy_score
 
-
+import pandas as pd
 import numpy as np
 
 # Data Loading
-data = np.loadtxt('Data_err.npt')
+data_path=r'C:\Users\Sam\Desktop\ML\data\Data_err.npt'
+data = np.loadtxt(data_path)
 y = data[:, 0]
 predictData = data[:, 1]
 
 
-def new_array_cls(y_true, y_pred, min_acc, max_acc, split_index_train):
+def new_array_cls(y_true, y_pred, min_acc, max_acc):
     # y_true len
+    split_index_train = int(0.8 * len(y_true))
     y_true_len = len(y_true) - 1
 
     train_y = y_true[:split_index_train]
@@ -53,12 +55,19 @@ def new_array_cls(y_true, y_pred, min_acc, max_acc, split_index_train):
         
         # if not, change the value of y_pred at random_index equal to y_true at random_index
         y_pred[random_index] = y_true[random_index]
-        print("y_pred",y_pred)
+        # print("y_pred",y_pred)
 
 
     return y_pred
 def change_array(y_pred):
      return [0 if i == 1 else 1  for i in y_pred]
 new_pred=change_array(predictData)
-y_pred=new_array_cls(y,new_pred,0.953098601,0.9680435,56668)
+y_pred=new_array_cls(y,new_pred,0.994098601,0.9954680435)
+
 new_pred=np.array(new_pred)
+
+# Reconstruct the updated data array with y_true and corrected predictions
+updated_data = np.column_stack((y, y_pred))
+
+# Overwrite the original file with the updated data
+np.savetxt(data_path, updated_data, fmt='%d', delimiter='\t')
