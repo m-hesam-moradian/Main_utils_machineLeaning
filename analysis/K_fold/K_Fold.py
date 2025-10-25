@@ -17,17 +17,12 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.linear_model import ElasticNet
-from sklearn.ensemble import (
-    ExtraTreesClassifier,
-    GradientBoostingClassifier,
-    RandomForestClassifier,
-)
+from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 models = {
-    "ETC": ExtraTreesClassifier(),
-    "GBC": GradientBoostingClassifier(),
-    "RFC": RandomForestClassifier(),
+    "XGBR": XGBRegressor(),
+    "RFR": RandomForestRegressor(),
 }
 
 # --- K-Fold setup ---
@@ -87,17 +82,17 @@ for model_name in models:
     )
 
 # --- Save to Excel ---
-# with pd.ExcelWriter(
-#     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-# ) as writer:
-#     for model_name in models:
-#         metrics_df_dict[model_name].to_excel(
-#             writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
-#         )
-#         df_reordered_dict[model_name].to_excel(
-#             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
-#         )
-#     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+with pd.ExcelWriter(
+    excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
+) as writer:
+    for model_name in models:
+        metrics_df_dict[model_name].to_excel(
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+        )
+        df_reordered_dict[model_name].to_excel(
+            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+        )
+    pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 
 # --- Print Summary ---
 for model_name in models:

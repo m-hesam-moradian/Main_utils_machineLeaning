@@ -1,46 +1,59 @@
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from imblearn.over_sampling import SMOTENC
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import EditedNearestNeighbours
 
-
-# === Step 1: Load original Excel file ===
+# -------------------- 1. Load the data --------------------
 file_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
-sheet_name = "BSS.No.1-Target 1"
+df = pd.read_excel(file_path, sheet_name="BSS.No.1-Target 1")
 
+target_col = df.columns[-1]
+X = df.drop(columns=[target_col]).copy()
+y = df[target_col].copy()
 
-df = pd.read_excel(file_path, sheet_name=sheet_name)
+# -------------------- 2. Identify categorical and numeric columns --------------------
+categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
 
-# === Step 2: Separate features and target ===
-target_col = "Anomalous Load"
-if target_col not in df.columns:
-    raise ValueError(f"Target column '{target_col}' not found in data.")
+# -------------------- 3. Encode categorical columns using SMOTE-ENC logic --------------------
+X_encoded = X.copy()
+imbalance_ratio = y.value_counts().min() / len(y)
 
-X = df.drop(columns=[target_col])
-y = df[target_col]
+for col in categorical_cols:
+    label_stats = {}
+    total_label_counts = X[col].value_counts()
+    minority_label_counts = X[y == y.value_counts().idxmin()][col].value_counts()
+    
+    for label in total_label_counts.index:
+        e = total_label_counts[label]
+        o = minority_label_counts.get(label, 0)
+        expected_e = e * imbalance_ratio
+        chi = (o - expected_e)
+        label_stats[label] = chi
+    
+    # Normalize and scale
+    chi_values = np.array(list(label_stats.values()))
+    if len(numeric_cols) > 0:
+        std_median = np.median(X[numeric_cols].std())
+        label_stats = {k: v * std_median for k, v in label_stats.items()}
+    
+    # Replace labels with encoded chi values
+    X_encoded[col] = X[col].map(label_stats)
 
-# === Step 3: Encode categorical features ===
-categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
-cat_indices = [X.columns.get_loc(col) for col in categorical_features]  # ✅ FIXED: use indices
+# -------------------- 4. Oversampling with SMOTE --------------------
+smote = SMOTE(random_state=42)
+X_over, y_over = smote.fit_resample(X_encoded, y)
 
-encoders = {}
-for col in categorical_features:
-    le = LabelEncoder()
-    X[col] = le.fit_transform(X[col])
-    encoders[col] = le
+# -------------------- 5. Undersampling with ENN --------------------
+enn = EditedNearestNeighbours()
+X_balanced, y_balanced = enn.fit_resample(X_over, y_over)
 
-# === Step 4: Apply SMOTENC ===
-if not cat_indices:
-    raise ValueError("SMOTENC requires at least one categorical feature. None found.")
+# -------------------- 6. Final result --------------------
+df_balanced = pd.DataFrame(X_balanced, columns=X_encoded.columns)
+df_balanced[target_col] = y_balanced
+df_balanced = df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
-smote = SMOTENC(categorical_features=cat_indices, random_state=42)
-X_resampled, y_resampled = smote.fit_resample(X, y)
-
-# === Step 5: Reconstruct balanced DataFrame ===
-df_balanced = pd.DataFrame(X_resampled, columns=X.columns)
-df_balanced[target_col] = y_resampled
-
-# === Step 6: Save to new sheet in same Excel file ===
-with pd.ExcelWriter(file_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_balanced.to_excel(writer, sheet_name="Balanced_SMOTENC", index=False)
-
-print("✅ Balanced dataset saved to 'Balanced_SMOTENC' sheet.")
+# -------------------- 7. Save to Excel --------------------
+with pd.ExcelWriter(file_path, mode="a", engine="openpyxl") as writer:
+    df_balanced.to_excel(writer, sheet_name="Balanced_SMOTEENC", index=False)
