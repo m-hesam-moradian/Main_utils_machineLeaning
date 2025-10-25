@@ -2,15 +2,14 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import AdaBoostRegressor
-from lightgbm import LGBMRegressor
+
+
 
 # --- Load dataset ---
-excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
-sheet_name = "Balanced_Shuffled"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
+sheet_name = "SMOGN"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Cyberattack_Detected"
+target_column = "CPU Usage"
 
 # Features and target
 X = df.drop(columns=[target_column])

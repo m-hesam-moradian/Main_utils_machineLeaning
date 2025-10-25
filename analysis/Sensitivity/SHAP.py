@@ -89,10 +89,10 @@ from sklearn.model_selection import train_test_split
 
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold"
+sheet_name = "Data_after_KFold_RFR"
 file_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
 
-target_column = "Anomalous Load"
+target_column = "CPU Usage"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -112,11 +112,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle
 # }
 
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
 
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=GradientBoostingClassifier(),
+    model=RandomForestRegressor(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,

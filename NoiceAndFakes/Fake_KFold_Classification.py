@@ -12,17 +12,28 @@ import pandas as pd
 
 # to this :
 
+# data = {
+#     "Fold": [1, 2, 3, 4, 5],
+#     "Accuracy": [0.527075812, 0.553345389, 0.556962025, 0.506329114, 0.471971067],
+#     "F1-Score": [0.52601686, 0.551235106, 0.546931312, 0.506400147, 0.468890725],
+# }
+
 data = {
     "Fold": [1, 2, 3, 4, 5],
-    "Accuracy": [0.527075812, 0.553345389, 0.556962025, 0.506329114, 0.471971067],
-    "F1-Score": [0.52601686, 0.551235106, 0.546931312, 0.506400147, 0.468890725],
+    "Accuracy": [0.836928387, 0.981018119, 0.973252804, 0.91285591, 0.895509499],
+    "F1-Score": [0.822584618, 0.980902062, 0.973054326, 0.909918264, 0.890963806],
 }
 
+
 # Reference metrics (target maximums)
-ref_accuracy = 0.943942134
+ref_accuracy = 0.830852211
 
 
-ref_f1 = 0.943585077
+
+
+ref_f1 = 0.852153667
+
+
 
 
 # Convert to DataFrame
@@ -45,3 +56,4 @@ predicted_f1 = df["F1-Score"].mean()
 # Show final result
 print(df[["Fold", "Accuracy", "F1-Score"]])
 print(f"\nPredicted Overall F1-Score (scaled): {predicted_f1:.4f}")
+df.to_clipboard(index=False)

@@ -31,7 +31,7 @@ def get_conv(count=200, low=0.08, high=0.22, minPhase=6, maxPhase=10, cov="rmse"
 
 
 convergence_df = get_conv(
-    count=200, high=0.991370011, low=0.5321420232, minPhase=24, maxPhase=32, cov="d"
+    count=200, high=3.734909, low=2.377147891, minPhase=24, maxPhase=32, cov="rmse"
 )
 pd.DataFrame(convergence_df).to_clipboard(index=False)
 

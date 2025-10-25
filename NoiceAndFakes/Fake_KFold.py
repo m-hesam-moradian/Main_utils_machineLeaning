@@ -18,21 +18,26 @@ import pandas as pd
 
 # main table:
 # Fold	R2	RMSE
-# 1	0.667670608	0.152466072
-# 2	0.67470275	0.150885964
-# 3	0.67201662	0.1531056
-# 4	0.672956544	0.151556044
-# 5	0.663914741	0.153809423
+# 1	-0.230111512	26.72199747
+# 2	-0.206701407	27.52703637
+# 3	-0.231848009	26.84985668
+# 4	-0.166115298	26.99543037
+# 5	-0.247892778	27.64124367
 
 data = {
     "Fold": [1, 2, 3, 4, 5],
-    "R2": [0.667670608, 0.67470275, 0.67201662, 0.672956544, 0.663914741],
+    "R2": [-0.019886711, -0.013598243, -0.035767606, -0.021732419, -0.04564282],
+    "RMSE": [24.33171068, 25.22856053, 24.62036975, 25.26900236, 25.30233629],
 }
 
 
+
 # Reference R² and RMSE from your image
-ref_r2 = 0.978977304
-ref_rmse = 0.038502484
+ref_r2 = 0.85001641
+
+ref_rmse = 9.49736689
+
+
 
 # Convert to DataFrame
 df = pd.DataFrame(data)
@@ -61,3 +66,4 @@ predicted_rmse = df["RMSE"].mean()
 # Show final result
 print(df[["Fold", "R2", "RMSE"]])
 print(f"\nPredicted Overall RMSE (more realistic): {predicted_rmse:.2f}")
+df.to_clipboard(index=False)

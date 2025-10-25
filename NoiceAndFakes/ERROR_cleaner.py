@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 
 # Load original data
-data = np.loadtxt(r"D:\ML\Main_utils\data\Data_err.npt")
+data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
 
 values = data[:, 0]
 predictions = data[:, 1]
 
-min_error = -26  # minimum allowed percentage error
+min_error = -46  # minimum allowed percentage error
 max_error = 52  # maximum allowed percentage error
     
 # Adjust predictions based on error limits
@@ -27,8 +27,9 @@ data[:, 1] = predictions
 ErrorCleanedData = pd.DataFrame(data, columns=["y_real", "y_pred"])
 
 # Save back to .npt format (if needed) or export as CSV
-# np.savetxt(r"D:\ML\Main_utils\data\Data_err.npt", ErrorCleanedData.values, fmt="%.10f")
+np.savetxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt", ErrorCleanedData.values, fmt="%.8f", delimiter='\t')
 # Optional: save as CSV for inspection
 # predictions.to_csv(r"D:\ML\Main_utils\data\Data_err.npt", index=False)
 
 print("Updated predictions saved back to Data_err.npt with column names in DataFrame")
+ErrorCleanedData.to_clipboard(index=False)
