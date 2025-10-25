@@ -1,7 +1,6 @@
 import pandas as pd
 import shap
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+
 
 def shap_analysis(
     model,
@@ -14,41 +13,60 @@ def shap_analysis(
 ):
     """
     Perform SHAP analysis for any trained model.
+
+    Parameters:
+        model: A trained ML model (e.g., DecisionTreeRegressor, XGBRegressor).
+        X_train: Training features (DataFrame or array).
+        y_train: Training target (Series or array).
+        X_test: Test features (DataFrame or array).
+        y_test: Test target (Series or array).
+        save_path: Optional, path to Excel file to save SHAP sensitivity results.
+        sheet_name: Name of the Excel sheet if saving results.
+
+    Returns:
+        sensitivity_df: DataFrame containing feature sensitivity scores.
+        shap_values: The SHAP values object (for plots or further analysis).
     """
+    # Ensure model is fitted
     if not hasattr(model, "fit"):
         raise ValueError("Provided model is not a valid scikit-learn compatible model.")
 
+    # Fit the model (if not already fitted)
     try:
         model.predict(X_train)
     except:
         model.fit(X_train, y_train)
 
-    # Use TreeExplainer for tree-based models
-    explainer = shap.TreeExplainer(model, feature_names=X_train.columns)
+    # Create SHAP explainer
+    explainer = shap.Explainer(model, X_train, feature_names=X_train.columns)
+
     shap_values = explainer.shap_values(X_test)
 
-    # Handle classification (binary or multiclass)
-    if isinstance(shap_values, list):
-        shap_values = shap_values[1]  # Use class 1 for binary classification
-
+    # Create SHAP values DataFrame
     feature_names = (
         X_test.columns
         if hasattr(X_test, "columns")
         else [f"Feature_{i}" for i in range(X_test.shape[1])]
     )
     shap_df = pd.DataFrame(shap_values, columns=feature_names)
-    shap_df["BaseValue"] = explainer.expected_value[1] if isinstance(explainer.expected_value, list) else explainer.expected_value
-    shap_df["ModelPrediction"] = shap_df[feature_names].sum(axis=1) + shap_df["BaseValue"]
+    shap_df["BaseValue"] = explainer.expected_value
+    shap_df["ModelPrediction"] = (
+        shap_df[feature_names].sum(axis=1) + shap_df["BaseValue"]
+    )
 
+    # Calculate sensitivity
     sensitivity_df = (
-        pd.DataFrame({
-            "Feature": feature_names,
-            "Sensitivity": shap_df[feature_names].abs().mean(),
-        })
+        pd.DataFrame(
+            {
+                "Feature": feature_names,
+                "Sensitivity": shap_df[feature_names].abs().mean(),
+            }
+        )
         .sort_values(by="Sensitivity", ascending=False)
         .reset_index(drop=True)
     )
 
+    # Save to Excel if requested
     if save_path:
         from openpyxl import load_workbook
 
@@ -59,30 +77,49 @@ def shap_analysis(
                 book.save(save_path)
         except FileNotFoundError:
             pass
-        with pd.ExcelWriter(save_path, engine="openpyxl", mode="a" if save_path else "w") as writer:
+        with pd.ExcelWriter(
+            save_path, engine="openpyxl", mode="a" if save_path else "w"
+        ) as writer:
             sensitivity_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     return sensitivity_df, shap_values
 
+
+from sklearn.model_selection import train_test_split
+
+
 # --- Load dataset ---
 sheet_name = "Data_after_KFold"
 file_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
+
 target_column = "Anomalous Load"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
+
+# --- Features and Target ---
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
+# --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+# models = {
+#     "Elastic": ElasticNet(
+#         alpha=0.005,
+#     ),
+#     "StocR": Ridge(
+#         alpha=22,
+#     ),
+# }
 
-# Run SHAP analysis
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=RandomForestClassifier(),
+    model=GradientBoostingClassifier(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
-    y_test=y_test,
+    y_test=y_test, 
 )
-
-# Copy results to clipboard
 sensitivity_df_shap.to_clipboard(index=False)
