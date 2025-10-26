@@ -4,8 +4,9 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
-sheet_name = "Balanced_Shuffled"
+
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.2-Dataset.xlsx"
+sheet_name = "DATA_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = "Anomalous Load"
 
