@@ -62,7 +62,7 @@ def new_array_cls(y_true, y_pred, min_acc, max_acc):
 def change_array(y_pred):
      return [0 if i == 1 else 1  for i in y_pred]
 new_pred=change_array(predictData)
-y_pred=new_array_cls(y,new_pred,0.994098601,0.9954680435)
+y_pred=new_array_cls(y,new_pred,0.925098601,0.9294680435)
 
 new_pred=np.array(new_pred)
 

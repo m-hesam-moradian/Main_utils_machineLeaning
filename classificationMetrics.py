@@ -9,7 +9,7 @@ from sklearn.metrics import (
 )
 
 # Load data
-data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\NoiceAndFakes\class_noice\Data_err.npt")
+data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
 y_real = data[:, 0]
 y_pred = data[:, 1]
 
