@@ -1,117 +1,50 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.preprocessing import LabelEncoder
-from Metrics_regression import getAllMetric
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load data ---
-sheet_name = "Data_after_KFold"
-excel_path = r"D:\ML\Main_utils\task\Resource_utilization.xlsx"
-df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "cpu_utilization"
+# Load and prepare data
+df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx", sheet_name="Data_after_KFold_LGBR")
+y = df["SOH"].astype(float)
+X = pd.get_dummies(df.drop(columns=["SOH"]), drop_first=True)
 
-# --- Encode Target Variable if needed ---
-if df[target_column].dtype == object:
-    le = LabelEncoder()
-    y = le.fit_transform(df[target_column])
-else:
-    y = df[target_column].astype(float)
+# Scale and split
+X = StandardScaler().fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False, random_state=42)
 
-# --- Preprocess Features ---
-categorical_cols = df.select_dtypes(include=["object"]).columns.drop(
-    target_column, errors="ignore"
-)
-X = pd.get_dummies(
-    df.drop(columns=[target_column]), columns=categorical_cols, drop_first=True
-)
-
-# --- Train-Test Split ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, shuffle=False, random_state=42
-)
-
-# --- Gradient Boosting Regressor Model ---
-model = GradientBoostingRegressor(
-    n_estimators=521,
-    learning_rate=0.7073,
-    max_depth=2,
-    subsample=0.7521,
-    min_samples_split=4,
-    min_samples_leaf=3,
-    max_features="sqrt",
-    loss="squared_error",
-    random_state=42,
-)
-
-# --- Save GBR parameters to DataFrame ---
-gbr_params = {
-    "n_estimators": model.n_estimators,
-    "learning_rate": model.learning_rate,
-    "max_depth": model.max_depth,
-    "subsample": model.subsample,
-    "min_samples_split": model.min_samples_split,
-    "min_samples_leaf": model.min_samples_leaf,
-    "max_features": model.max_features,
-    "loss": model.loss,
-}
-horizantal_params_df = pd.DataFrame([gbr_params])
-Vertical_params_df = pd.DataFrame(
-    {
-        "parameters": list(horizantal_params_df.columns),
-        "values": list(horizantal_params_df.iloc[0]),
-    }
-)
-
+# Train and predict
+model = GradientBoostingRegressor()
 model.fit(X_train, y_train)
-
-# --- Predictions ---
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
 
-# --- Split Test Predictions ---
-mid_index = len(y_pred_test) // 2
-y_test_first_half = y_test[:mid_index]
-y_test_second_half = y_test[mid_index:]
-y_pred_test_first_half = y_pred_test[:mid_index]
-y_pred_test_second_half = y_pred_test[mid_index:]
-
-# --- Build Metrics Table Using getAllMetric ---
-metrics_data = {
-    "Set": [],
-    "MAE": [],
-    "RMSE": [],
-    "R2": [],
-}
+# Metrics
+mid = len(y_test) // 2
 sets = [
     ("All", y, y_pred_all),
     ("Train", y_train, y_pred_train),
     ("Test", y_test, y_pred_test),
-    ("Value", y_test_first_half, y_pred_test_first_half),
-    ("Test-Value", y_test_second_half, y_pred_test_second_half),
+    ("Value", y_test[:mid], y_pred_test[:mid]),
+    ("Test-Value", y_test[mid:], y_pred_test[mid:])
 ]
 
-for name, y_true, y_pred in sets:
-    MAE, RMSE, R2 = getAllMetric(y_true, y_pred)
-    metrics_data["R2"].append(R2)
-    metrics_data["Set"].append(name)
-    metrics_data["MAE"].append(MAE)
-    metrics_data["RMSE"].append(RMSE)
+df_metrics = pd.DataFrame([{
+    "Set": s,
+    "MAE": mean_absolute_error(y_t, y_p),
+    "RMSE": mean_squared_error(y_t, y_p) ** 0.5,
+    "R2": r2_score(y_t, y_p)
+} for s, y_t, y_p in sets])
 
-metrics_df = pd.DataFrame(metrics_data)
+print(df_metrics)
 
-# --- Create DataFrames for real vs predicted ---
-df_train = pd.DataFrame({"y_train_real": y_train, "y_train_pred": y_pred_train})
-df_test = pd.DataFrame({"y_test_real": y_test, "y_test_pred": y_pred_test})
-df_all = pd.concat(
-    [
-        pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train}),
-        pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test}),
-    ],
-    ignore_index=True,
-)
+# Output predictions
+df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
+df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# --- Print Metrics Table ---
-print("\n📊 Performance Metrics Table (GradientBoostingRegressor):")
-print(metrics_df)
+# Optional: Export to clipboard or Excel
+df_all.to_clipboard()
+# df_train.to_clipboard(index=False)
+# df_test.to_clipboard(index=False)

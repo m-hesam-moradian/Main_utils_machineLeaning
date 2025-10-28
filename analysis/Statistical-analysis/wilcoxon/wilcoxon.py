@@ -5,9 +5,9 @@ from itertools import combinations
 
 # Load structured data from Excel
 df = pd.read_excel(
-    r"D:\ML\Main_utils_machineLeaning\task\BSE. No.14-Dataset.xlsx",
+    r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx",
     header=0,
-    sheet_name="DataForWilcoxonTest",
+    sheet_name="Data for Wilcoxon test",
 )
 
 # Dynamically extract model names and predictions
@@ -68,3 +68,4 @@ if results["p_values"][first_pair] < alpha:
     print(f"\n{first_pair} shows a significant difference.")
 else:
     print(f"\nNo significant difference between {first_pair}.")
+df_results.to_clipboard()

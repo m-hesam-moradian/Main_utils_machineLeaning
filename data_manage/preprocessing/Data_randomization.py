@@ -1,9 +1,8 @@
 import pandas as pd
 
 # --- Load original dataset ---
-sheet_name = "SMOTE-ENC"
-excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BSS.No.2-Dataset.xlsx", sheet_name="CTAB-GAN")
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx"
+df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx", sheet_name="Data")
 
 # --- Shuffle the dataset ---
 df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)

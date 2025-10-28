@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score, mean_squared_error
 
 # -------------------- 1. Load data --------------------
 data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
@@ -13,26 +13,17 @@ y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
 y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
 
 # -------------------- 3. Define regression metrics --------------------
-def smape(y_true, y_pred):
-    denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
-    diff = np.abs(y_true - y_pred)
-    return np.mean(diff / denominator) * 100
-
-def gr_threshold(y_true, y_pred, threshold, percent=False):
-    error = np.abs(y_true - y_pred)
-    if percent:
-        threshold_values = np.abs(y_true) * (threshold / 100)
-        return np.mean(error <= threshold_values) * 100
-    else:
-        return np.mean(error <= threshold) * 100
 def get_regression_metrics(y_true, y_pred):
+    abs_error = np.abs(y_true - y_pred)
+    rel_error = (y_pred - y_true) / y_true
+    rel_error_abs = np.abs(rel_error)
+
     return {
         "R2": r2_score(y_true, y_pred),
         "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-        "MAE": mean_absolute_error(y_true, y_pred),
-        "SMAPE": smape(y_true, y_pred),
-        "GR10": gr_threshold(y_true, y_pred, 10),               # absolute error ≤ 10
-        "GR10%": gr_threshold(y_true, y_pred, 10, percent=True) # error ≤ 10% of true value
+        "U95": np.percentile(abs_error, 95),
+        "MNB": np.mean(rel_error),
+        "AARD": np.mean(rel_error_abs) * 100
     }
 
 # -------------------- 4. Compute metrics --------------------
@@ -57,7 +48,7 @@ df_main = pd.DataFrame(
         ["Value", *metrics_value.values()],
         ["Value-test", *metrics_value_test.values()],
     ],
-    columns=["Set", "R2", "RMSE", "MAE", "SMAPE", "GR100", "GR125"],
+    columns=["Set", "R2", "RMSE", "U95", "MNB", "AARD"],
 )
 
 # -------------------- 6. Save to clipboard --------------------

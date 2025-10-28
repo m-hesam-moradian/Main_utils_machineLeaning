@@ -42,7 +42,7 @@ def find_zero(arr):
 
 
 # Data Loading
-data = np.loadtxt(r"D:\ML\Main_utils\data\Data_err.npt")
+data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
 
 y = data[:, 0]
 predictData = data[:, 1]
