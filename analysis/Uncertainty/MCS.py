@@ -1,89 +1,178 @@
+# =========================================================
+# uncertainty_mcs_table7_stacked_clipboard.py
+# =========================================================
+# Requirements:
+#   pip install pandas numpy scikit-learn lightgbm
+# =========================================================
+
+import os
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor
-from lightgbm import LGBMRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.svm import SVR
+import lightgbm as lgb
 
-# -------------------- 1. Load and prepare data --------------------
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx", sheet_name="Data_after_KFold_LGBR")
-y_real = df["SOH"].astype(float).values
-X_raw = pd.get_dummies(df.drop(columns=["SOH"]), drop_first=True)
-X = StandardScaler().fit_transform(X_raw)
+# -------------------------
+# USER SETTINGS
+EXCEL_PATH = r"C:\Users\Sam\Desktop\BMM-EI. No.21-Data.xlsx"  # your Excel file path
+SHEET_NAME = "Data_after_KFold_LGBR"  # sheet name
+TARGET_COLUMN = "SOH"                  # target column name
+FEATURE_COLUMNS = None                # None -> all except target
+N_MC = 1000                           # Monte Carlo samples
+TEST_SIZE = 0.3
+RANDOM_STATE = 42
+# -------------------------
 
-# -------------------- 2. Train base models --------------------
-X_train, X_test, y_train, y_test = train_test_split(X, y_real, test_size=0.3, shuffle=False, random_state=42)
+# Load data
+df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
+if FEATURE_COLUMNS is None:
+    FEATURE_COLUMNS = [c for c in df.columns if c != TARGET_COLUMN]
 
-model_lgbr = LGBMRegressor()
-model_sgb = GradientBoostingRegressor()
+X = df[FEATURE_COLUMNS].copy()
+y = df[TARGET_COLUMN].values
 
-model_lgbr.fit(X_train, y_train)
-model_sgb.fit(X_train, y_train)
+# Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+)
 
-# -------------------- 3. DST Fusion --------------------
-y_pred_lgbr = model_lgbr.predict(X)
-y_pred_sgb = model_sgb.predict(X)
+# Scaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-error_lgbr = np.abs(y_real - y_pred_lgbr) + 1e-8
-error_sgb = np.abs(y_real - y_pred_sgb) + 1e-8
+# Define models
+models = {
+    "LGBR": lgb.LGBMRegressor(random_state=RANDOM_STATE),
+    "SGB": GradientBoostingRegressor(random_state=RANDOM_STATE),
+    "RF": RandomForestRegressor(n_estimators=200, random_state=RANDOM_STATE),
+    "SVM": SVR(kernel="rbf", C=10.0, epsilon=0.1),
+}
 
-belief_lgbr = 1 / error_lgbr
-belief_sgb = 1 / error_sgb
-total_belief = belief_lgbr + belief_sgb
+# Train models
+models["LGBR"].fit(X_train, y_train)
+models["SGB"].fit(X_train, y_train)
+models["RF"].fit(X_train, y_train)
+models["SVM"].fit(X_train_scaled, y_train)
 
-m_lgbr = belief_lgbr / total_belief
-m_sgb = belief_sgb / total_belief
+# Monte Carlo perturbation factor
+perturb_factor = 0.05
+col_std = X_train.std(axis=0).replace(0, 1e-8)
 
-y_pred_dst = m_lgbr * y_pred_lgbr + m_sgb * y_pred_sgb
+def run_mcs_model(model_name, model, X_base, y_true, scaled=False, n_mc=N_MC):
+    """Monte Carlo simulation for uncertainty estimation"""
+    Xb = X_base.copy()
+    n_samples, n_features = Xb.shape
+    preds_per_sample = np.zeros((n_samples, n_mc))
+    for i in range(n_samples):
+        base = Xb.iloc[i].values
+        noise = np.random.normal(
+            loc=0.0,
+            scale=(col_std.values * perturb_factor).astype(float),
+            size=(n_mc, n_features),
+        )
+        sims = base + noise
+        sims_in = scaler.transform(sims) if scaled else sims
+        preds = model.predict(sims_in)
+        preds_per_sample[i, :] = preds
+    preds_mean_per_sample = preds_per_sample.mean(axis=1)
+    all_preds_flat = preds_per_sample.flatten()
+    return preds_mean_per_sample, all_preds_flat, preds_per_sample
 
-# -------------------- 4. Monte Carlo Simulation --------------------
-n_simulations = 1000
-noise_std = 0.01  # Adjust based on feature sensitivity
 
-def simulate_model(model, X, n_sim=1000, noise_std=0.01):
-    preds = []
-    for _ in range(n_sim):
-        X_noisy = X + np.random.normal(0, noise_std, X.shape)
-        preds.append(model.predict(X_noisy))
-    return np.array(preds)
+# Run MCS for all models
+results = []
+for name, mdl in models.items():
+    use_scaled = name == "SVM"
+    preds_mean, all_preds, preds_per_sample = run_mcs_model(
+        name, mdl, X_test, y_test, scaled=use_scaled, n_mc=N_MC
+    )
 
-# Simulate LGBR and SGB
-sim_lgbr = simulate_model(model_lgbr, X, n_simulations, noise_std)
-sim_sgb = simulate_model(model_sgb, X, n_simulations, noise_std)
+    Ei = np.log10(preds_mean + 1e-12) - np.log10(y_test + 1e-12)
+    E = Ei.mean()
+    SDE = Ei.std(ddof=0)
+    Median = np.median(all_preds)
+    MAD = np.mean(np.abs(all_preds - Median))
+    Uncertainty_pct = (MAD * 100.0) / (Median if Median != 0 else 1e-12)
 
-# Simulate DST by fusing each simulation
-sim_dst = (sim_lgbr + sim_sgb) / 2  # or apply DST weights per simulation if needed
+    results.append(
+        {
+            "Model": name,
+            "E": float(np.round(E, 6)),
+            "SDE": float(np.round(SDE, 6)),
+            "Median": float(np.round(Median, 3)),
+            "MAD": float(np.round(MAD, 3)),
+            "Uncertainty (%)": float(np.round(Uncertainty_pct, 3)),
+        }
+    )
 
-# -------------------- 5. Compute uncertainty metrics --------------------
-def summarize_mcs(simulated_preds, y_true):
-    mean_pred = simulated_preds.mean(axis=0)
-    std_pred = simulated_preds.std(axis=0)
-    lower = np.percentile(simulated_preds, 2.5, axis=0)
-    upper = np.percentile(simulated_preds, 97.5, axis=0)
-    return pd.DataFrame({
-        "y_real": y_true,
-        "mean_pred": mean_pred,
-        "std_pred": std_pred,
-        "CI_lower": lower,
-        "CI_upper": upper
-    })
+# --- Dempster–Shafer (DST) Ensemble for the two best hybrid models: RF + SVM ---
 
-df_lgbr = summarize_mcs(sim_lgbr, y_real)
-df_sgb = summarize_mcs(sim_sgb, y_real)
-df_dst = summarize_mcs(sim_dst, y_real)
+def dst_combine_predictions(model_a_preds, model_b_preds, y_true):
+    eps = 1e-12
+    err_a = np.abs(model_a_preds - y_true)
+    err_b = np.abs(model_b_preds - y_true)
+    rel_a = 1.0 / (err_a + eps)
+    rel_b = 1.0 / (err_b + eps)
+    mass_a = rel_a / (rel_a + rel_b + eps)
+    mass_b = rel_b / (rel_a + rel_b + eps)
+    fused = mass_a * model_a_preds + mass_b * model_b_preds
+    return fused, mass_a, mass_b
 
-# -------------------- 6. Output --------------------
-print("LGBR Uncertainty Sample:")
-print(df_lgbr.head())
 
-print("\nSGB Uncertainty Sample:")
-print(df_sgb.head())
+# Get mean predictions for RF and SVM
+rf_mean, _, _ = run_mcs_model("RF", models["RF"], X_test, y_test, scaled=False, n_mc=N_MC)
+svm_mean, _, _ = run_mcs_model("SVM", models["SVM"], X_test, y_test, scaled=True, n_mc=N_MC)
 
-print("\nDST Uncertainty Sample:")
-print(df_dst.head())
+dst_pred, mass_a, mass_b = dst_combine_predictions(svm_mean, rf_mean, y_test)
 
-# Optional: Export to Excel or clipboard
-# df_lgbr.to_excel("LGBR_Uncertainty.xlsx", index=False)
-# df_sgb.to_excel("SGB_Uncertainty.xlsx", index=False)
-# df_dst.to_excel("DST_Uncertainty.xlsx", index=False)
+Ei_dst = np.log10(dst_pred + 1e-12) - np.log10(y_test + 1e-12)
+E_dst = float(np.round(Ei_dst.mean(), 6))
+SDE_dst = float(np.round(Ei_dst.std(ddof=0), 6))
+Median_dst = float(np.round(np.median(dst_pred), 3))
+MAD_dst = float(np.round(np.mean(np.abs(dst_pred - Median_dst)), 3))
+Uncertainty_dst = float(
+    np.round((MAD_dst * 100.0) / (Median_dst if Median_dst != 0 else 1e-12), 3)
+)
+
+results.append(
+    {
+        "Model": "DST_RF+SVM",
+        "E": E_dst,
+        "SDE": SDE_dst,
+        "Median": Median_dst,
+        "MAD": MAD_dst,
+        "Uncertainty (%)": Uncertainty_dst,
+    }
+)
+
+# =========================================================
+# === Build and display stacked tables (each model below) ==
+# =========================================================
+
+tables_list = []
+
+for r in results:
+    temp_df = pd.DataFrame(
+        {
+            "Metric": ["E", "SDE", "Median", "MAD", "Uncertainty (%)"],
+            "Value": [r["E"], r["SDE"], r["Median"], r["MAD"], r["Uncertainty (%)"]],
+        }
+    )
+    temp_df.insert(0, "Model", r["Model"])
+    tables_list.append(temp_df)
+
+# Combine vertically (one under another)
+table7_df = pd.concat(tables_list, axis=0, ignore_index=True)
+
+# Print and copy
+print("\nFinal stacked Table 7 (each model under another):\n")
+print(table7_df.to_string(index=False))
+table7_df.to_clipboard(index=False)
+print("\n✅ Table 7 copied to clipboard — paste it directly into Excel or Word.")
+
+# =========================================================
+# End of script
+# =========================================================
