@@ -5,9 +5,9 @@ from itertools import combinations
 
 # Load structured data from Excel
 df = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx",
+    r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx",
     header=0,
-    sheet_name="Data for Wilcoxon test",
+    sheet_name="Wilcoxon test Data",
 )
 
 # Dynamically extract model names and predictions

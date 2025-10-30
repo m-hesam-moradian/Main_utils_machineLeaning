@@ -5,7 +5,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
-sheet_name = "Data"
+sheet_name = "Z-score"
 target_column = "Renewable Availability Index"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)

@@ -61,21 +61,22 @@ def Fast_function(X, predictions):
 
 
 # Path & target
-DATA_PATH = r"D:\ML\Main_utils\task\136_Seismic_ETC_RTHA, BO.xlsx"
-TARGET = "Class"
+DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
+TARGET = "Renewable Availability Index"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Balanced_resample_Data")
+df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_XGBR")
 
 # Separate features and target
 X = df.drop(columns=[TARGET])
 
 
 # Read the text file into a DataFrame
-y = pd.read_csv(r"D:\ML\Main_utils\data\predictions.txt")
+y = pd.read_csv(r"C:\Users\Sam\Desktop\ML\data\predictions.txt")
 
 
 print(df)
 
 
 Fast_df = pd.DataFrame(Fast_function(X=X, predictions=y))
+Fast_df.to_clipboard(index=False)

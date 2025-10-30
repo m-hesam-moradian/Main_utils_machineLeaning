@@ -1,17 +1,16 @@
 import pandas as pd
-from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import QuantileRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Load reordered data for ENR (after K-Fold)
+# Load reordered data for QR (after K-Fold)
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
-sheet_name = "Z-score"
+sheet_name = "Data_after_KFold_QR"
 target_column = "Renewable Availability Index"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 X = df.drop(columns=[target_column])
 y = df[target_column]
-
 
 # Use last 20% as test set to match K-Fold logic
 split_idx = int(len(df) * 0.8)
@@ -19,7 +18,7 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
-model = ElasticNet()
+model = QuantileRegressor(quantile=0.5)
 model.fit(X_train, y_train)
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)

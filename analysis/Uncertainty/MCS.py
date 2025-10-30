@@ -1,5 +1,5 @@
 # =========================================================
-# uncertainty_mcs_table7_stacked_clipboard.py
+# uncertainty_mcs_table7_stacked_clipboard_ENR_XGBR_QR.py
 # =========================================================
 # Requirements:
 #   pip install pandas numpy scikit-learn lightgbm
@@ -10,17 +10,16 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.svm import SVR
-import lightgbm as lgb
+from sklearn.linear_model import ElasticNet, QuantileRegressor
+from xgboost import XGBRegressor
 
 # -------------------------
 # USER SETTINGS
-EXCEL_PATH = r"C:\Users\Sam\Desktop\BMM-EI. No.21-Data.xlsx"  # your Excel file path
-SHEET_NAME = "Data_after_KFold_LGBR"  # sheet name
-TARGET_COLUMN = "SOH"                  # target column name
-FEATURE_COLUMNS = None                # None -> all except target
-N_MC = 1000                           # Monte Carlo samples
+EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"  # your Excel file path
+SHEET_NAME = "Data_after_KFold_ENR"  # sheet name
+TARGET_COLUMN = "Renewable Availability Index"  # target column name
+FEATURE_COLUMNS = None  # None -> all except target
+N_MC = 1000  # Monte Carlo samples
 TEST_SIZE = 0.3
 RANDOM_STATE = 42
 # -------------------------
@@ -43,23 +42,32 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
+# ----------------------------------------------------------
 # Define models
+# ----------------------------------------------------------
 models = {
-    "LGBR": lgb.LGBMRegressor(random_state=RANDOM_STATE),
-    "SGB": GradientBoostingRegressor(random_state=RANDOM_STATE),
-    "RF": RandomForestRegressor(n_estimators=200, random_state=RANDOM_STATE),
-    "SVM": SVR(kernel="rbf", C=10.0, epsilon=0.1),
+    "ENR": ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=RANDOM_STATE),
+    "XGBR": XGBRegressor(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=4,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=RANDOM_STATE,
+        objective="reg:squarederror",
+    ),
+    "QR": QuantileRegressor(alpha=0.1, quantile=0.5, solver="highs"),
 }
 
 # Train models
-models["LGBR"].fit(X_train, y_train)
-models["SGB"].fit(X_train, y_train)
-models["RF"].fit(X_train, y_train)
-models["SVM"].fit(X_train_scaled, y_train)
+models["ENR"].fit(X_train_scaled, y_train)
+models["XGBR"].fit(X_train, y_train)
+models["QR"].fit(X_train_scaled, y_train)
 
 # Monte Carlo perturbation factor
 perturb_factor = 0.05
 col_std = X_train.std(axis=0).replace(0, 1e-8)
+
 
 def run_mcs_model(model_name, model, X_base, y_true, scaled=False, n_mc=N_MC):
     """Monte Carlo simulation for uncertainty estimation"""
@@ -85,7 +93,7 @@ def run_mcs_model(model_name, model, X_base, y_true, scaled=False, n_mc=N_MC):
 # Run MCS for all models
 results = []
 for name, mdl in models.items():
-    use_scaled = name == "SVM"
+    use_scaled = name in ["ENR", "QR"]
     preds_mean, all_preds, preds_per_sample = run_mcs_model(
         name, mdl, X_test, y_test, scaled=use_scaled, n_mc=N_MC
     )
@@ -108,8 +116,9 @@ for name, mdl in models.items():
         }
     )
 
-# --- Dempster–Shafer (DST) Ensemble for the two best hybrid models: RF + SVM ---
-
+# ----------------------------------------------------------
+# --- Dempster–Shafer (DST) Ensemble for ENR + XGBR ---
+# ----------------------------------------------------------
 def dst_combine_predictions(model_a_preds, model_b_preds, y_true):
     eps = 1e-12
     err_a = np.abs(model_a_preds - y_true)
@@ -122,24 +131,22 @@ def dst_combine_predictions(model_a_preds, model_b_preds, y_true):
     return fused, mass_a, mass_b
 
 
-# Get mean predictions for RF and SVM
-rf_mean, _, _ = run_mcs_model("RF", models["RF"], X_test, y_test, scaled=False, n_mc=N_MC)
-svm_mean, _, _ = run_mcs_model("SVM", models["SVM"], X_test, y_test, scaled=True, n_mc=N_MC)
+# Get mean predictions for ENR and XGBR
+enr_mean, _, _ = run_mcs_model("ENR", models["ENR"], X_test, y_test, scaled=True, n_mc=N_MC)
+xgbr_mean, _, _ = run_mcs_model("XGBR", models["XGBR"], X_test, y_test, scaled=False, n_mc=N_MC)
 
-dst_pred, mass_a, mass_b = dst_combine_predictions(svm_mean, rf_mean, y_test)
+dst_pred, mass_a, mass_b = dst_combine_predictions(enr_mean, xgbr_mean, y_test)
 
 Ei_dst = np.log10(dst_pred + 1e-12) - np.log10(y_test + 1e-12)
 E_dst = float(np.round(Ei_dst.mean(), 6))
 SDE_dst = float(np.round(Ei_dst.std(ddof=0), 6))
 Median_dst = float(np.round(np.median(dst_pred), 3))
 MAD_dst = float(np.round(np.mean(np.abs(dst_pred - Median_dst)), 3))
-Uncertainty_dst = float(
-    np.round((MAD_dst * 100.0) / (Median_dst if Median_dst != 0 else 1e-12), 3)
-)
+Uncertainty_dst = float(np.round((MAD_dst * 100.0) / (Median_dst if Median_dst != 0 else 1e-12), 3))
 
 results.append(
     {
-        "Model": "DST_RF+SVM",
+        "Model": "DST_ENR+XGBR",
         "E": E_dst,
         "SDE": SDE_dst,
         "Median": Median_dst,

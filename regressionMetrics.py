@@ -10,20 +10,30 @@ y_pred = data[:, 1]
 # -------------------- 2. Split into train/test --------------------
 split_idx = int(len(y_real) * 0.8)
 y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
-y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+y_pred_train = y_pred[:split_idx]
+y_pred_test = y_pred[split_idx:]
 
 # -------------------- 3. Define regression metrics --------------------
 def get_regression_metrics(y_true, y_pred):
     abs_error = np.abs(y_true - y_pred)
-    rel_error = (y_pred - y_true) / y_true
-    rel_error_abs = np.abs(rel_error)
+    rel_error = abs_error / np.abs(y_true)
+
+    # Prediction Interval (PI): % of predictions within ±10% of true value
+    within_10_percent = rel_error <= 0.10
+    pi = np.mean(within_10_percent) * 100
+
+    # Coefficient of Variation (COV): std / mean of predictions
+    cov = np.std(y_pred) / np.mean(y_pred)
+
+    # Mean Absolute Relative Deviation (MARD)
+    mard = np.mean(rel_error) * 100
 
     return {
         "R2": r2_score(y_true, y_pred),
         "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-        "U95": np.percentile(abs_error, 95),
-        "MNB": np.mean(rel_error),
-        "AARD": np.mean(rel_error_abs) * 100
+        "PI": pi,
+        "COV": cov,
+        "MARD": mard
     }
 
 # -------------------- 4. Compute metrics --------------------
@@ -48,7 +58,7 @@ df_main = pd.DataFrame(
         ["Value", *metrics_value.values()],
         ["Value-test", *metrics_value_test.values()],
     ],
-    columns=["Set", "R2", "RMSE", "U95", "MNB", "AARD"],
+    columns=["Set", "R2", "RMSE", "PI", "COV", "MARD"],
 )
 
 # -------------------- 6. Save to clipboard --------------------
