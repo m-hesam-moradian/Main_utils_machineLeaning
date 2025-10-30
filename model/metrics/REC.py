@@ -22,6 +22,7 @@ df_rec = pd.DataFrame({
     "AUC": ["" for _ in range(len(epsilon))]  # Fill AUC column with empty strings
 })
 
+
 # Append AUC value in the last row
 df_rec.loc[0] = ["", "", rec_auc]
 
