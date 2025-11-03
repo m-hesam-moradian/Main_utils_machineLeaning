@@ -6,7 +6,7 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.tree import DecisionTreeRegressor
 from Metrics_regression import getAllMetric
 
-# --- Load data ---
+# --- Load data --
 sheet_name = "Data_after_KFold_ADAR"
 excel_path = (
     r"D:\ML\Main_utils\task\EI No. 5, Action Power-DTR-LGBR-ADAR-CPO-PRO-Data.xlsx"
