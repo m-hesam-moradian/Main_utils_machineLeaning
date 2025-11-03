@@ -91,13 +91,10 @@ from sklearn.metrics import confusion_matrix
 
 cm = confusion_matrix(y_real, y_pred)
 cm_df = pd.DataFrame(cm, index=["Actual 0", "Actual 1"], columns=["Predicted 0", "Predicted 1"])
-# print("\nConfusion Matrix:")
-# print(cm_df)
+ 
 
-# Plot heatmap
-# sns.heatmap(cm_df, annot=True, fmt="d", cmap="Blues")
-# plt.title("Confusion Matrix Heatmap")
-# plt.show()
+
+ 
 df_main.to_clipboard(index=False)
 df_class.to_clipboard(index=False)
 roc_df.to_clipboard(index=False)
