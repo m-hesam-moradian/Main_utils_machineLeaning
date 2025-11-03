@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 
 # -------------------- 1. Load data --------------------
-data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
+data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data")
 y_real = data[:, 0]
 y_pred = data[:, 1]
 
