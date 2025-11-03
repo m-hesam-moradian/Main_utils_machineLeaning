@@ -19,7 +19,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
 model = QuantileRegressor(
-    quantile=0.4,          # Target quantile (0 < q < 1)
+    quantile=0.5,          # Target quantile (0 < q < 1)
     alpha=0.01,           # L1 regularization strength
     solver="highs-ds",        # LP solver: "highs", "interior-point", "revised simplex"
     fit_intercept=False,    # Whether to fit intercept
