@@ -16,14 +16,17 @@ y_pred_test = y_pred[split_idx:]
 # -------------------- 3. Define regression metrics --------------------
 def get_regression_metrics(y_true, y_pred):
     abs_error = np.abs(y_true - y_pred)
-    rel_error = abs_error / np.abs(y_true)
+   
+    # Avoid division by zero in relative error
+    nonzero_mask = np.abs(y_true) > 1e-8
+    rel_error = np.zeros_like(y_true)
+    rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
 
-    # Prediction Interval (PI): % of predictions within ±10% of true value
-    within_10_percent = rel_error <= 0.10
-    pi = np.mean(within_10_percent) * 100
+    # Relative Absolute Error (RAE)
+    rae = np.sum(abs_error) / np.sum(np.abs(y_true - np.mean(y_true)))
 
-    # Coefficient of Variation (COV): std / mean of predictions
-    cov = np.std(y_pred) / np.mean(y_pred)
+    # 95th percentile of absolute error (U95)
+    u95 = np.percentile(abs_error, 95)
 
     # Mean Absolute Relative Deviation (MARD)
     mard = np.mean(rel_error) * 100
@@ -31,11 +34,10 @@ def get_regression_metrics(y_true, y_pred):
     return {
         "R2": r2_score(y_true, y_pred),
         "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-        "PI": pi,
-        "COV": cov,
+        "RAE": rae,
+        "U95": u95,
         "MARD": mard
     }
-
 # -------------------- 4. Compute metrics --------------------
 metrics_all = get_regression_metrics(y_real, y_pred)
 metrics_train = get_regression_metrics(y_real_train, y_pred_train)
@@ -58,7 +60,7 @@ df_main = pd.DataFrame(
         ["Value", *metrics_value.values()],
         ["Value-test", *metrics_value_test.values()],
     ],
-    columns=["Set", "R2", "RMSE", "PI", "COV", "MARD"],
+    columns=["Set", "R2", "RMSE", "RAE", "U95", "MARD"],
 )
 
 # -------------------- 6. Save to clipboard --------------------

@@ -1,11 +1,11 @@
 import pandas as pd
-from sklearn.linear_model import QuantileRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Load reordered data for QR (after K-Fold)
+# Load reordered data for ETR (after K-Fold)
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.23-Data.xlsx"
-sheet_name = "Data_after_KFold_QR"
+sheet_name = "Data_after_KFold_ETR"
 target_column = "Remaining Useful Life "
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -18,14 +18,13 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
-model = QuantileRegressor(
-    quantile=0.4,          # Target quantile (0 < q < 1)
-    alpha=0.01,           # L1 regularization strength
-    solver="highs-ds",        # LP solver: "highs", "interior-point", "revised simplex"
-    fit_intercept=False,    # Whether to fit intercept
-    # copy_X=True,           # Avoid modifying input X
-    # max_iter=1000,         # Max iterations for solver
-    # verbose=0              # Set to 1 for solver output
+model = ExtraTreesRegressor(
+    n_estimators=800,         # Number of trees (default is 100)
+    max_depth=15,             # Limit tree depth to prevent memorization
+    min_samples_split=2,     # Require more samples to split a node
+    min_samples_leaf=1,       # Minimum samples per leaf
+    max_features="sqrt",      # Use fewer features per split
+      
 )
 model.fit(X_train, y_train)
 y_pred_all = model.predict(X)

@@ -8,7 +8,7 @@ values = data[:, 0]
 predictions = data[:, 1]
 
 min_error = -46  # minimum allowed percentage error
-max_error = 52  # maximum allowed percentage error
+max_error = 62  # maximum allowed percentage error
     
 # Adjust predictions based on error limits
 for i in range(len(values)):
