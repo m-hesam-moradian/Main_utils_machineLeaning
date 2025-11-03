@@ -19,7 +19,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
 model = ExtraTreesRegressor(
-    n_estimators=800,         # Number of trees (default is 100)
+    n_estimators=500,         # Number of trees (default is 100)
     max_depth=15,             # Limit tree depth to prevent memorization
     min_samples_split=2,     # Require more samples to split a node
     min_samples_leaf=1,       # Minimum samples per leaf
