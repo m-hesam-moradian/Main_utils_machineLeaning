@@ -5,6 +5,8 @@ from sklearn.metrics import r2_score, mean_squared_error
 from Metrics_regression import getAllMetric
 import numpy as np
 
+
+# iudsfkshdf
 sheet_name = "Data after K-FOLD"
 excel_path = r"D:\ML\Main_utils\task\startup_company_one_line_pitches.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
