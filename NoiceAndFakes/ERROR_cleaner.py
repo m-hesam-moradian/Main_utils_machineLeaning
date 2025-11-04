@@ -7,8 +7,8 @@ data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
 values = data[:, 0]
 predictions = data[:, 1]
 
-min_error = -46  # minimum allowed percentage error
-max_error = 62  # maximum allowed percentage error
+min_error = -22  # minimum allowed percentage error
+max_error = 35  # maximum allowed percentage error
     
 # Adjust predictions based on error limits
 for i in range(len(values)):
