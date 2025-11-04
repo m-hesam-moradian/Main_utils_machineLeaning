@@ -1,10 +1,6 @@
 # =========================================================
-# uncertainty_mcs_table7_from_predictions.py
+# uncertainty_mcs_table7_from_predictions_fixed.py
 # =========================================================
-# Requirements:
-#   pip install numpy pandas
-# =========================================================
-
 import numpy as np
 import pandas as pd
 
@@ -16,10 +12,21 @@ MODEL_NAME = "QR"  # e.g., "ENR", "XGBR", etc.
 
 # Load data
 data = np.loadtxt(DATA_PATH)
-CSac = data[:, 0]  # actual values
-CSpr = data[:, 1]  # predicted values
+CSac = data[:, 0]  # actual
+CSpr = data[:, 1]  # predicted
 
-# Avoid log(0) by adding epsilon
+# Convert to float arrays and clean NaN / inf / negatives
+CSac = np.asarray(CSac, dtype=float)
+CSpr = np.asarray(CSpr, dtype=float)
+
+mask_valid = np.isfinite(CSac) & np.isfinite(CSpr) & (CSac > 0) & (CSpr > 0)
+CSac = CSac[mask_valid]
+CSpr = CSpr[mask_valid]
+
+if len(CSac) == 0:
+    raise ValueError("❌ No valid (positive, finite) data points remain after filtering.")
+
+# Avoid log(0) by epsilon
 eps = 1e-12
 log_CSac = np.log10(CSac + eps)
 log_CSpr = np.log10(CSpr + eps)
