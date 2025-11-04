@@ -1,5 +1,5 @@
 # --------------------------------------------------------------
-#  COA + QR / ETR  (Excel loading as you requested)
+#  DOA + QR / ETR  (Excel loading as you requested)
 # --------------------------------------------------------------
 import time
 import numpy as np
@@ -23,9 +23,9 @@ MODEL = "QR"          # <--- change to "ETR" if you want Extra-Trees
 # MODEL = "ETR"
 
 # --------------------------------------------------------------
-#  COA implementation (class)
+#  DOA implementation (class)
 # --------------------------------------------------------------
-class COA:
+class DOA:
     def __init__(self, N=30, max_iter=200, lb=None, ub=None, dim=None, use_cv=True):
         self.N = N
         self.max_iter = max_iter
@@ -33,8 +33,11 @@ class COA:
         self.ub = np.array(ub)
         self.dim = dim
         self.use_cv = use_cv
-        self.T_max = 40.0
-        self.F_max = 3.0
+        self.p_mem = 0.1  # Probability for memory reset
+        self.p_f = 0.1    # Probability for forgetting and supplementation
+        self.p_recomb = 0.5  # Probability for recombination
+        self.phase_switch = 5  # Switch phase every 5 iterations
+        self.diversity_threshold = 1e-3  # Diversity threshold for phase decision
 
     def _rae(self, y_true, y_pred, y_train_mean):
         ae = np.abs(y_true - y_pred).sum()
@@ -82,58 +85,89 @@ class COA:
             raes.append(self._rae(y_val, pred, y_tr.mean()))
         return np.mean(raes)
 
+    # ---------- dream recombination ----------
+    def _dream_recombine(self, parent1, parent2):
+        mask = np.random.rand(self.dim) < 0.5
+        child = np.where(mask, parent1, parent2)
+        return child
+
+    # ---------- dream perturbation ----------
+    def _dream_perturbation(self, x):
+        sigma = 0.1 * (self.ub - self.lb)
+        return np.random.normal(0, sigma, self.dim)
+
     # ---------- main optimisation loop ----------
     def optimize(self):
         np.random.seed(42)
         pop = self.lb + np.random.rand(self.N, self.dim) * (self.ub - self.lb)
         fitness = np.array([self._fitness(ind) for ind in pop])
 
-        pbest = pop.copy()
-        pbest_fit = fitness.copy()
-        gbest_idx = np.argmin(fitness)
-        gbest = pop[gbest_idx].copy()
-        gbest_fit = fitness[gbest_idx]
+        best_idx = np.argmin(fitness)
+        worst_idx = np.argmax(fitness)
+        gbest = pop[best_idx].copy()
+        gbest_fit = fitness[best_idx]
+        gworst = pop[worst_idx].copy()
 
-        history = [gbest.copy()]          # iteration 0 (initial)
+        history = [gbest.copy()]  # iteration 0 (initial)
 
         start = time.time()
-        for it in range(1, self.max_iter + 1):
-            T = (it / self.max_iter) * self.T_max
+        for t in range(1, self.max_iter + 1):
+            # Compute diversity
+            diversity = np.mean(np.std(pop, axis=0))
 
+            # Decide phase
+            if (t % self.phase_switch == 0) or (diversity < self.diversity_threshold):
+                phase = 'exploration'
+            else:
+                phase = 'exploitation'
+
+            # Memory reset
+            if np.random.rand() < self.p_mem:
+                for i in range(self.N):
+                    if np.random.rand() < 0.5:
+                        pop[i] = gbest.copy()
+
+            # Forgetting and supplementation
+            if np.random.rand() < self.p_f:
+                num_forget = self.N // 2
+                forget_idx = np.random.choice(self.N, num_forget, replace=False)
+                pop[forget_idx] = self.lb + np.random.rand(num_forget, self.dim) * (self.ub - self.lb)
+
+            # Dream-logic recombination
             for i in range(self.N):
-                if T > 30:                                 # competition
-                    C = (pbest[i] + gbest) / 2
-                    if np.random.rand() > 0.5:
-                        pop[i] = C
-                    else:
-                        pop[i] = pop[np.random.randint(self.N)]
-                else:                                      # foraging
-                    F_loc = gbest
-                    fi, ff = fitness[i], gbest_fit
-                    diff = np.abs(fitness - ff)
-                    max_diff = max(diff.max(), 1e-6)
-                    S = self.F_max * np.abs(fi - ff) / max_diff
+                if np.random.rand() < self.p_recomb:
+                    idx1, idx2 = np.random.choice(self.N, 2, replace=False)
+                    parent1 = pop[idx1]
+                    parent2 = pop[idx2]
+                    pop[i] = self._dream_recombine(parent1, parent2)
+
+            # Update positions based on phase
+            for i in range(self.N):
+                if phase == 'exploration':
+                    r1 = np.random.rand()
+                    r2 = np.random.rand()
+                    r3 = np.random.rand()
+                    perturbation = self._dream_perturbation(pop[i])
+                    new_pos = pop[i] + r1 * (gbest - pop[i]) + r2 * (gworst - pop[i]) + r3 * perturbation
+                else:  # exploitation
                     r = np.random.rand()
-                    if S > 2:
-                        trig = np.sin(np.pi * r) if np.random.rand() < 0.5 else np.cos(np.pi * r)
-                        pop[i] = F_loc + F_loc * trig
-                    else:
-                        pop[i] = F_loc + r * (F_loc - pop[i])
+                    mutation = np.random.normal(0, 0.01 * (self.ub - self.lb), self.dim)
+                    new_pos = gbest + r * (pop[i] - gbest) + mutation
 
-                pop[i] = np.clip(pop[i], self.lb, self.ub)
+                new_pos = np.clip(new_pos, self.lb, self.ub)
+                pop[i] = new_pos
 
+            # Update fitness
             fitness = np.array([self._fitness(ind) for ind in pop])
 
-            # update personal best
-            improve = fitness < pbest_fit
-            pbest[improve] = pop[improve]
-            pbest_fit[improve] = fitness[improve]
+            # Update best and worst
+            new_best_idx = np.argmin(fitness)
+            if fitness[new_best_idx] < gbest_fit:
+                gbest = pop[new_best_idx].copy()
+                gbest_fit = fitness[new_best_idx]
 
-            # update global best
-            new_g_idx = np.argmin(fitness)
-            if fitness[new_g_idx] < gbest_fit:
-                gbest = pop[new_g_idx].copy()
-                gbest_fit = fitness[new_g_idx]
+            new_worst_idx = np.argmax(fitness)
+            gworst = pop[new_worst_idx].copy()
 
             history.append(gbest.copy())
 
@@ -163,11 +197,11 @@ else:   # ETR
     ub = [300, 30, 20]
     print("Optimising Extra-Trees (n_estimators, max_depth, min_samples_split)…")
 
-coa = COA(N=30, max_iter=200, lb=lb, ub=ub, dim=dim, use_cv=True)
-best_hp, best_rae, hp_history, runtime = coa.optimize()
+doa = DOA(N=30, max_iter=200, lb=lb, ub=ub, dim=dim, use_cv=True)
+best_hp, best_rae, hp_history, runtime = doa.optimize()
 
 # --------------------------------------------------------------
-#  4. Show hyper-parameters for **all** iterations (first 10 + last)
+#  4. Show hyper-parameters for every iteration (sample)
 # --------------------------------------------------------------
 print("\n=== Hyper-parameters for every iteration (sample) ===")
 for i in range(0, 10):
@@ -234,5 +268,5 @@ for k, v in metrics.items():
 # --------------------------------------------------------------
 hist_df = pd.DataFrame(hp_history,
                        columns=[f"param_{i}" for i in range(dim)])
-hist_df.to_excel("COA_hyperparameters_history.xlsx", index_label="iteration")
-print("\nHyper-parameter history saved to 'COA_hyperparameters_history.xlsx'")
+hist_df.to_excel("DOA_hyperparameters_history.xlsx", index_label="iteration")
+print("\nHyper-parameter history saved to 'DOA_hyperparameters_history.xlsx'")

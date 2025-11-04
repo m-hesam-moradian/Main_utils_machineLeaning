@@ -1,5 +1,5 @@
 # --------------------------------------------------------------
-#  COA + QR / ETR  (Excel loading as you requested)
+#  KOA + QR / ETR  (Excel loading as you requested)
 # --------------------------------------------------------------
 import time
 import numpy as np
@@ -23,9 +23,9 @@ MODEL = "QR"          # <--- change to "ETR" if you want Extra-Trees
 # MODEL = "ETR"
 
 # --------------------------------------------------------------
-#  COA implementation (class)
+#  KOA implementation (class)
 # --------------------------------------------------------------
-class COA:
+class KOA:
     def __init__(self, N=30, max_iter=200, lb=None, ub=None, dim=None, use_cv=True):
         self.N = N
         self.max_iter = max_iter
@@ -33,8 +33,10 @@ class COA:
         self.ub = np.array(ub)
         self.dim = dim
         self.use_cv = use_cv
-        self.T_max = 40.0
-        self.F_max = 3.0
+        self.mu0 = 1.0
+        self.gamma = 20.0
+        self.epsilon = 1e-10
+        self.pi = np.pi
 
     def _rae(self, y_true, y_pred, y_train_mean):
         ae = np.abs(y_true - y_pred).sum()
@@ -86,54 +88,102 @@ class COA:
     def optimize(self):
         np.random.seed(42)
         pop = self.lb + np.random.rand(self.N, self.dim) * (self.ub - self.lb)
+        e = np.random.rand(self.N)
+        T_period = np.abs(np.random.randn(self.N))
         fitness = np.array([self._fitness(ind) for ind in pop])
 
-        pbest = pop.copy()
-        pbest_fit = fitness.copy()
-        gbest_idx = np.argmin(fitness)
-        gbest = pop[gbest_idx].copy()
-        gbest_fit = fitness[gbest_idx]
+        # Initial best
+        best_idx = np.argmin(fitness)
+        gbest = pop[best_idx].copy()
+        gbest_fit = fitness[best_idx]
 
-        history = [gbest.copy()]          # iteration 0 (initial)
+        history = [gbest.copy()]  # iteration 0 (initial)
 
         start = time.time()
-        for it in range(1, self.max_iter + 1):
-            T = (it / self.max_iter) * self.T_max
+        for t in range(1, self.max_iter + 1):
+            fit_s = gbest_fit
+            worst = np.max(fitness)
+            sum_diff = np.sum(fitness - worst)
+            if sum_diff == 0:
+                sum_diff = self.epsilon
 
-            for i in range(self.N):
-                if T > 30:                                 # competition
-                    C = (pbest[i] + gbest) / 2
-                    if np.random.rand() > 0.5:
-                        pop[i] = C
-                    else:
-                        pop[i] = pop[np.random.randint(self.N)]
-                else:                                      # foraging
-                    F_loc = gbest
-                    fi, ff = fitness[i], gbest_fit
-                    diff = np.abs(fitness - ff)
-                    max_diff = max(diff.max(), 1e-6)
-                    S = self.F_max * np.abs(fi - ff) / max_diff
-                    r = np.random.rand()
-                    if S > 2:
-                        trig = np.sin(np.pi * r) if np.random.rand() < 0.5 else np.cos(np.pi * r)
-                        pop[i] = F_loc + F_loc * trig
-                    else:
-                        pop[i] = F_loc + r * (F_loc - pop[i])
+            r2 = np.random.rand()
+            M_s = r2 * (fit_s - worst) / sum_diff
+            m = r2 * (fitness - worst) / sum_diff
 
-                pop[i] = np.clip(pop[i], self.lb, self.ub)
+            # Distance to sun (best)
+            R = np.linalg.norm(pop - gbest, axis=1) ** 2
+            min_R = np.min(R)
+            max_R = np.max(R)
+            if max_R > min_R:
+                R_norm = (R - min_R) / (max_R - min_R)
+            else:
+                R_norm = np.zeros(self.N)
 
-            fitness = np.array([self._fitness(ind) for ind in pop])
+            mu = self.mu0 * np.exp(-self.gamma * t / self.max_iter)
 
-            # update personal best
-            improve = fitness < pbest_fit
-            pbest[improve] = pop[improve]
-            pbest_fit[improve] = fitness[improve]
+            r1 = np.random.rand(self.N)
+            F_g = e * mu * M_s * m / (R_norm**2 + self.epsilon + r1)
 
-            # update global best
-            new_g_idx = np.argmin(fitness)
-            if fitness[new_g_idx] < gbest_fit:
-                gbest = pop[new_g_idx].copy()
-                gbest_fit = fitness[new_g_idx]
+            # Semi-major axis
+            r3_scalar = np.random.rand(self.N)
+            a = r3_scalar * T_period**2 * mu * (M_s + m) / (4 * self.pi**2) * (1/3)
+
+            # L
+            L = np.sqrt(mu * (M_s + m) / (2 * R + self.epsilon) - 1 / (a + self.epsilon))
+
+            # Random vectors (per dimension)
+            r3 = np.random.rand(self.N, self.dim)
+            r4 = np.random.rand(self.N, self.dim)
+            r5 = np.random.rand(self.N, self.dim)
+            r6 = np.random.rand(self.N, self.dim)
+
+            U = (r5 > r6).astype(float)
+            F_flag = (r4 <= 0.5).astype(float) * 2 - 1  # 1 or -1
+
+            M = r3 * (1 - r4) + r4
+            ddl = (1 - U) * M * L[:, np.newaxis]
+
+            M_vec = r3 * (1 - r5) + r5
+            U1 = (r5 > r4).astype(float)
+            U2 = (r3 > r4).astype(float)
+
+            # Random a and b
+            a_idx = np.random.randint(0, self.N, self.N)
+            b_idx = np.random.randint(0, self.N, self.N)
+            X_a = pop[a_idx]
+            X_b = pop[b_idx]
+
+            # Velocity
+            l = U * M_vec * L[:, np.newaxis]
+
+            V = np.zeros_like(pop)
+            mask = (R_norm <= 0.5)[:, np.newaxis]
+
+            V[mask] = l[mask] * (2 * r4[mask] * (pop[mask] - X_b[mask])) + ddl[mask] * (X_a[mask] - X_b[mask]) + (1 - R_norm[mask, np.newaxis]) * F_flag[mask] * U1[mask] * r5[mask] * (self.ub - self.lb)
+
+            V[~mask] = r4[~mask] * L[~mask, np.newaxis] * (X_a[~mask] - pop[~mask]) + (1 - R_norm[~mask, np.newaxis]) * F_flag[~mask] * U2[~mask] * r5[~mask] * r3[~mask] * (self.ub - self.lb)
+
+            # Position update
+            rn = np.random.randn(self.N, self.dim)
+            X_new = pop + F_flag * V + (F_g[:, np.newaxis] + np.abs(rn)) * U * (gbest - pop)
+
+            # Clip
+            X_new = np.clip(X_new, self.lb, self.ub)
+
+            # New fitness
+            fitness_new = np.array([self._fitness(ind) for ind in X_new])
+
+            # Elitism
+            improve = fitness_new < fitness
+            pop[improve] = X_new[improve]
+            fitness[improve] = fitness_new[improve]
+
+            # Update gbest
+            new_best_idx = np.argmin(fitness)
+            if fitness[new_best_idx] < gbest_fit:
+                gbest = pop[new_best_idx].copy()
+                gbest_fit = fitness[new_best_idx]
 
             history.append(gbest.copy())
 
@@ -163,11 +213,11 @@ else:   # ETR
     ub = [300, 30, 20]
     print("Optimising Extra-Trees (n_estimators, max_depth, min_samples_split)…")
 
-coa = COA(N=30, max_iter=200, lb=lb, ub=ub, dim=dim, use_cv=True)
-best_hp, best_rae, hp_history, runtime = coa.optimize()
+koa = KOA(N=30, max_iter=200, lb=lb, ub=ub, dim=dim, use_cv=True)
+best_hp, best_rae, hp_history, runtime = koa.optimize()
 
 # --------------------------------------------------------------
-#  4. Show hyper-parameters for **all** iterations (first 10 + last)
+#  4. Show hyper-parameters for every iteration (sample)
 # --------------------------------------------------------------
 print("\n=== Hyper-parameters for every iteration (sample) ===")
 for i in range(0, 10):
@@ -234,5 +284,5 @@ for k, v in metrics.items():
 # --------------------------------------------------------------
 hist_df = pd.DataFrame(hp_history,
                        columns=[f"param_{i}" for i in range(dim)])
-hist_df.to_excel("COA_hyperparameters_history.xlsx", index_label="iteration")
-print("\nHyper-parameter history saved to 'COA_hyperparameters_history.xlsx'")
+hist_df.to_excel("KOA_hyperparameters_history.xlsx", index_label="iteration")
+print("\nHyper-parameter history saved to 'KOA_hyperparameters_history.xlsx'")
