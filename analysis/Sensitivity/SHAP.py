@@ -1,6 +1,7 @@
 import pandas as pd
 import shap
-
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import HistGradientBoostingClassifier  # ADAC
 
 def shap_analysis(
     model,
@@ -15,7 +16,7 @@ def shap_analysis(
     Perform SHAP analysis for any trained model.
 
     Parameters:
-        model: A trained ML model (e.g., DecisionTreeRegressor, XGBRegressor).
+        model: A trained ML model (e.g., HistGradientBoostingClassifier).
         X_train: Training features (DataFrame or array).
         y_train: Training target (Series or array).
         X_test: Test features (DataFrame or array).
@@ -27,22 +28,17 @@ def shap_analysis(
         sensitivity_df: DataFrame containing feature sensitivity scores.
         shap_values: The SHAP values object (for plots or further analysis).
     """
-    # Ensure model is fitted
     if not hasattr(model, "fit"):
         raise ValueError("Provided model is not a valid scikit-learn compatible model.")
 
-    # Fit the model (if not already fitted)
     try:
         model.predict(X_train)
     except:
         model.fit(X_train, y_train)
 
-    # Create SHAP explainer
     explainer = shap.Explainer(model, X_train, feature_names=X_train.columns)
-
     shap_values = explainer.shap_values(X_test)
 
-    # Create SHAP values DataFrame
     feature_names = (
         X_test.columns
         if hasattr(X_test, "columns")
@@ -54,19 +50,15 @@ def shap_analysis(
         shap_df[feature_names].sum(axis=1) + shap_df["BaseValue"]
     )
 
-    # Calculate sensitivity
     sensitivity_df = (
-        pd.DataFrame(
-            {
-                "Feature": feature_names,
-                "Sensitivity": shap_df[feature_names].abs().mean(),
-            }
-        )
+        pd.DataFrame({
+            "Feature": feature_names,
+            "Sensitivity": shap_df[feature_names].abs().mean(),
+        })
         .sort_values(by="Sensitivity", ascending=False)
         .reset_index(drop=True)
     )
 
-    # Save to Excel if requested
     if save_path:
         from openpyxl import load_workbook
 
@@ -77,22 +69,15 @@ def shap_analysis(
                 book.save(save_path)
         except FileNotFoundError:
             pass
-        with pd.ExcelWriter(
-            save_path, engine="openpyxl", mode="a" if save_path else "w"
-        ) as writer:
+        with pd.ExcelWriter(save_path, engine="openpyxl", mode="a") as writer:
             sensitivity_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     return sensitivity_df, shap_values
 
-
-from sklearn.model_selection import train_test_split
-
-
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_RFR"
-file_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.1-Dataset.xlsx"
-
-target_column = "CPU Usage"
+sheet_name = "Data_after_KFold_ADAC"
+file_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
+target_column = "Fault_Status"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -102,24 +87,15 @@ y = df[target_column]
 
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-# models = {
-#     "Elastic": ElasticNet(
-#         alpha=0.005,
-#     ),
-#     "StocR": Ridge(
-#         alpha=22,
-#     ),
-# }
 
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import RandomForestRegressor
-from xgboost import XGBRegressor
-
+# --- Run SHAP Analysis with ADAC ---
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=RandomForestRegressor(),
+    model=HistGradientBoostingClassifier(max_iter=100, learning_rate=0.0005),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
-    y_test=y_test, 
+    y_test=y_test,
 )
+
+# --- Export to clipboard ---
 sensitivity_df_shap.to_clipboard(index=False)

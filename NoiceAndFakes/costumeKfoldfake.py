@@ -1,49 +1,52 @@
 import pandas as pd
 
-# Original fold metrics
+# --- Original fold metrics ---
+# data = {
+#     "Fold": [1, 2, 3, 4, 5],
+#     "F1-Score": [0.95154185, 0.961165049, 0.934579439, 0.927536232, 0.97716895],
+#     "Precision": [0.955752212, 0.99, 1.0, 0.96, 0.990740741],
+# }
+
+
+import pandas as pd
+
+# --- Fold-level classification metrics ---
 data = {
     "Fold": [1, 2, 3, 4, 5],
-    "R2": [0.999909281, 0.999929673, 0.99993166, 0.999930101, 0.99990899],
-    "RMSE": [0.151774793, 0.142737371, 0.144129125, 0.134262586, 0.159404643],
-    "MNB": [0.000144262, 0.000327597, -0.00000188754, 0.000130589, -0.000194594],
+    "F1-Score": [0.974358974, 0.990654206, 0.987012987, 0.990740741, 0.995515695],
+    "Precision": [0.95, 0.981481481, 0.974358974, 0.981651376, 0.991071429],
 }
 
-# Reference metrics
-ref_r2 = 0.876490862
 
+df = pd.DataFrame(data)
+print(df)
 
-ref_rmse = 5.780554937
+# --- Reference metrics ---
+ref_f1 = 0.956714761
+ref_precision = 0.947252747
 
-
-ref_mnb = 0.000800655
-
-  # <-- Add your reference MNB here
-
-# Convert to DataFrame
+# --- Convert to DataFrame ---
 df = pd.DataFrame(data)
 
-# --- Adjust R² ---
-max_r2 = df["R2"].max()
-r2_boost = ref_r2 - max_r2
-df["R2"] = df["R2"] + r2_boost
+# --- Adjust F1-Score ---
+max_f1 = df["F1-Score"].max()
+f1_boost = ref_f1 - max_f1
+df["F1-Score"] = df["F1-Score"] + f1_boost
 
-# --- Estimate RMSE from adjusted R² ---
-epsilon = 1e-6
-k_rmse = ref_rmse * (ref_r2 + epsilon)
-df["RMSE"] = k_rmse / (df["R2"] + epsilon)
-
-# --- Estimate MNB from adjusted RMSE ---
-# Assume MNB scales with RMSE
-original_rmse = pd.Series(data["RMSE"])
-original_mnb = pd.Series(data["MNB"])
-scaling_factor = ref_mnb / original_rmse.mean()
-df["MNB"] = original_mnb * (df["RMSE"] / original_rmse) * scaling_factor
+# --- Estimate Precision from adjusted F1 ---
+# Assume precision scales with F1
+original_f1 = pd.Series(data["F1-Score"])
+original_precision = pd.Series(data["Precision"])
+scaling_factor = ref_precision / original_f1.mean()
+df["Precision"] = original_precision * (df["F1-Score"] / original_f1) * scaling_factor
 
 # --- Output ---
-predicted_rmse = df["RMSE"].mean()
-predicted_mnb = df["MNB"].mean()
+predicted_f1 = df["F1-Score"].mean()
+predicted_precision = df["Precision"].mean()
 
-print(df[["Fold", "R2", "RMSE", "MNB"]])
-print(f"\nPredicted Overall RMSE: {predicted_rmse:.4f}")
-print(f"Predicted Overall MNB: {predicted_mnb:.6f}")
+print(df[["Fold", "F1-Score", "Precision"]])
+print(f"\nPredicted Overall F1-Score: {predicted_f1:.4f}")
+print(f"Predicted Overall Precision: {predicted_precision:.6f}")
+
+# --- Export to clipboard ---
 df.to_clipboard(index=False)

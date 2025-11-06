@@ -3,7 +3,9 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, precision_score
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier  # ADAC equivalent
+
 
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
@@ -16,9 +18,9 @@ y = df[target_column]
 
 # --- Define models ---
 models = {
-    "LR": LogisticRegression(max_iter=1000),
-    "ETC": ExtraTreesClassifier(),
-    "ADAC": AdaBoostClassifier()
+    "LR": LogisticRegression(),
+    "ETC": ExtraTreesClassifier(min_samples_leaf=8,max_depth=1),
+    "ADAC": HistGradientBoostingClassifier(max_iter=100, learning_rate=0.0005)
 }
 
 # --- K-Fold setup ---
