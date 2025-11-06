@@ -6,9 +6,9 @@ from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.linear_model import QuantileRegressor
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.23-Data.xlsx"
-sheet_name = "DATA_Shuffled"
-target_column = "Remaining Useful Life "
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
+sheet_name = "Data"
+target_column = "Fault_Status"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 X = df.drop(columns=[target_column])

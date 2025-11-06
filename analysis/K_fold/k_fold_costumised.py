@@ -1,53 +1,103 @@
-from sklearn.model_selection import KFold
-from sklearn.metrics import r2_score, mean_squared_error
-from catboost import CatBoostRegressor
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import KFold
+from sklearn.metrics import f1_score, precision_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier
 
-# Load data
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BSS.No.2-Dataset.xlsx", sheet_name="DATA_Shuffled")
-X = df.drop(columns=["Anomalous Load"])
-y = df["Anomalous Load"]
+# --- Load dataset ---
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
+sheet_name = "DATA_Shuffled"
+target_column = "Fault_Status"
 
-# Initialize model and KFold
-model = CatBoostRegressor(verbose=0)
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
+X = df.drop(columns=[target_column])
+y = df[target_column]
 
-fold_metrics_list = []
-fold_data_list = []
-fold_indices = []
+# --- Define models ---
+models = {
+    "LR": LogisticRegression(max_iter=1000),
+    "ETC": ExtraTreesClassifier(),
+    "ADAC": AdaBoostClassifier()
+}
 
-# First pass: train and collect metrics + indices
-for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
-    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+# --- K-Fold setup ---
+n_splits = 5
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+# --- Results containers ---
+metrics_df_dict = {}
+df_reordered_dict = {}
+summary_df = []
+df_prediction_dict = {}
 
-    r2 = r2_score(y_test, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+# --- K-Fold loop ---
+for model_name, model in models.items():
+    fold_metrics = []
+    fold_indices = []
+    y_real_all = []
+    y_pred_all = []
 
-    fold_metrics_list.append({"Fold": fold_index, "R2": r2, "RMSE": rmse})
-    fold_data_list.append(df.iloc[test_idx])
-    fold_indices.append(test_idx)
+    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-# Convert metrics to DataFrame
-metrics_df = pd.DataFrame(fold_metrics_list)
+        if y_train.nunique() < 2 or y_test.nunique() < 2:
+            print(f"⚠️ Skipping fold {fold_index} for {model_name}: constant target values.")
+            continue
 
-# Identify best fold by highest R²
-best_fold_index = metrics_df["R2"].idxmax()
-best_fold_data = fold_data_list[best_fold_index]
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
 
-# Reorder: all other folds first, best fold last
-non_best_folds = [fold_data_list[i] for i in range(len(fold_data_list)) if i != best_fold_index]
-reordered_data = pd.concat(non_best_folds + [best_fold_data], ignore_index=True)
+        y_real_all.extend(y_test)
+        y_pred_all.extend(y_pred)
 
-# Save to variable
-final_dataset = reordered_data
+        f1 = f1_score(y_test, y_pred, average="binary")
+        precision = precision_score(y_test, y_pred, average="binary")
+        fold_metrics.append({"Fold": fold_index, "F1-Score": f1, "Precision": precision})
+        fold_indices.append({"train_idx": train_idx, "test_idx": test_idx})
 
-# Output
-print("Fold Metrics Table:")
-print(metrics_df)
-print("\nBest fold:", metrics_df.iloc[best_fold_index]["Fold"])
-print("Final dataset shape:", final_dataset.shape)
+    metrics_df = pd.DataFrame(fold_metrics)
+    metrics_df_dict[model_name] = metrics_df
+
+    best_fold_idx = metrics_df["F1-Score"].idxmax()
+    best_test_idx = fold_indices[best_fold_idx]["test_idx"]
+    remaining_idx = df.index.difference(best_test_idx)
+    df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
+    df_reordered_dict[model_name] = df_reordered
+
+    summary_df.append({
+        "Model": model_name,
+        "Best Fold": metrics_df.loc[best_fold_idx, "Fold"],
+        "Best F1-Score": metrics_df.loc[best_fold_idx, "F1-Score"],
+        "Best Precision": metrics_df.loc[best_fold_idx, "Precision"],
+        "Mean F1-Score": metrics_df["F1-Score"].mean(),
+        "Mean Precision": metrics_df["Precision"].mean(),
+    })
+
+    prediction_df = pd.DataFrame({"y_real": y_real_all, "y_pred": y_pred_all})
+    df_prediction_dict[model_name] = prediction_df
+
+# --- Save results to Excel ---
+with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+    for model_name in models:
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
+    pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+
+# --- Log fold results to console ---
+for model_name in models:
+    metrics_df = metrics_df_dict[model_name]
+    best_fold_idx = metrics_df["F1-Score"].idxmax()
+    best_fold = metrics_df.loc[best_fold_idx]
+
+    print(f"\n📘 K-Fold Results for {model_name}:")
+    print(metrics_df.to_string(index=False, float_format="%.4f"))
+    print(f"\n🏆 Best Fold for {model_name}: Fold {best_fold['Fold']}")
+    print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
+    print(f"   Precision: {best_fold['Precision']:.4f}")
+    print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
+    print(f"📊 Mean Precision: {metrics_df['Precision'].mean():.4f}")
+
+# --- Copy predictions to clipboard (change model name if needed) ---
+df_prediction_dict["LR"].to_clipboard(index=False)
