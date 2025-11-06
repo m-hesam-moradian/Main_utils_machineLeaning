@@ -1,10 +1,10 @@
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score, confusion_matrix
+from sklearn.ensemble import HistGradientBoostingClassifier  # ADAC equivalent
 
-# --- Load reordered data for LR (after K-Fold) ---
+# --- Load reordered data for ADAC (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
-sheet_name = "Data_after_KFold_LR"
+sheet_name = "Data_after_KFold_ADAC"
 target_column = "Fault_Status"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -17,7 +17,7 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict ---
-model = LogisticRegression(max_iter=5)
+model = HistGradientBoostingClassifier(max_iter=100, learning_rate=0.0005)
 model.fit(X_train, y_train)
 
 y_pred_all = model.predict(X)
@@ -65,4 +65,4 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 # --- Export to clipboard ---
 df_all.to_clipboard()
 # df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)1
+# df_test.to_clipboard(index=False)

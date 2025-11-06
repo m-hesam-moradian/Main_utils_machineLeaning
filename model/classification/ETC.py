@@ -1,108 +1,68 @@
 import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import ExtraTreesClassifier  # Replace RandomForest import
-from sklearn.preprocessing import LabelEncoder
-from getAllMetrics_Classification import getAllMetric
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef, roc_auc_score, confusion_matrix
 
-# Load data
-excel_path = r"D:\ML\ML\task\BSE. No.13-Dataset.xlsx"
+# --- Load reordered data for ETC (after K-Fold) ---
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
 sheet_name = "Data_after_KFold_ETC"
+target_column = "Fault_Status"
+
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Cyberattack_Detected"
+X = df.drop(columns=[target_column])
+y = df[target_column]
 
-# --- Encode Target Variable ---
-# If Attrition is categorical ("Yes"/"No"), encode it to 0/1
-if df[target_column].dtype == object:
-    le = LabelEncoder()
-    y = le.fit_transform(df[target_column])
-else:
-    # If numerical, binarize like the previous code
-    median_value = df[target_column].median()
-    y = (df[target_column] > median_value).astype(int)
+# --- Use last 20% as test set to match K-Fold logic ---
+split_idx = int(len(df) * 0.8)
+X_train, X_test = X[:split_idx], X[split_idx:]
+y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Preprocess Features ---
-# Identify categorical columns
-categorical_cols = df.select_dtypes(include=["object"]).columns.drop(
-    target_column, errors="ignore"
-)
-# One-hot encode categorical features
-X = pd.get_dummies(
-    df.drop(columns=[target_column]), columns=categorical_cols, drop_first=True
-)
-
-# --- Train-Test Split ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.3,
-    shuffle=False,
-    random_state=42,  # Shuffle to ensure class balance
-)
-
-# --- Voting Classifier Model ---
-model = ExtraTreesClassifier(
-    n_estimators=500,  # High ensemble stability
-    max_depth=10,  # Full depth for expressive splits
-    min_samples_split=2,  # Slightly more aggressive splits
-    min_samples_leaf=1,  # Allow fine-grained leaf nodes
-)
-
-
-# Fit the model
+# --- Train and predict ---
+model = ExtraTreesClassifier(min_samples_leaf=5)
 model.fit(X_train, y_train)
 
-# --- Predictions ---
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
+y_prob_test = model.predict_proba(X_test)[:, 1]  # For AUC
 
-# --- Split Test Predictions ---
-mid_index = len(y_pred_test) // 2
-y_test_first_half = y_test[:mid_index]
-y_test_second_half = y_test[mid_index:]
-y_pred_test_first_half = y_pred_test[:mid_index]
-y_pred_test_second_half = y_pred_test[mid_index:]
+# --- Metrics ---
+def get_classification_metrics(y_true, y_pred, y_prob=None):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    class_error = (fp + fn) / len(y_true)
+    auc = roc_auc_score(y_true, y_prob) if y_prob is not None else None
 
-# --- Build Metrics Table Using getAllMetric ---
-metrics_data = {
-    "Set": [],
-    "Accuracy": [],
-    "Precision": [],
-    "Recall": [],
-    "F1": [],
-    "F2": [],
-}
+    return {
+        "Accuracy": accuracy_score(y_true, y_pred),
+        "Precision": precision_score(y_true, y_pred),
+        "Recall": recall_score(y_true, y_pred),
+        "F1-Score": f1_score(y_true, y_pred),
+        "Class-Wise Error": class_error,
+        "MCC": matthews_corrcoef(y_true, y_pred),
+        "AUC": auc
+    }
+
+mid = len(y_test) // 2
 sets = [
-    ("All", y, y_pred_all),
-    ("Train", y_train, y_pred_train),
-    ("Test", y_test, y_pred_test),
-    ("Value", y_test_first_half, y_pred_test_first_half),
-    ("Test-Value", y_test_second_half, y_pred_test_second_half),
+    ("All", y, y_pred_all, None),
+    ("Train", y_train, y_pred_train, None),
+    ("Test", y_test, y_pred_test, y_prob_test),
+    ("Value", y_test[:mid], y_pred_test[:mid], y_prob_test[:mid]),
+    ("Test-Value", y_test[mid:], y_pred_test[mid:], y_prob_test[mid:])
 ]
 
-for name, y_true, y_pred in sets:
-    Accuracy, Precision, Recall, F1, F2 = getAllMetric(y_true, y_pred)
-    metrics_data["Set"].append(name)
-    metrics_data["Accuracy"].append(Accuracy)
-    metrics_data["Precision"].append(Precision)
-    metrics_data["Recall"].append(Recall)
-    metrics_data["F1"].append(F1)
-    metrics_data["F2"].append(F2)
+df_metrics = pd.DataFrame([
+    {"Set": s, **get_classification_metrics(y_t, y_p, y_prob)}
+    for s, y_t, y_p, y_prob in sets
+])
 
-metrics_df = pd.DataFrame(metrics_data)
+print(df_metrics)
 
-# --- Create DataFrames for real vs predicted ---
-df_train = pd.DataFrame({"y_train_real": y_train, "y_train_pred": y_pred_train})
-df_test = pd.DataFrame({"y_test_real": y_test, "y_test_pred": y_pred_test})
-df_all = pd.concat(
-    [
-        pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train}),
-        pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test}),
-    ],
-    ignore_index=True,
-)
+# --- Output predictions ---
+df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
+df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# --- Print Metrics Table ---
-print("\n📋 Performance Metrics Table:")
-print(metrics_df)
+# --- Export to clipboard ---
+df_all.to_clipboard()
+# df_train.to_clipboard(index=False)
+# df_test.to_clipboard(index=False)
