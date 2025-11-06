@@ -18,20 +18,21 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
+
 model = ExtraTreesRegressor(
     n_estimators=500,         # Number of trees (default is 100)
     max_depth=15,             # Limit tree depth to prevent memorization
-    min_samples_split=2,     # Require more samples to split a node
+    min_samples_split=2,      # Require more samples to split a node
     min_samples_leaf=1,       # Minimum samples per leaf
     max_features="sqrt",      # Use fewer features per split
-      
 )
+
 model.fit(X_train, y_train)
 y_pred_all = model.predict(X)
-y_pred_train = model.predict(X_train)
+y_pred_train = model.predict(X_train) 
 y_pred_test = model.predict(X_test)
 
-# Metrics
+
 mid = len(y_test) // 2
 sets = [
     ("All", y, y_pred_all),
