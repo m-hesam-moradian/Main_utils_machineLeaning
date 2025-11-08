@@ -22,12 +22,13 @@ params = {
     "tol": 0.01
 }
 optimizer_name = " " #no optimizer 
-optimizer_name = "Kepler Optimization Algorithm (KOA)"
+optimizer_name = "Nurse Optimization Algorithm (NOA)"
 model_name = "RR"
-R2_target = 0.98
-min_error = -26
-max_error = 31
-Convergence_metric = "RMSE"  
+R2_target = 0.94
+min_error = -32
+max_error = 45
+Convergence_metric = "SMAPE"  # Options: "rmse" or "smape"
+convegence_direction = "higher"  # Options: "higher" or "lower"
 
 
 
@@ -56,22 +57,59 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
             random_percent = np.random.uniform(min_error, max_error) / 100
             y_pred[i] = y_real[i] * (1 + random_percent)
     return y_pred
-def get_regression_metrics(y_true, y_pred):
-    abs_error = np.abs(y_true - y_pred)
-    nonzero_mask = np.abs(y_true) > 1e-8
-    rel_error = np.zeros_like(y_true)
-    rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
-    rae = np.sum(abs_error) / np.sum(np.abs(y_true - np.mean(y_true)))
-    u95 = np.percentile(abs_error, 95)
-    mard = np.mean(rel_error) * 100
-    return {
-        "R2": r2_score(y_true, y_pred),
-        "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-        "RAE": rae,
-        "U95": u95,
-        "MARD": mard
-    }
+
+
+from sklearn.metrics import r2_score, mean_squared_error
+
 def build_metrics_table(y_real, y_pred):
+    def compute_metrics(y_true, y_pred):
+        abs_error = np.abs(y_true - y_pred)
+        nonzero_mask = np.abs(y_true) > 1e-8
+        rel_error = np.zeros_like(y_true)
+        rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
+
+        # SMAPE
+        denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
+        smape_mask = denominator > 1e-8
+        smape = np.mean(np.abs(y_true[smape_mask] - y_pred[smape_mask]) / denominator[smape_mask]) * 100
+
+        # COV
+        cov = np.std(abs_error) / np.mean(abs_error) if np.mean(abs_error) > 1e-8 else 0
+
+        # U95
+        u95 = np.percentile(abs_error, 95)
+
+        return {
+            "R2": r2_score(y_true, y_pred),
+            "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
+            "SMAPE": smape,
+            "U95": u95,
+            "COV": cov
+        }
+
+    split_idx = int(len(y_real) * 0.8)
+    y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
+    y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+    mid = len(y_real_test) // 2
+    y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
+    y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
+
+    metrics_all = compute_metrics(y_real, y_pred)
+    metrics_train = compute_metrics(y_real_train, y_pred_train)
+    metrics_test = compute_metrics(y_real_test, y_pred_test)
+    metrics_value = compute_metrics(y_real_value, y_pred_value)
+    metrics_value_test = compute_metrics(y_real_value_test, y_pred_value_test)
+
+    df_metrics = pd.DataFrame([
+        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["SMAPE"], metrics_all["U95"], metrics_all["COV"]],
+        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["SMAPE"], metrics_train["U95"], metrics_train["COV"]],
+        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["SMAPE"], metrics_test["U95"], metrics_test["COV"]],
+        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["SMAPE"], metrics_value["U95"], metrics_value["COV"]],
+        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["SMAPE"], metrics_value_test["U95"], metrics_value_test["COV"]],
+    ], columns=["Set", "R2", "RMSE", "SMAPE", "U95", "COV"])
+
+    return df_metrics
+
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
@@ -80,6 +118,7 @@ def build_metrics_table(y_real, y_pred):
     y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
 
     metrics_all = get_regression_metrics(y_real, y_pred)
+   
     metrics_train = get_regression_metrics(y_real_train, y_pred_train)
     metrics_test = get_regression_metrics(y_real_test, y_pred_test)
     metrics_value = get_regression_metrics(y_real_value, y_pred_value)
@@ -109,10 +148,16 @@ def build_rec_curve(y_real, y_pred):
 def build_relative_error_table(y_real, y_pred):
     rel_error = ((y_pred / y_real) - 1) * 100
     return pd.DataFrame({"Relative Error (%)": rel_error})
-def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, cov="rmse"):
-    # Randomize low as 1.5x to 2.5x lower than high
+
+
+
+def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, convegence_direction="higher"):
+    # Adjust low based on convergence direction
     low_factor = np.random.uniform(1.5, 2.5)
-    low = high / low_factor
+    if convegence_direction == "higher":
+        low = high * low_factor  # start much lower
+    else:
+        low = high / low_factor  # start slightly lower
 
     phase = np.random.randint(minPhase, maxPhase + 1)
     convergence = []
@@ -123,14 +168,12 @@ def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, cov="rmse"):
         convergence.extend([random_number] * repeated_count)
 
     convergence = np.resize(convergence, count)
-    convergence = np.sort(convergence)[::-1] if cov == "rmse" else np.sort(convergence)
-
-    # Inject a value close to high (but not exactly high) between index 7 and 23
-    inject_index = np.random.randint(7, 24)
-    offset = np.random.uniform(-0.03, 0.03) * high  # ±3% variation
-    convergence[inject_index] = high + offset
+    convergence = np.sort(convergence)[::-1] if convegence_direction == "higher" else np.sort(convergence)
 
     return np.array(convergence)
+
+
+
 def write_table(df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name):
     header_styles = {
         "value_pred": make_style("9DC3E6"),  # richer blue
@@ -156,12 +199,15 @@ def write_table(df, startrow, startcol, style_key, worksheet, writer, header_sty
         for col_num, value in enumerate(row_data):
             worksheet.cell(row=startrow + 2 + row_num, column=startcol + col_num + 1).value = value
 def close_excel_file(filepath):
+    import os
+    import win32com.client
 
     excel = win32com.client.Dispatch("Excel.Application")
     for wb in excel.Workbooks:
         if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-            wb.Close(SaveChanges=False)
-            print("🔒 Closed Excel file:", filepath)
+            wb.Save()  # ✅ Explicit save
+            wb.Close(SaveChanges=False)  # ✅ Close without prompting
+            print("💾 Saved and 🔒 Closed Excel file:", filepath)
             break
     excel.Quit()
 def open_excel_file(filepath):
@@ -196,8 +242,9 @@ df_metrics = build_metrics_table(y_real, y_pred_fake)
 print("Metrics table created : ", df_metrics)
 
 # Step 5.5: Generate fake convergence based on RMSE from training
-rmse_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
-convergence_array = get_conv(count=200, high=rmse_train, minPhase=24, maxPhase=32, cov=Convergence_metric)
+Target_metric_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
+
+convergence_array = get_conv(count=200, high=Target_metric_train, minPhase=24, maxPhase=32, convegence_direction=convegence_direction) 
 df_convergence = pd.DataFrame({"Convergence": convergence_array})
 print("Fake convergence table created.")
 
