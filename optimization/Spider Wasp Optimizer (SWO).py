@@ -1,24 +1,24 @@
 # --------------------------------------------------------------
-#  Dream Optimization Algorithm (DOA) + LR + ETC + ADAC
+#  Spider Wasp Optimizer (SWO) + LR + ETC + ADAC
 # --------------------------------------------------------------
 import numpy as np
-import pandas as pd
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import ExtraTreesClassifier, AdaBoostClassifier
+from scipy.stats import levy
 import warnings
 warnings.filterwarnings("ignore")
 
 # ------------------- 1. Load & preprocess Adult dataset -------------------
-print("Loading and preprocessing Adult dataset...")
+print("Loading Adult dataset...")
 data = fetch_openml(name='adult', version=2, as_frame=True)
 X, y = data.data, data.target
 y = LabelEncoder().fit_transform(y)  # '>50K' → 1, '<=50K' → 0
 
-# One-hot encode categorical features
+# Handle categorical features
 X = pd.get_dummies(X, drop_first=True)
 
 # Scale features (important for LR)
@@ -31,21 +31,19 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 print(f"Train size: {X_train.shape}, Test size: {X_test.shape}")
 
-# ------------------- 2. Dream Optimization Algorithm (DOA) -------------------
-def doa_optimize(obj_func, lb, ub, pop_size=25, max_iter=50, verbose=True):
+# ------------------- 2. Spider Wasp Optimizer (SWO) -------------------
+def swo_optimize(obj_func, lb, ub, pop_size=25, max_iter=50, verbose=True):
     """
-    Dream Optimization Algorithm (DOA)
+    Spider Wasp Optimizer (SWO)
     -------------------------------------------------
-    Inspired by human dreaming:
-    • Lucid Dreaming  → Large creative jumps (exploration)
-    • REM Sleep       → Move toward best idea (exploitation)
-    • Subconscious Refinement → Small local perturbations
-    • Dream Recall    → Elite replacement
+    • Hunting   → Lévy-flight long jumps (exploration)
+    • Paralyzing→ Move toward global best (exploitation)
+    • Nest-building → Tiny local refinement
+    • Elite replacement → Avoid stagnation
     -------------------------------------------------
     Returns: best_params, best_score (negative accuracy)
     """
     dim = len(lb)
-    # Initialize population (dreamers)
     pop = lb + np.random.rand(pop_size, dim) * (ub - lb)
     fitness = np.array([obj_func(ind) for ind in pop])
 
@@ -57,24 +55,22 @@ def doa_optimize(obj_func, lb, ub, pop_size=25, max_iter=50, verbose=True):
         print(f"Iter 00 | Best fitness = {gbest_fit:.5f} | Params = {np.round(gbest, 4)}")
 
     for it in range(1, max_iter + 1):
-        # Dream intensity: high early (exploration), low late (exploitation)
-        dream_factor = 1.0 - it / max_iter
+        alpha = 1.0 - it / max_iter  # exploration → exploitation
 
         for i in range(pop_size):
             r1, r2 = np.random.rand(dim), np.random.rand(dim)
 
-            # ---- Phase 1: Lucid Dreaming (Creative Jumps) ----
-            if np.random.rand() < dream_factor:
-                # Large random jump (like surreal dream)
-                step = (ub - lb) * (np.random.rand(dim) - 0.5) * 2 * dream_factor
+            # ---- Phase 1: Hunting (Lévy jumps) ----
+            if np.random.rand() < alpha:
+                step = levy.rvs(size=dim, loc=0, scale=1) * (ub - lb) * alpha
                 candidate = pop[i] + step
             else:
-                # ---- Phase 2: REM Sleep (Move to Best Idea) ----
-                candidate = pop[i] + r1 * (gbest - pop[i]) * (1 - dream_factor)
+                # ---- Phase 2: Paralyzing strike ----
+                candidate = pop[i] + r1 * (gbest - pop[i]) * (1 - alpha)
 
-            # ---- Phase 3: Subconscious Refinement (Local Polish) ----
-            local_refine = (ub - lb) * np.random.randn(dim) * 0.03 * (1 - dream_factor)
-            candidate += local_refine
+            # ---- Phase 3: Nest-building (local refinement) ----
+            local_noise = (ub - lb) * np.random.randn(dim) * 0.02 * (1 - alpha)
+            candidate += local_noise
 
             # Clip to bounds
             candidate = np.clip(candidate, lb, ub)
@@ -93,7 +89,7 @@ def doa_optimize(obj_func, lb, ub, pop_size=25, max_iter=50, verbose=True):
                         print(f"Iter {it:02d} | Best fitness = {gbest_fit:.5f} | "
                               f"Params = {np.round(gbest, 4)}")
 
-        # ---- Phase 4: Dream Recall (Elite Replacement) ----
+        # ---- Elite replacement (avoid stagnation) ----
         worst_idx = np.argmax(fitness)
         if np.random.rand() < 0.1:
             pop[worst_idx] = lb + np.random.rand(dim) * (ub - lb)
@@ -149,21 +145,21 @@ lb_adac = np.array([50, 0.01])     # n_estimators, learning_rate
 ub_adac = np.array([300, 2.0])
 
 
-# ------------------- 5. Run DOA -------------------
+# ------------------- 5. Run SWO -------------------
 print("\n" + "="*70)
-print("OPTIMIZING LOGISTIC REGRESSION (LR) WITH DOA")
+print("OPTIMIZING LOGISTIC REGRESSION (LR) WITH SWO")
 print("="*70)
-best_lr, err_lr = doa_optimize(lr_objective, lb_lr, ub_lr, pop_size=20, max_iter=40)
+best_lr, err_lr = swo_optimize(lr_objective, lb_lr, ub_lr, pop_size=20, max_iter=40)
 
 print("\n" + "="*70)
-print("OPTIMIZING EXTRA TREES CLASSIFIER (ETC) WITH DOA")
+print("OPTIMIZING EXTRA TREES CLASSIFIER (ETC) WITH SWO")
 print("="*70)
-best_etc, err_etc = doa_optimize(etc_objective, lb_etc, ub_etc, pop_size=20, max_iter=40)
+best_etc, err_etc = swo_optimize(etc_objective, lb_etc, ub_etc, pop_size=20, max_iter=40)
 
 print("\n" + "="*70)
-print("OPTIMIZING ADABOOST CLASSIFIER (ADAC) WITH DOA")
+print("OPTIMIZING ADABOOST CLASSIFIER (ADAC) WITH SWO")
 print("="*70)
-best_adac, err_adac = doa_optimize(adac_objective, lb_adac, ub_adac, pop_size=20, max_iter=40)
+best_adac, err_adac = swo_optimize(adac_objective, lb_adac, ub_adac, pop_size=20, max_iter=40)
 
 
 # ------------------- 6. Final Evaluation -------------------
@@ -197,7 +193,7 @@ acc_adac = accuracy_score(y_test, adac_final.predict(X_test))
 
 # ------------------- 7. Final Report -------------------
 print("\n" + "="*70)
-print("FINAL RESULTS (Dream Optimization Algorithm - DOA)")
+print("FINAL RESULTS (Spider Wasp Optimizer)")
 print("="*70)
 print(f"LR     → C={best_lr[0]:.4f}, penalty={penalty} | "
       f"CV error={err_lr:.4f} | Test Acc={acc_lr:.4f}")
