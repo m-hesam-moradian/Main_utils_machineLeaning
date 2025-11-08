@@ -4,23 +4,23 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
-sheet_name = "Z-score"
-target_column = "Renewable Availability Index"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.25-Data.xlsx"
+sheet_name = "Z-Score"
+target_column = "State of Health (%)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.linear_model import ElasticNet
-from xgboost import XGBRegressor
-from sklearn.linear_model import QuantileRegressor
+from sklearn.linear_model import Ridge
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 models = {
-    "ENR": ElasticNet(),
-    "XGBR": XGBRegressor(),
-    "QR": QuantileRegressor(quantile=0.5),
+    "RR": Ridge(),
+    "KNNR": KNeighborsRegressor(),
+    "HGBR": HistGradientBoostingRegressor()
 }
 
 # --- K-Fold setup ---
