@@ -3,11 +3,11 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for KNNR (after K-Fold) ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.25-Data.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "Data_after_KFold"
-target_column = "State of Health (%)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 

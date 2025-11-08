@@ -3,11 +3,11 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for RR (after K-Fold) ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.25-Data.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "Data_after_KFold"
-target_column = "State of Health (%)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
@@ -57,6 +57,6 @@ df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
 # --- Export to clipboard ---
-df_all.to_clipboard()
+df_all.to_clipboard(index=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)

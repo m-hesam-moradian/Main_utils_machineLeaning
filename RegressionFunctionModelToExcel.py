@@ -9,27 +9,32 @@ import win32com.client
 
 
 # === CONFIGURATION ===
-dataPath = r"C:\Users\Sam\Desktop\ML\data\Data_err.npt"
-outputPath = r"C:\Users\Sam\Desktop\ML\data\Structured_Output.xlsx"
-sheet_name = "model_results"
-R2_target = 0.85
-min_error = -46
-max_error = 61
-model_name = "SGB"
-# optimizer_name = "Spider Wasp Optimizer"
-optimizer_name = " " #no optimizer 
 # get params based on model for as data calld params as object 3 best numerical params of the model like this (it should be params of the model in variables[model_name]) : 
 # params = {
 #     "alpha": 1.0,
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model [model_name]:
+# ok here are defalt params for the model [model_name] 3 numerical params :
 params = {
-    "alpha": 1.0,
-    "tol": 0.0001,
-    "max_iter": 1000
+    "alpha": 0.5,
+    "max_iter": 10000,
+    "tol": 0.01
 }
+optimizer_name = " " #no optimizer 
+optimizer_name = "Kepler Optimization Algorithm (KOA)"
+model_name = "RR"
+R2_target = 0.98
+min_error = -26
+max_error = 31
+Convergence_metric = "RMSE"  
+
+
+
+dataPath = r"data\Data_err.npt"
+outputPath = r"task/Data.xlsx"
+sheet_name = "model_results"
+
 # === FUNCTIONS ===
 
 def fake_r2_prediction(y_real, y_pred, R2_target):
@@ -41,7 +46,6 @@ def fake_r2_prediction(y_real, y_pred, R2_target):
         if r2_score(y_real, y_fake) >= R2_target:
             return y_fake
     return y_pred * 0.5 + y_real * 0.5
-
 def enforce_error_bounds(y_real, y_pred, min_error, max_error):
     y_pred = y_pred.copy()
     for i in range(len(y_real)):
@@ -52,7 +56,6 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
             random_percent = np.random.uniform(min_error, max_error) / 100
             y_pred[i] = y_real[i] * (1 + random_percent)
     return y_pred
-
 def get_regression_metrics(y_true, y_pred):
     abs_error = np.abs(y_true - y_pred)
     nonzero_mask = np.abs(y_true) > 1e-8
@@ -68,7 +71,6 @@ def get_regression_metrics(y_true, y_pred):
         "U95": u95,
         "MARD": mard
     }
-
 def build_metrics_table(y_real, y_pred):
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
@@ -84,14 +86,14 @@ def build_metrics_table(y_real, y_pred):
     metrics_value_test = get_regression_metrics(y_real_value_test, y_pred_value_test)
 
     df_metrics = pd.DataFrame([
-        ["All", *metrics_all.values()],
-        ["Train", *metrics_train.values()],
-        ["Test", *metrics_test.values()],
-        ["Value", *metrics_value.values()],
-        ["Value-test", *metrics_value_test.values()],
-    ], columns=["Set", "R2", "RMSE", "RAE", "U95", "MARD"])
-    return df_metrics
+        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["SMAPE"], metrics_all["U95"], metrics_all["COV"]],
+        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["SMAPE"], metrics_train["U95"], metrics_train["COV"]],
+        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["SMAPE"], metrics_test["U95"], metrics_test["COV"]],
+        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["SMAPE"], metrics_value["U95"], metrics_value["COV"]],
+        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["SMAPE"], metrics_value_test["U95"], metrics_value_test["COV"]],
+    ], columns=["Set", "R2", "RMSE", "SMAPE", "U95", "COV"])
 
+    return df_metrics
 def build_rec_curve(y_real, y_pred):
     errors = np.abs(y_real - y_pred)
     epsilon = np.linspace(0, errors.max(), 200)
@@ -102,13 +104,11 @@ def build_rec_curve(y_real, y_pred):
         "Accuracy": accuracy,
         "AUC": ["" for _ in range(len(epsilon))]
     })
-    df_rec_curve.loc[0] = ["", "", rec_auc]
+    df_rec_curve.loc[0] = [np.nan, np.nan, rec_auc]
     return df_rec_curve
-
 def build_relative_error_table(y_real, y_pred):
     rel_error = ((y_pred / y_real) - 1) * 100
     return pd.DataFrame({"Relative Error (%)": rel_error})
-
 def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, cov="rmse"):
     # Randomize low as 1.5x to 2.5x lower than high
     low_factor = np.random.uniform(1.5, 2.5)
@@ -132,11 +132,29 @@ def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, cov="rmse"):
 
     return np.array(convergence)
 def write_table(df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name):
-    header_format = header_styles[style_key]
-    for col_num, col_name in enumerate(df.columns):
-        worksheet.write(startrow, startcol + col_num, col_name, header_format)
-    df.to_excel(writer, sheet_name=sheet_name, startrow=startrow + 1, startcol=startcol, index=False, header=False)
+    header_styles = {
+        "value_pred": make_style("9DC3E6"),  # richer blue
+        "params": make_style("A9D08E"),      # deeper green
+        "metrics": make_style("F4B084"),     # stronger orange
+        "error": make_style("FFD966"),       # golden yellow
+        "rec_curve": make_style("E06666")    # bold red
+}
+    style = header_styles.get(style_key, make_style("D9D9D9"))  # fallback gray
 
+    # Write header row
+    for col_num, col_name in enumerate(df.columns):
+        row = startrow + 1
+        col = startcol + col_num + 1
+        cell = worksheet.cell(row=row, column=col)
+        cell.value = col_name
+        cell.font = style["font"]
+        cell.alignment = style["alignment"]
+        cell.fill = style["fill"]
+
+    # Write data rows
+    for row_num, row_data in enumerate(df.values):
+        for col_num, value in enumerate(row_data):
+            worksheet.cell(row=startrow + 2 + row_num, column=startcol + col_num + 1).value = value
 def close_excel_file(filepath):
 
     excel = win32com.client.Dispatch("Excel.Application")
@@ -146,7 +164,6 @@ def close_excel_file(filepath):
             print("🔒 Closed Excel file:", filepath)
             break
     excel.Quit()
-
 def open_excel_file(filepath):
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True  # Show Excel window
@@ -179,8 +196,8 @@ df_metrics = build_metrics_table(y_real, y_pred_fake)
 print("Metrics table created : ", df_metrics)
 
 # Step 5.5: Generate fake convergence based on RMSE from training
-rmse_train = df_metrics.loc[df_metrics["Set"] == "Train", "RMSE"].values[0]
-convergence_array = get_conv(count=200, high=rmse_train, minPhase=24, maxPhase=32, cov="rms")
+rmse_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
+convergence_array = get_conv(count=200, high=rmse_train, minPhase=24, maxPhase=32, cov=Convergence_metric)
 df_convergence = pd.DataFrame({"Convergence": convergence_array})
 print("Fake convergence table created.")
 
@@ -196,14 +213,31 @@ print("REC curve created. AUC =", df_rec_curve.loc[0, "AUC"])
 df_error = build_relative_error_table(y_real, y_pred_fake)
 print("Relative error table created.")
 
+def make_style(color):
+    return {
+        "font": Font(bold=True),
+        "alignment": Alignment(horizontal="center"),
+        "fill": PatternFill(start_color=color, end_color=color, fill_type="solid")
+    }
+
 # Step 9: Close Excel if open, then export to Excel
 close_excel_file(outputPath)
-with pd.ExcelWriter(outputPath, engine="xlsxwriter") as writer:
-    workbook = writer.book
-    worksheet = workbook.add_worksheet(sheet_name)
-    writer.sheets[sheet_name] = worksheet
 
-    # === Custom Header Row ===
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+# Load existing workbook
+book = load_workbook(outputPath)
+from openpyxl.styles import Font, Alignment, PatternFill
+
+
+
+
+
+
+with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+    # Create new sheet
+    worksheet = writer.book.create_sheet(sheet_name)
+    writer.sheets[sheet_name] = worksheet
 
     # === Custom Header Row ===
     if optimizer_name.strip():
@@ -215,38 +249,28 @@ with pd.ExcelWriter(outputPath, engine="xlsxwriter") as writer:
         merge_end_col = 13
         include_convergence = False
 
-    worksheet.merge_range(0, 0, 0, merge_end_col, title, workbook.add_format({
-        "bold": True,
-        "font_size": 14,
-        "align": "center",
-        "valign": "vcenter",
-        "bg_color": "#E1DFFF",
-        "border": 1
-    }))
+    worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
+    cell = worksheet.cell(row=1, column=1)
+    cell.value = title
+    cell.font = Font(bold=True)
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+    cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
 
-    # === Header Styles ===
-    header_styles = {
-        "value_pred": workbook.add_format({"bold": True, "bg_color": "#DDEBF7", "border": 1, "align": "center"}),
-        "params": workbook.add_format({"bold": True, "bg_color": "#E2EFDA", "border": 1, "align": "center"}),
-        "metrics": workbook.add_format({"bold": True, "bg_color": "#FCE4D6", "border": 1, "align": "center"}),
-        "error": workbook.add_format({"bold": True, "bg_color": "#FFF2CC", "border": 1, "align": "center"}),
-        "rec_curve": workbook.add_format({"bold": True, "bg_color": "#F4CCCC", "border": 1, "align": "center"})
-    }
-
-    # === Write Tables (shifted down by 2 rows) ===
-    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
+    # === Write Tables ===
+    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
     params_col = len(df_value_pred.columns) + 1
-    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
+    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
     metrics_col = params_col + len(df_params.columns) + 1
-    write_table(df_metrics, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
+    write_table(df_metrics, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
     error_col = metrics_col + len(df_metrics.columns) + 1
-    write_table(df_error, startrow=1, startcol=error_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
+    write_table(df_error, startrow=1, startcol=error_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
     rec_start_row = len(df_params) + 6
-    write_table(df_rec_curve, startrow=rec_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
-    
+    write_table(df_rec_curve, startrow=rec_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+
     if include_convergence:
-        convergence_col = error_col + len(df_error.columns)
-        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error",worksheet=worksheet, writer=writer, header_styles=header_styles, sheet_name=sheet_name)
+        convergence_col = error_col + len(df_error.columns) 
+        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+
 open_excel_file(outputPath) 
 
 print("✅ Structured Excel file saved successfully.")

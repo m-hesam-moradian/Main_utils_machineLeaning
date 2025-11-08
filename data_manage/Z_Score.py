@@ -23,7 +23,7 @@ def replace_outliers_with_median(df):
     return df_cleaned
 
 # === CONFIGURATION ===
-input_file = r'C:\Users\Sam\Desktop\ML\task\BMM-EI. No.25-Data.xlsx'
+input_file = r'C:\Users\Sam\Desktop\ML\task\Data'
 input_sheet = 'Data'
 # output_sheet = 'Z-Score'
 

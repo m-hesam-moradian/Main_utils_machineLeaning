@@ -4,11 +4,11 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.25-Data.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "Z-Score"
-target_column = "State of Health (%)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
