@@ -1,5 +1,3 @@
-
-
 # === IMPORTS ===
 import numpy as np
 import pandas as pd
@@ -15,18 +13,20 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model [model_name] 3 numerical params :
+# ok here are defalt params for the model [model_name] 5 numerical params :
 params = {
-    "alpha": 0.5,
-    "max_iter": 10000,
-    "tol": 0.01
+    "n_neighbors": 5,
+    "leaf_size":30,        
+    "p":2  
 }
 optimizer_name = " " #no optimizer 
 optimizer_name = "Nurse Optimization Algorithm (NOA)"
-model_name = "RR"
-R2_target = 0.94
-min_error = -32
-max_error = 45
+# optimizer_name = "Kepler Optimization Algorithm (KOA)"
+
+model_name = "HGBR"
+R2_target = 0.989
+min_error = -31
+max_error = 36
 Convergence_metric = "SMAPE"  # Options: "rmse" or "smape"
 convegence_direction = "higher"  # Options: "higher" or "lower"
 
@@ -148,12 +148,9 @@ def build_rec_curve(y_real, y_pred):
 def build_relative_error_table(y_real, y_pred):
     rel_error = ((y_pred / y_real) - 1) * 100
     return pd.DataFrame({"Relative Error (%)": rel_error})
-
-
-
 def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, convegence_direction="higher"):
     # Adjust low based on convergence direction
-    low_factor = np.random.uniform(1.5, 2.5)
+    low_factor = np.random.uniform(1.2, 2.0)
     if convegence_direction == "higher":
         low = high * low_factor  # start much lower
     else:
@@ -171,9 +168,6 @@ def get_conv(count=200, high=0.2, minPhase=6, maxPhase=10, convegence_direction=
     convergence = np.sort(convergence)[::-1] if convegence_direction == "higher" else np.sort(convergence)
 
     return np.array(convergence)
-
-
-
 def write_table(df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name):
     header_styles = {
         "value_pred": make_style("9DC3E6"),  # richer blue

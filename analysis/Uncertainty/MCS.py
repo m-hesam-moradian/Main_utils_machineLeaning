@@ -7,7 +7,7 @@ import pandas as pd
 # -------------------------
 # USER SETTINGS
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\data\Data_err.npt"  # .npt file with [actual, predicted]
-MODEL_NAME = "QR"  # e.g., "ENR", "XGBR", etc.
+MODEL_NAME = "HGBR"  # e.g., "ENR", "XGBR", etc.
 # -------------------------
 
 # Load data

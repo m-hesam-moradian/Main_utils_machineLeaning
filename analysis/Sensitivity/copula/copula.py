@@ -5,9 +5,9 @@ from sklearn.linear_model import QuantileRegressor
 
 # Load the dataset
 dt = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.23-Data.xlsx", sheet_name="Data_after_KFold_QR"
+    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold"
 )
-target_column = "Remaining Useful Life "
+target_column = dt.columns[-1]
 X = dt.drop(target_column, axis=1)
 
 y = dt[target_column]

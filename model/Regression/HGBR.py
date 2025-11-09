@@ -1,8 +1,8 @@
 import pandas as pd
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load reordered data for KNNR (after K-Fold) ---
+# --- Load reordered data for HGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "Data_after_KFold"
 
@@ -17,11 +17,11 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict ---
-model = KNeighborsRegressor(
-    n_neighbors=7,          # Number of neighbors
-     
-    leaf_size=30,           # Tree leaf size
-    p=2                     # Use Euclidean distance
+model = HistGradientBoostingRegressor(
+    max_iter=100,          # Number of boosting iterations
+    max_depth=7,           # Maximum tree depth
+    learning_rate=0.1,     # Learning rate
+    l2_regularization=0.0  # Regularization strength
 )
 model.fit(X_train, y_train)
 
