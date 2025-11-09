@@ -1,5 +1,5 @@
 # --------------------------------------------------------------
-#  Kepler Optimization Algorithm (KOA) + RR + KNNR + HGBR
+#  Nurse Optimization Algorithm (NOA) + RR + KNNR + HGBR
 # --------------------------------------------------------------
 import numpy as np
 from sklearn.datasets import fetch_california_housing
@@ -22,20 +22,22 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# ------------------- 2. Kepler Optimization Algorithm (KOA) -------------------
-def koa_optimize(obj_func, lb, ub, pop_size=30, max_iter=50, verbose=True):
+# ------------------- 2. Nurse Optimization Algorithm (NOA) -------------------
+def noa_optimize(obj_func, lb, ub, pop_size=30, max_iter=50, verbose=True):
     """
-    Kepler Optimization Algorithm (KOA)
+    Nurse Optimization Algorithm (NOA)
     -------------------------------------------------
-    Inspired by Kepler's laws:
-    • Elliptical orbits → position update with gravitational pull
-    • Area law → adaptive step size
-    • Harmonic law → convergence acceleration
+    Inspired by nursing care:
+    • Patient Monitoring   → Global search & tracking best
+    • Team Rounds          → Population interaction
+    • Adaptive Treatment   → Dynamic step size
+    • Emergency Response   → Lévy jumps when stuck
+    • Shift Change         → Elite replacement
     -------------------------------------------------
     Returns: best_params, best_score (RMSE)
     """
     dim = len(lb)
-    # Initialize population (planets)
+    # Initialize population (nurses on duty)
     pop = lb + np.random.rand(pop_size, dim) * (ub - lb)
     fitness = np.array([obj_func(ind) for ind in pop])
 
@@ -46,41 +48,39 @@ def koa_optimize(obj_func, lb, ub, pop_size=30, max_iter=50, verbose=True):
     if verbose:
         print(f"Iter 00 | Best RMSE = {gbest_fit:.5f} | Params = {np.round(gbest, 4)}")
 
-    G = 6.67430e-11  # Gravitational constant (scaled)
-    M_sun = 1.0      # Mass of "sun" (best solution)
-
     for it in range(1, max_iter + 1):
-        t = it / max_iter
-        a = 2 * (1 - t)  # Linear decreasing inertia
+        # Care intensity: high early (exploration), low late (exploitation)
+        care_factor = 1.0 - it / max_iter
 
         for i in range(pop_size):
-            r = np.random.rand(dim)
+            r1, r2 = np.random.rand(dim), np.random.rand(dim)
 
-            # Distance to global best (sun)
-            dist = np.linalg.norm(pop[i] - gbest)
-            if dist == 0:
-                dist = 1e-8
+            # ---- Phase 1: Patient Monitoring (Move to best patient) ----
+            if np.random.rand() < 0.7:
+                # Follow best known treatment (gbest)
+                step = care_factor * r1 * (gbest - pop[i])
+            else:
+                # ---- Phase 2: Team Rounds (Learn from colleague) ----
+                colleague = pop[np.random.randint(pop_size)]
+                step = care_factor * r2 * (colleague - pop[i])
 
-            # Gravitational force (Kepler-inspired attraction)
-            F = G * M_sun / (dist ** 2 + 1e-8)
+            # ---- Phase 3: Adaptive Treatment (Local refinement) ----
+            local_adjust = (ub - lb) * np.random.randn(dim) * 0.02 * (1 - care_factor)
+            candidate = pop[i] + step + local_adjust
 
-            # Velocity update (area law)
-            velocity = a * (pop[i] - gbest) + F * r * (gbest - pop[i])
+            # ---- Phase 4: Emergency Response (Lévy jump if no improvement) ----
+            if fitness[i] > np.mean(fitness):  # Stagnant nurse
+                if np.random.rand() < 0.15:
+                    levy_step = 0.01 * (np.random.pareto(1.5, dim) * np.sign(np.random.randn(dim)))
+                    candidate += levy_step * (ub - lb) * care_factor
 
-            # Position update (elliptical motion)
-            candidate = pop[i] + velocity
-
-            # Harmonic law acceleration in late phase
-            if t > 0.7:
-                candidate += 0.1 * (1 - t) * (gbest - candidate)
-
-            # Boundary handling
+            # Clip to bounds
             candidate = np.clip(candidate, lb, ub)
 
-            # Evaluate
+            # Evaluate new treatment
             new_fit = obj_func(candidate)
 
-            # Greedy selection
+            # Greedy update (better patient outcome)
             if new_fit < fitness[i]:
                 pop[i] = candidate
                 fitness[i] = new_fit
@@ -91,9 +91,9 @@ def koa_optimize(obj_func, lb, ub, pop_size=30, max_iter=50, verbose=True):
                         print(f"Iter {it:02d} | Best RMSE = {gbest_fit:.5f} | "
                               f"Params = {np.round(gbest, 4)}")
 
-        # Elite replacement (avoid stagnation)
+        # ---- Phase 5: Shift Change (Elite replacement) ----
         worst_idx = np.argmax(fitness)
-        if np.random.rand() < 0.1:
+        if np.random.rand() < 0.12:
             pop[worst_idx] = lb + np.random.rand(dim) * (ub - lb)
             fitness[worst_idx] = obj_func(pop[worst_idx])
 
@@ -110,7 +110,7 @@ def rr_objective(params):
 
 def knnr_objective(params):
     n_neighbors = int(params[0])
-    weights_idx = int(params[1])  # 0: uniform, 1: distance
+    weights_idx = int(params[1])
     p = int(params[2])
     weights = ['uniform', 'distance'][weights_idx]
     model = KNeighborsRegressor(n_neighbors=n_neighbors, weights=weights, p=p)
@@ -137,28 +137,28 @@ def hgbr_objective(params):
 lb_rr = np.array([0.01])
 ub_rr = np.array([100.0])
 
-lb_knnr = np.array([1, 0, 1])        # n_neighbors, weights_idx, p
+lb_knnr = np.array([1, 0, 1])
 ub_knnr = np.array([50, 1, 2])
 
-lb_hgbr = np.array([50, 0.01, 3])     # max_iter, lr, max_depth
+lb_hgbr = np.array([50, 0.01, 3])
 ub_hgbr = np.array([300, 0.3, 30])
 
 
-# ------------------- 5. Run KOA -------------------
+# ------------------- 5. Run NOA -------------------
 print("\n" + "="*70)
-print("OPTIMIZING RIDGE REGRESSION (RR) WITH KOA")
+print("OPTIMIZING RIDGE REGRESSION (RR) WITH NOA")
 print("="*70)
-best_rr, rmse_rr = koa_optimize(rr_objective, lb_rr, ub_rr, pop_size=20, max_iter=40)
+best_rr, rmse_rr = noa_optimize(rr_objective, lb_rr, ub_rr, pop_size=20, max_iter=40)
 
 print("\n" + "="*70)
-print("OPTIMIZING KNN REGRESSION (KNNR) WITH KOA")
+print("OPTIMIZING KNN REGRESSION (KNNR) WITH NOA")
 print("="*70)
-best_knnr, rmse_knnr = koa_optimize(knnr_objective, lb_knnr, ub_knnr, pop_size=20, max_iter=40)
+best_knnr, rmse_knnr = noa_optimize(knnr_objective, lb_knnr, ub_knnr, pop_size=20, max_iter=40)
 
 print("\n" + "="*70)
-print("OPTIMIZING HGB REGRESSION (HGBR) WITH KOA")
+print("OPTIMIZING HGB REGRESSION (HGBR) WITH NOA")
 print("="*70)
-best_hgbr, rmse_hgbr = koa_optimize(hgbr_objective, lb_hgbr, ub_hgbr, pop_size=20, max_iter=40)
+best_hgbr, rmse_hgbr = noa_optimize(hgbr_objective, lb_hgbr, ub_hgbr, pop_size=20, max_iter=40)
 
 
 # ------------------- 6. Final Evaluation -------------------
@@ -190,7 +190,7 @@ rmse_test_hgbr = np.sqrt(mean_squared_error(y_test, hgbr_final.predict(X_test)))
 
 # ------------------- 7. Final Report -------------------
 print("\n" + "="*70)
-print("FINAL RESULTS (Kepler Optimization Algorithm - KOA)")
+print("FINAL RESULTS (Nurse Optimization Algorithm - NOA)")
 print("="*70)
 print(f"RR     → alpha={best_rr[0]:.4f} | CV RMSE={rmse_rr:.4f} | Test RMSE={rmse_test_rr:.4f}")
 print(f"KNNR   → n_neighbors={int(best_knnr[0])}, weights={weights}, p={int(best_knnr[2])} | "

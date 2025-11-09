@@ -20,11 +20,11 @@ params = {
     "p":2  
 }
 optimizer_name = " " #no optimizer 
-optimizer_name = "Nurse Optimization Algorithm (NOA)"
+# optimizer_name = "Nurse Optimization Algorithm (NOA)"
 # optimizer_name = "Kepler Optimization Algorithm (KOA)"
 
 model_name = "HGBR"
-R2_target = 0.989
+R2_target = 0
 min_error = -31
 max_error = 36
 Convergence_metric = "SMAPE"  # Options: "rmse" or "smape"
