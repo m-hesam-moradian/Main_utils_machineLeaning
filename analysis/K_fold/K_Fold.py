@@ -8,9 +8,9 @@ from sklearn.linear_model import QuantileRegressor
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
 sheet_name = "Data"
-target_column = "Fault_Status"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 

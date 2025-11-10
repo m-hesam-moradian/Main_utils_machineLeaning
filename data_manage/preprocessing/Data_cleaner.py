@@ -27,7 +27,7 @@ def clean_missing_samples(excel_path, source_sheet="DATA", target_sheet="CLEANED
 
 # Example usage
 clean_missing_samples(
-    excel_path=r"C:\Users\Sam\Desktop\ML\task\BSS.No.2-Dataset.xlsx",
-    source_sheet="BSS.No.1-Target 1",
+    excel_path=r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
+    source_sheet="Encoded_Data",
     target_sheet="CLEANED_DATA",
 )
