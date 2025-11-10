@@ -51,6 +51,4 @@ print(df_all.head())
 
 # --- Optional: export to clipboard or Excel ---
 df_all.to_clipboard(index=False, header=False)
-# df_all.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_all.xlsx", index=False)
-# df_train.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_train.xlsx", index=False)
-# df_test.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_test.xlsx", index=False)
+
