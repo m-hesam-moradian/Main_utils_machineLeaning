@@ -5,10 +5,10 @@ from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BSS.No.2-Dataset.xlsx"
-sheet_name = "DATA_Shuffled"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "DATA_Normalized"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Anomalous Load"
+target_column = df.columns[-1]
 
 # --- Ensure target is binary and not leaking ---
 if df[target_column].nunique() > 2:
@@ -19,22 +19,15 @@ if df[target_column].nunique() > 2:
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 
 models = {
-    "Random Forest":RandomForestClassifier(
-    n_estimators=250,         # Number of trees
-    max_depth=1,           # No limit on tree depth
-    min_samples_split=6,      # Minimum samples to split a node
-    min_samples_leaf=5,       # Minimum samples at a leaf
-    max_features="sqrt",      # Number of features to consider at each split
-    
-)
-,
     "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
+    "Decision Tree": DecisionTreeClassifier(max_depth=5, min_samples_split=4, min_samples_leaf=3),
+    "SVC": SVC(kernel="rbf", C=1.0, gamma="scale", probability=True),
 }
-
 # --- K-Fold setup ---
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
@@ -82,7 +75,7 @@ for model_name, model in models.items():
     metrics_df_dict[model_name] = metrics_df
 
     # Identify best fold
-    best_fold_idx = metrics_df["F1-Score"].idxmax()
+    best_fold_idx = metrics_df["Accuracy"].idxmax()
     best_test_idx = fold_indices[best_fold_idx]["test_idx"]
     remaining_idx = df.index.difference(best_test_idx)
     df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
@@ -129,4 +122,3 @@ print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
 print(f"📊 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
 print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
 
-df_prediction_dict["Random Forest"].to_clipboard(index=False)

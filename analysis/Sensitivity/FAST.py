@@ -61,14 +61,14 @@ def Fast_function(X, predictions):
 
 
 # Path & target
-DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
-TARGET = "Renewable Availability Index"
+DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_XGBR")
+df = pd.read_excel(DATA_PATH, sheet_name="DATA_Normalized")
+target_column = df.columns[-1]
 
 # Separate features and target
-X = df.drop(columns=[TARGET])
+X = df.drop(columns=[target_column])
 
 
 # Read the text file into a DataFrame
@@ -80,3 +80,4 @@ print(df)
 
 Fast_df = pd.DataFrame(Fast_function(X=X, predictions=y))
 Fast_df.to_clipboard(index=False)
+

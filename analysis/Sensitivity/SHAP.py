@@ -75,11 +75,11 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_ADAC"
-file_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
-target_column = "Fault_Status"
+sheet_name = "DATA_Shuffled"
+file_path = r"C:\Users\Sam\Desktop\BSE. No.14-Dataset.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
+target_column = df.columns[-1]
 
 # --- Features and Target ---
 X = df.drop(columns=[target_column])

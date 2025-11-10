@@ -19,11 +19,11 @@ def clean_missing_samples(excel_path, source_sheet="DATA", target_sheet="CLEANED
         book.save(excel_path)
 
     # Write the cleaned data to the new sheet
-    # with pd.ExcelWriter(excel_path, **writer_args) as writer:
-    #     cleaned_df.to_excel(writer, sheet_name=target_sheet, index=False)
-    cleaned_df.to_clipboard(index=False)
+    with pd.ExcelWriter(excel_path, **writer_args) as writer:
+        cleaned_df.to_excel(writer, sheet_name=target_sheet, index=False)
     print(f"🧹 Cleaned data saved to sheet '{target_sheet}' in '{excel_path}'.")
 
+    cleaned_df.to_clipboard(index=False)
 
 # Example usage
 clean_missing_samples(

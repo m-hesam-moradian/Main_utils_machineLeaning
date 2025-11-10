@@ -1,8 +1,8 @@
 import pandas as pd
 
 # --- Load original dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
-df = pd.read_excel(excel_path, sheet_name="RUS")
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+df = pd.read_excel(excel_path, sheet_name="CLEANED_DATA")
 
 # --- Shuffle the dataset ---
 df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)

@@ -1,4 +1,5 @@
 import pandas as pd
+from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
@@ -19,8 +20,18 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # --- Train model ---
-from sklearn.svm import SVC
-model = SVC(probability=True, kernel="rbf", C=1.0, class_weight="balanced", random_state=42)
+model = XGBClassifier(
+    n_estimators=200,       # number of trees
+    max_depth=4,            # smaller depth prevents overfitting
+    learning_rate=0.05,     # slower learning for smoother fit
+    subsample=0.8,          # use 80% of data for each tree
+    colsample_bytree=0.8,   # use 80% of features per tree
+    reg_lambda=2,           # L2 regularization
+    reg_alpha=0.5,          # L1 regularization
+    random_state=42,
+    use_label_encoder=False,
+    eval_metric="logloss"
+)
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -50,7 +61,8 @@ print("\n📊 Sample of overall predictions:")
 print(df_all.head())
 
 # --- Optional: export to clipboard or Excel ---
-df_all.to_clipboard(index=False, header=False)
+# df_all.to_clipboard(index=False, header=False)
+df_train.to_clipboard(index=False, header=False)
 # df_all.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_all.xlsx", index=False)
 # df_train.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_train.xlsx", index=False)
 # df_test.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_test.xlsx", index=False)

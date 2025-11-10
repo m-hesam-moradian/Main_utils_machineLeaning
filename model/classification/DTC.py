@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
@@ -18,15 +19,23 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train model ---
-from sklearn.svm import SVC
-model = SVC(probability=True, kernel="rbf", C=1.0, class_weight="balanced", random_state=42)
+# --- Train Decision Tree model ---
+from sklearn.tree import DecisionTreeClassifier
+
+model = DecisionTreeClassifier(
+    criterion="gini",           # or "entropy"
+    max_depth=4,                # limit tree depth to prevent overfitting
+    min_samples_split=10,       # require at least 10 samples to split a node
+    min_samples_leaf=5,         # require at least 5 samples in each leaf
+    class_weight="balanced",    # handle class imbalance
+    random_state=42
+)
 model.fit(X_train, y_train)
 
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X)  # full data
+y_pred_all = model.predict(X)
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)

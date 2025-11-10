@@ -3,11 +3,11 @@ from sklearn.preprocessing import MinMaxScaler
 
 # --- Load dataset ---
 sheet_name = "DATA_Shuffled"
-excel_path = r"D:\ML\Main_utils\task\EL. No 6. Allocated bandwidth- SVR-ENR-SCO-POA-GGO-DATA.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Target column ---
-target_column = "allocated_bandwidth"
+target_column = df.columns[-1]
 
 # --- Separate features and target ---
 features = df.drop(columns=[target_column])

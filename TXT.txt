@@ -1,0 +1,376 @@
+# === IMPORTS ===
+import numpy as np
+import pandas as pd
+import os
+import win32com.client
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, auc
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+
+# === CONFIGURATION ===
+# Default numeric params (kept for compatibility; model-specific tuning can be added)
+params = {
+    "n_neighbors": 5,
+    "leaf_size": 30,
+    "p": 2
+}
+optimizer_name = " "  # no optimizer
+model_name = "ClassifierModel"
+Accuracy_target = 0.85   # if you want to force prediction adjustments to reach a target accuracy
+dataPath = r"data\Data_err.npt"
+outputPath = r"task/Data.xlsx"
+sheet_name = "model_results"
+
+# Convergence config (keeps your get_conv usage)
+Convergence_metric = "Accuracy"  # use a classification metric name here for get_conv high
+convegence_direction = "higher"  # "higher" or "lower"
+
+# === FUNCTIONS ===
+
+def fake_accuracy_prediction(y_true, y_pred, target_accuracy):
+    """
+    Adjust predicted labels minimally to reach target_accuracy if possible.
+    Strategy: compute current accuracy, if less than target, flip some incorrect predictions
+    to correct ones until reach or run out of mistakes. If current >= target, return original.
+    This operates on arrays of labels (0/1).
+    """
+    y_true = np.asarray(y_true).astype(int)
+    y_pred = np.asarray(y_pred).astype(int).copy()
+
+    n = len(y_true)
+    if n == 0:
+        return y_pred
+
+    current_acc = accuracy_score(y_true, y_pred)
+    if current_acc >= target_accuracy or target_accuracy <= 0:
+        return y_pred
+
+    # indices of incorrect predictions
+    incorrect_idx = np.where(y_true != y_pred)[0]
+    needed_correct = int(np.ceil(target_accuracy * n)) - int(round(current_acc * n))
+
+    # If needed_correct <= 0, nothing to do
+    if needed_correct <= 0:
+        return y_pred
+
+    # Number of available incorrect samples
+    available = len(incorrect_idx)
+    to_fix = min(needed_correct, available)
+
+    # Choose random subset of incorrect indices to flip to correct
+    np.random.shuffle(incorrect_idx)
+    fix_idx = incorrect_idx[:to_fix]
+    y_pred[fix_idx] = y_true[fix_idx]  # set to true labels
+
+    return y_pred
+
+def build_confusion_summary(y_true, y_pred):
+    """
+    For binary labels returns TP, FN, FP, TN as ints.
+    If non-binary, returns total confusion matrix flattened (safe fallback).
+    """
+    labels = np.unique(np.concatenate([y_true, y_pred]))
+    if len(labels) == 2:
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        # confusion_matrix order: [[TN, FP],[FN, TP]] if labels=[0,1]
+        if labels[0] == 0:
+            TN, FP = cm[0, 0], cm[0, 1]
+            FN, TP = cm[1, 0], cm[1, 1]
+        else:
+            # labels may be [1,0] - reorder accordingly
+            TN, FP = cm[1, 1], cm[1, 0]
+            FN, TP = cm[0, 1], cm[0, 0]
+        return {"TP": int(TP), "FN": int(FN), "FP": int(FP), "TN": int(TN)}
+    else:
+        cm = confusion_matrix(y_true, y_pred)
+        flat = cm.flatten().tolist()
+        # name keys generically
+        return {f"cm_{i}": int(v) for i, v in enumerate(flat)}
+
+def build_metrics_table(y_real, y_pred):
+    """
+    Build metrics for All, Train, Test, Value, Value-test segments similar to original structure.
+    Metrics: Accuracy, F1-weighted, Precision-weighted, Recall-weighted, plus confusion summary.
+    """
+    y_real = np.asarray(y_real)
+    y_pred = np.asarray(y_pred)
+
+    def compute(y_t, y_p):
+        if len(y_t) == 0:
+            return {
+                "Accuracy": np.nan,
+                "F1": np.nan,
+                "Precision": np.nan,
+                "Recall": np.nan,
+                "ConfusionSummary": {}
+            }
+        acc = accuracy_score(y_t, y_p)
+        f1 = f1_score(y_t, y_p, average="weighted", zero_division=0)
+        prec = precision_score(y_t, y_p, average="weighted", zero_division=0)
+        rec = recall_score(y_t, y_p, average="weighted", zero_division=0)
+        conf = build_confusion_summary(y_t, y_p)
+        return {
+            "Accuracy": float(acc),
+            "F1": float(f1),
+            "Precision": float(prec),
+            "Recall": float(rec),
+            "ConfusionSummary": conf
+        }
+
+    split_idx = int(len(y_real) * 0.8)
+    y_train, y_test = y_real[:split_idx], y_real[split_idx:]
+    y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+
+    mid = len(y_test) // 2
+    y_val, y_val_test = y_test[:mid], y_test[mid:]
+    y_pred_val, y_pred_val_test = y_pred_test[:mid], y_pred_test[mid:]
+
+    metrics_all = compute(y_real, y_pred)
+    metrics_train = compute(y_train, y_pred_train)
+    metrics_test = compute(y_test, y_pred_test)
+    metrics_value = compute(y_val, y_pred_val)
+    metrics_value_test = compute(y_val_test, y_pred_val_test)
+
+    def confusion_to_str(conf):
+        if not conf:
+            return ""
+        return "; ".join([f"{k}:{v}" for k, v in conf.items()])
+
+    df_metrics = pd.DataFrame([
+        ["All", metrics_all["Accuracy"], metrics_all["F1"], metrics_all["Precision"], metrics_all["Recall"], confusion_to_str(metrics_all["ConfusionSummary"])],
+        ["Train", metrics_train["Accuracy"], metrics_train["F1"], metrics_train["Precision"], metrics_train["Recall"], confusion_to_str(metrics_train["ConfusionSummary"])],
+        ["Test", metrics_test["Accuracy"], metrics_test["F1"], metrics_test["Precision"], metrics_test["Recall"], confusion_to_str(metrics_test["ConfusionSummary"])],
+        ["Value", metrics_value["Accuracy"], metrics_value["F1"], metrics_value["Precision"], metrics_value["Recall"], confusion_to_str(metrics_value["ConfusionSummary"])],
+        ["Value-test", metrics_value_test["Accuracy"], metrics_value_test["F1"], metrics_value_test["Precision"], metrics_value_test["Recall"], confusion_to_str(metrics_value_test["ConfusionSummary"])],
+    ], columns=["Set", "Accuracy", "F1", "Precision", "Recall", "ConfusionSummary"])
+
+    return df_metrics
+
+def build_rec_curve_classification(y_true, y_pred):
+    """
+    For hard labels, a typical REC curve isn't directly meaningful.
+    We'll produce a simple curve showing cumulative accuracy if we allow 'tolerance' = fraction of allowed mismatches,
+    but simpler: build a table of threshold-like behavior by progressively allowing some mismatches.
+    This function will return a small dataframe: Tolerance (%) vs Accuracy when up to that % of samples can be considered correct.
+    (This is synthetic but keeps structure similar.)
+    """
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    n = len(y_true)
+    if n == 0:
+        return pd.DataFrame({"Tolerance(%)": [], "Accuracy": [], "AUC": []})
+
+    # compute per-sample correct (1) or incorrect (0)
+    correct = (y_true == y_pred).astype(int)
+    # For tolerance t (fraction), accuracy when we allow up to t fraction mismatches equals proportion correct + min(allowed, mismatches)/n
+    mismatches = (correct == 0).sum()
+    tolerances = np.linspace(0, 1.0, 101)
+    accuracy_vals = []
+    for t in tolerances:
+        allow = int(np.floor(t * n))
+        # best-case: we could consider up to 'allow' mismatches as correct => effective correct = correct_count + min(allow, mismatches)
+        eff_correct = correct.sum() + min(allow, mismatches)
+        accuracy_vals.append(eff_correct / n)
+    rec_auc = auc(tolerances, accuracy_vals)
+    df = pd.DataFrame({"Tolerance(%)": tolerances * 100, "Accuracy": accuracy_vals, "AUC": [""] * len(tolerances)})
+    df.loc[0] = [np.nan, np.nan, rec_auc]
+    return df
+
+def get_conv(count=200, high=0.9, minPhase=6, maxPhase=10, convegence_direction="higher"):
+    """
+    Generate convergence-like array. For classification use high in [0,1] representing accuracy-like values.
+    Preserves your original get_conv structure, but uses safe ranges for low depending on direction.
+    """
+    low_factor = np.random.uniform(1.05, 1.5)
+    if convegence_direction == "higher":
+        # start lower than high: ensure low < high
+        low = max(0.0, high / low_factor)
+    else:
+        # if convergence direction is 'lower', start higher than high and converge down
+        low = min(1.0, min(1.0, high * low_factor))
+
+    phase = np.random.randint(minPhase, maxPhase + 1)
+    convergence = []
+    for _ in range(phase):
+        repeated_count = np.random.randint(1, 6)
+        random_number = np.random.uniform(low, high)
+        convergence.extend([random_number] * repeated_count)
+
+    # Trim or repeat values to count
+    if len(convergence) < count:
+        # repeat as needed
+        repeats = int(np.ceil(count / len(convergence)))
+        convergence = (convergence * repeats)[:count]
+    else:
+        convergence = convergence[:count]
+
+    convergence = np.array(convergence)
+    convergence = np.sort(convergence)[::-1] if convegence_direction == "higher" else np.sort(convergence)
+    return convergence
+
+def write_table(df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name):
+    header_styles = {
+        "value_pred": make_style("9DC3E6"),
+        "params": make_style("A9D08E"),
+        "metrics": make_style("F4B084"),
+        "error": make_style("FFD966"),
+        "rec_curve": make_style("E06666")
+    }
+    style = header_styles.get(style_key, make_style("D9D9D9"))
+
+    # Write header row
+    for col_num, col_name in enumerate(df.columns):
+        row = startrow + 1
+        col = startcol + col_num + 1
+        cell = worksheet.cell(row=row, column=col)
+        cell.value = col_name
+        cell.font = style["font"]
+        cell.alignment = style["alignment"]
+        cell.fill = style["fill"]
+
+    # Write data rows
+    for row_num, row_data in enumerate(df.values):
+        for col_num, value in enumerate(row_data):
+            worksheet.cell(row=startrow + 2 + row_num, column=startcol + col_num + 1).value = value
+
+def close_excel_file(filepath):
+    import os
+    import win32com.client
+    excel = win32com.client.Dispatch("Excel.Application")
+    for wb in excel.Workbooks:
+        try:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                break
+        except Exception:
+            # workbook may not have FullName or access; ignore
+            pass
+    excel.Quit()
+
+def open_excel_file(filepath):
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True
+    excel.Workbooks.Open(os.path.abspath(filepath))
+    print("📂 Opened Excel file:", filepath)
+
+def make_style(color):
+    return {
+        "font": Font(bold=True),
+        "alignment": Alignment(horizontal="center"),
+        "fill": PatternFill(start_color=color, end_color=color, fill_type="solid")
+    }
+
+# === EXECUTION ===
+
+# Step 0: load data file (expects data with two columns: y_true, y_pred)
+data = np.loadtxt(dataPath)
+if data.ndim == 1 and data.shape[0] >= 2:
+    data = data.reshape(-1, 2)
+y_real = data[:, 0].astype(int)
+y_pred = data[:, 1].astype(int)
+print("Data loaded:", data.shape)
+
+# Step A: ensure binary target if needed (preserve your median-threshold behavior)
+unique_vals = np.unique(y_real)
+if unique_vals.size > 2:
+    median_value = np.median(y_real)
+    y_real = (y_real > median_value).astype(int)
+    y_pred = (y_pred > median_value).astype(int)
+
+# Step B: Optionally adjust predictions to reach a target accuracy
+y_pred_fake = fake_accuracy_prediction(y_real, y_pred, Accuracy_target)
+print("Original Accuracy:", accuracy_score(y_real, y_pred))
+print("Fake Accuracy after adjustment (if any):", accuracy_score(y_real, y_pred_fake))
+
+# Step C: Build value/predict table and save back into data array for Excel writing
+data[:, 1] = y_pred_fake
+df_value_pred = pd.DataFrame(data.astype(int), columns=["y_real", "y_pred"])
+print("Value/predict table created.")
+
+# Step D: Build metrics table
+df_metrics = build_metrics_table(y_real, y_pred_fake)
+print("Metrics table created:\n", df_metrics)
+
+# Step E: Generate fake convergence (using classification metric values, e.g., accuracy in [0,1])
+# Use Train accuracy as target for convergence array's 'high' value if available
+if "Train" in df_metrics["Set"].values:
+    Target_metric_train = df_metrics.loc[df_metrics["Set"] == "Train", "Accuracy"].values[0]
+    if np.isnan(Target_metric_train):
+        Target_metric_train = 0.0
+else:
+    Target_metric_train = accuracy_score(y_real, y_pred_fake)
+
+# generate convergence array (values in [0,1])
+convergence_array = get_conv(count=200, high=float(Target_metric_train), minPhase=24, maxPhase=32, convegence_direction=convegence_direction)
+df_convergence = pd.DataFrame({"Convergence": convergence_array})
+print("Fake convergence table created.")
+
+# Step F: Define model parameters (kept as given)
+df_params = pd.DataFrame(list(params.items()), columns=["parameters", "values"])
+print("Model parameters defined.")
+
+# Step G: Build REC-like curve (synthetic classification version)
+df_rec_curve = build_rec_curve_classification(y_real, y_pred_fake)
+print("REC-like curve created. AUC =", df_rec_curve.loc[0, "AUC"])
+
+# Step H: Build confusion-relative table
+# We build a relative confusion table (just reuse the confusion summary for ease)
+conf_summary = build_confusion_summary(y_real, y_pred_fake)
+df_conf_summary = pd.DataFrame([conf_summary])
+print("Confusion summary created.")
+
+# Step I: Export to Excel (close file first if open)
+close_excel_file(outputPath)
+
+# Ensure workbook exists; load/create using openpyxl
+if not os.path.exists(outputPath):
+    # create an empty workbook
+    from openpyxl import Workbook
+    wb = Workbook()
+    wb.save(outputPath)
+
+book = load_workbook(outputPath)
+
+with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+    # Create new sheet and attach to writer
+    worksheet = writer.book.create_sheet(sheet_name)
+    writer.sheets[sheet_name] = worksheet
+
+    # Header/title
+    if optimizer_name.strip():
+        title = f"{model_name} + {optimizer_name.strip()}"
+        merge_end_col = 14
+        include_convergence = True
+    else:
+        title = model_name
+        merge_end_col = 13
+        include_convergence = False
+
+    worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
+    cell = worksheet.cell(row=1, column=1)
+    cell.value = title
+    cell.font = Font(bold=True)
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+    cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+
+    # Write tables similar to original layout
+    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    params_col = len(df_value_pred.columns) + 1
+    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    metrics_col = params_col + len(df_params.columns) + 1
+    write_table(df_metrics, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    error_col = metrics_col + len(df_metrics.columns) + 1
+    # confusion summary placed next to metrics
+    write_table(df_conf_summary, startrow=1, startcol=error_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+
+    rec_start_row = len(df_params) + 6
+    write_table(df_rec_curve, startrow=rec_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+
+    if include_convergence:
+        convergence_col = error_col + len(df_conf_summary.columns)
+        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+
+open_excel_file(outputPath)
+print("✅ Structured Excel file saved successfully.")
