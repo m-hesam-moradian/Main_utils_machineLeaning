@@ -38,19 +38,7 @@ data = {
 
 # Reference metrics (target maximums)
 ref_accuracy = 0.730952381
-
-
-
-
 ref_f1 = 0.68956044
-
-
-
-
-
-
-
-
 
 # Convert to DataFrame
 df = pd.DataFrame(data)
