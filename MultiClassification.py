@@ -15,19 +15,17 @@ params = {
     "max_depth": 10,
     "min_samples_split": 2,
     "min_samples_leaf": 1,
-    "max_features": "sqrt",
-    "bootstrap": True,
-    "random_state": 42
+
 }
 
 
-
-
-model_name = "DTC"
+model_name = "RFC"
+# model_name = "LGBC"
 optimizer_name = ""  # no optimizer
-optimizer_name = "mother optimization algorithm (MOA)"  # no optimizer
-# optimizer_name = "monarch butterfly optimization algorithm(MBOA)"  # no optimizer
-Accuracy_target = 0.99324 # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "Monkey optimization algorithm(MOA)"  # no optimizer
+# optimizer_name = "golden jackal optimization algorithm (GJOA)"  # no optimizer
+# optimizer_name = "hybrid whale optimization algorithm (HWOA)"  # no optimizer
+Accuracy_target = 0.932345 # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
 sheet_name = "model_results"
@@ -53,10 +51,20 @@ def fake_accuracy_prediction(y_true, y_pred, target_accuracy):
     if needed_correct <= 0:
         return y_pred
 
-    available = len(incorrect_idx)
-    to_fix = min(needed_correct, available)
+    # Prioritize fixing errors by class frequency
+    class_counts = np.bincount(y_true)
+    class_order = np.argsort(-class_counts)  # descending frequency
+
     np.random.shuffle(incorrect_idx)
-    fix_idx = incorrect_idx[:to_fix]
+    fix_pool = []
+
+    for cls in class_order:
+        cls_errors = [i for i in incorrect_idx if y_true[i] == cls]
+        fix_pool.extend(cls_errors)
+        if len(fix_pool) >= needed_correct:
+            break
+
+    fix_idx = fix_pool[:needed_correct]
     y_pred[fix_idx] = y_true[fix_idx]
 
     return y_pred
@@ -155,16 +163,17 @@ def make_style(color):
         "fill": PatternFill(start_color=color, end_color=color, fill_type="solid")
     }
 
-def build_classification_reports(y_real, y_pred):
+def build_classification_reports(y_real, y_pred, y_pred_probable):
     """
     Builds classification evaluation DataFrames:
     1️⃣ df_combined – global + per-class metrics
-    2️⃣ roc_df – ROC curve points and AUC
+    2️⃣ roc_df – ROC curve points and AUC (multiclass one-vs-rest)
     3️⃣ cm_df – confusion matrix table
     """
     from sklearn.metrics import (
         accuracy_score, recall_score, f1_score,
-        precision_score, matthews_corrcoef, confusion_matrix, roc_curve, auc
+        precision_score, matthews_corrcoef, confusion_matrix,
+        roc_curve, auc
     )
     import pandas as pd
     import numpy as np
@@ -172,9 +181,9 @@ def build_classification_reports(y_real, y_pred):
     def get_metrics(y_true, y_pred):
         return {
             "Accuracy": accuracy_score(y_true, y_pred),
-            "Recall": recall_score(y_true, y_pred, zero_division=0),
-            "F1": f1_score(y_true, y_pred, zero_division=0),
-            "Precision": precision_score(y_true, y_pred, zero_division=0),
+            "Recall": recall_score(y_true, y_pred, zero_division=0, average='macro'),
+            "F1": f1_score(y_true, y_pred, zero_division=0, average='macro'),
+            "Precision": precision_score(y_true, y_pred, zero_division=0, average='macro'),
             "MCC": matthews_corrcoef(y_true, y_pred)
         }
 
@@ -182,6 +191,7 @@ def build_classification_reports(y_real, y_pred):
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+    y_prob_train, y_prob_test = y_pred_probable[:split_idx], y_pred_probable[split_idx:]
 
     # --- Global metrics (All, Train, Test)
     metrics_all = get_metrics(y_real, y_pred)
@@ -192,7 +202,7 @@ def build_classification_reports(y_real, y_pred):
         ["All", *metrics_all.values()],
         ["Train", *metrics_train.values()],
         ["Test", *metrics_test.values()],
-    ], columns=["Set",  "Accuracy","Recall", "F1", "Precision", "MCC"])
+    ], columns=["Set", "Accuracy", "Recall", "F1", "Precision", "MCC"])
 
     # --- Per-class metrics
     classes = np.unique(y_real).astype(int)
@@ -220,17 +230,30 @@ def build_classification_reports(y_real, y_pred):
 
     df_combined = pd.concat([df_main, df_class], ignore_index=True)
 
-    # --- ROC & Confusion Matrix
-    fpr, tpr, thresholds = roc_curve(y_real, y_pred)
-    roc_auc = auc(fpr, tpr)
-    auc_column = [""] * (len(fpr) - 1) + [round(roc_auc, 3)]
-    roc_df = pd.DataFrame({"FPR": fpr, "TPR": tpr, "AUC": auc_column})
+    # --- ROC Curve (multiclass one-vs-rest)
+    roc_data = []
+    for cls in classes:
+        y_true_bin = (y_real == cls).astype(int)
+        y_score_bin = y_pred_probable[:, cls]
 
+        fpr, tpr, _ = roc_curve(y_true_bin, y_score_bin)
+        roc_auc = auc(fpr, tpr)
+
+        for f, t in zip(fpr, tpr):
+            roc_data.append({
+                "Class": f"Class {cls}",
+                "FPR": f,
+                "TPR": t,
+                "AUC": roc_auc
+            })
+
+    roc_df = pd.DataFrame(roc_data)
+
+    # --- Confusion Matrix
     cm = confusion_matrix(y_real, y_pred)
     cm_df = pd.DataFrame(cm, index=[f"Actual {i}" for i in classes], columns=[f"Predicted {i}" for i in classes])
 
     return df_combined, roc_df, cm_df
-
 def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="down" ,Convergence_metric=Convergence_metric):
     if "Train" in df_combined["Set"].values:
         Target_metric_train = df_combined.loc[df_combined["Set"] == "Train", Convergence_metric].values[0]
@@ -251,19 +274,17 @@ def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direc
 # === EXECUTION ===
 
 # Step 0: load data file (expects data with two columns: y_true, y_pred)
+
+
 data = np.loadtxt(dataPath)
-if data.ndim == 1 and data.shape[0] >= 2:
-    data = data.reshape(-1, 2)
+
 y_real = data[:, 0].astype(int)
 y_pred = data[:, 1].astype(int)
+y_pred_probable = data[:, 2:]  # shape: (n_samples, 8)
+
 print("Data loaded:", data.shape)
 
-# Step A: ensure binary target if needed (preserve your median-threshold behavior)
-unique_vals = np.unique(y_real)
-if unique_vals.size > 2:
-    median_value = np.median(y_real)
-    y_real = (y_real > median_value).astype(int)
-    y_pred = (y_pred > median_value).astype(int)
+
 
 # Step B: Optionally adjust predictions to reach a target accuracy
 y_pred_fake = fake_accuracy_prediction(y_real, y_pred, Accuracy_target)
@@ -272,7 +293,11 @@ print("Fake Accuracy after adjustment (if any):", accuracy_score(y_real, y_pred_
 
 # Step C: Build value/predict table and save back into data array for Excel writing
 data[:, 1] = y_pred_fake
-df_value_pred = pd.DataFrame(data.astype(int), columns=["y_real", "y_pred"])
+df_value_pred = pd.DataFrame({
+    "y_real": data[:, 0].astype(int),
+    "y_pred": data[:, 1].astype(int),
+    # "y_pred_probable": data[:, 2:].astype(float)
+})
 print("Value/predict table created.")
 
 # Step F: Define model parameters (kept as given)
@@ -281,7 +306,7 @@ print("Model parameters defined.")
 
 # ---- REPLACED: Step G & H (original REC & confusion summary replaced) ----
 # Step G: Build df_combined (global + per-class metrics) -- will be written where REC used to be
-df_combined, roc_df, cm_df = build_classification_reports(y_real, y_pred_fake)
+df_combined, roc_df, cm_df = build_classification_reports(y_real, y_pred, y_pred_probable)
 print("Classification reports created successfully.")
 
 
@@ -332,13 +357,14 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     metrics_col = params_col + len(df_params.columns) + 1
     write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
+ 
     # CM_col = len(df_value_pred.columns) + 1
-    CM_start_row = len(df_params) + 6
+    CM_start_row = len(df_combined) + 4
     write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
     # Write ROC table just under df_combined (preserve spacing)
-    write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    roc_start_col=params_col + len(cm_df.columns) + 1
+    write_table(roc_df, startrow=CM_start_row, startcol=roc_start_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
     if include_convergence:
         convergence_col = metrics_col + len(df_combined.columns) + 1

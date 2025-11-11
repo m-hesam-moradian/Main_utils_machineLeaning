@@ -2,22 +2,57 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.linear_model import QuantileRegressor
+
+
+def close_excel_file(filepath):
+    import os
+    import win32com.client
+    excel = win32com.client.Dispatch("Excel.Application")
+    for wb in excel.Workbooks:
+        try:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                break
+        except Exception:
+            pass
+    excel.Quit()
+
+def open_excel_file(filepath):
+    import os
+    import win32com.client
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True
+    excel.Workbooks.Open(os.path.abspath(filepath))
+    print("📂 Opened Excel file:", filepath)
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
-sheet_name = "Data"
-
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Encoded_Data"
+close_excel_file(excel_path)
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
+
 models = {
-    "ETR": ExtraTreesRegressor(),
-    "QR": QuantileRegressor(quantile=0.5, alpha=0.01, solver="highs"),
+    "LGBc": LGBMClassifier(
+        n_estimators=100,
+        learning_rate=0.1,
+        class_weight="balanced",
+        random_state=42
+    ),
+    "RFc": RandomForestClassifier(
+        n_estimators=100,
+        max_depth=6,
+        class_weight="balanced",
+        random_state=42
+    )
 }
 
 # --- K-Fold setup ---
@@ -85,8 +120,13 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
         df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 
+
+
+open_excel_file(excel_path)
+
 # --- Print Summary ---
 for model_name in models:
+
     metrics_df = metrics_df_dict[model_name]
     best_fold_idx = metrics_df["R2"].idxmax()
     best_fold = metrics_df.loc[best_fold_idx]

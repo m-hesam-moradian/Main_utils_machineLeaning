@@ -4,30 +4,59 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, f1_score
 
 # --- Load dataset ---
+def close_excel_file(filepath):
+    import os
+    import win32com.client
+    excel = win32com.client.Dispatch("Excel.Application")
+    for wb in excel.Workbooks:
+        try:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                break
+        except Exception:
+            pass
+    excel.Quit()
+
+def open_excel_file(filepath):
+    import os
+    import win32com.client
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = True
+    excel.Workbooks.Open(os.path.abspath(filepath))
+    print("📂 Opened Excel file:", filepath)
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Normalized"
+close_excel_file(excel_path)
+sheet_name = "Encoded_Data"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
 # --- Ensure target is binary and not leaking ---
-if df[target_column].nunique() > 2:
-    median_value = df[target_column].median()
-    df[target_column] = (df[target_column] > median_value).astype(int)
 
 # --- Features and target ---
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from xgboost import XGBClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 models = {
-    "XGBoost": XGBClassifier(use_label_encoder=False, eval_metric="logloss", random_state=42),
-    "Decision Tree": DecisionTreeClassifier(max_depth=5, min_samples_split=4, min_samples_leaf=3),
-    "SVC": SVC(kernel="rbf", C=1.0, gamma="scale", probability=True),
+    "LGBC": LGBMClassifier(
+        n_estimators=100,
+        learning_rate=0.1,
+        class_weight="balanced",
+        random_state=42
+    ),
+    "RFC": RandomForestClassifier(
+        n_estimators=100,
+        max_depth=6,
+        class_weight="balanced",
+        random_state=42
+    )
 }
+
 # --- K-Fold setup ---
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
@@ -108,7 +137,7 @@ with pd.ExcelWriter(
             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
         )
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
-
+open_excel_file(excel_path)
 print(
     f"✅ K-Fold results and summary added to '{excel_path}' with sheets for SVC, LGBC, and Model_Summary."
 )
