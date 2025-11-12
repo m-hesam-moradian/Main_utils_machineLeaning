@@ -1,7 +1,8 @@
 import pandas as pd
 import shap
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import HistGradientBoostingClassifier  # ADAC
+from lightgbm import LGBMClassifier
+
 
 def shap_analysis(
     model,
@@ -75,8 +76,8 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 # --- Load dataset ---
-sheet_name = "DATA_Shuffled"
-file_path = r"C:\Users\Sam\Desktop\BSE. No.14-Dataset.xlsx"
+sheet_name = "Data_after_KFold"
+file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 target_column = df.columns[-1]
@@ -90,7 +91,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle
 
 # --- Run SHAP Analysis with ADAC ---
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=HistGradientBoostingClassifier(max_iter=100, learning_rate=0.0005),
+    model=LGBMClassifier(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,

@@ -17,13 +17,16 @@ params = {
 }
 
 
+
+
+
 # model_name = "RFC"
 model_name = "LGBC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Monkey optimization algorithm(MOA)"  # no optimizer
 # optimizer_name = "golden jackal optimization algorithm (GJOA)"  # no optimizer
-# optimizer_name = "hybrid whale optimization algorithm (HWOA)"  # no optimizer
-Accuracy_target = 0.864972345 # if you want to force prediction adjustments to reach a target accuracy
+optimizer_name = "hybrid whale optimization algorithm (HWOA)"  # no optimizer
+Accuracy_target = 0.96829734114972345 # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
 sheet_name = "model_results"
