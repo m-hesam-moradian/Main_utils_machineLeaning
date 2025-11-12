@@ -8,24 +8,22 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# // parameters RFC
+# // parameters LGBC
 
 params = {
     "n_estimators": 100,
     "max_depth": 10,
     "min_samples_split": 2,
-    "min_samples_leaf": 1,
-
 }
 
 
-model_name = "RFC"
-# model_name = "LGBC"
+# model_name = "RFC"
+model_name = "LGBC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Monkey optimization algorithm(MOA)"  # no optimizer
 # optimizer_name = "golden jackal optimization algorithm (GJOA)"  # no optimizer
 # optimizer_name = "hybrid whale optimization algorithm (HWOA)"  # no optimizer
-Accuracy_target = 0.932345 # if you want to force prediction adjustments to reach a target accuracy
+Accuracy_target = 0.864972345 # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
 sheet_name = "model_results"
@@ -306,7 +304,7 @@ print("Model parameters defined.")
 
 # ---- REPLACED: Step G & H (original REC & confusion summary replaced) ----
 # Step G: Build df_combined (global + per-class metrics) -- will be written where REC used to be
-df_combined, roc_df, cm_df = build_classification_reports(y_real, y_pred, y_pred_probable)
+df_combined, roc_df, cm_df = build_classification_reports(y_real, y_pred_fake, y_pred_probable)
 print("Classification reports created successfully.")
 
 
@@ -363,8 +361,9 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
     # Write ROC table just under df_combined (preserve spacing)
-    roc_start_col=params_col + len(cm_df.columns) + 1
-    write_table(roc_df, startrow=CM_start_row, startcol=roc_start_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    # roc_start_col=params_col + len(cm_df.columns) + 1 
+    roc_start_row = len(cm_df) + CM_start_row + 2
+    write_table(roc_df, startrow=roc_start_row, startcol=params_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
     if include_convergence:
         convergence_col = metrics_col + len(df_combined.columns) + 1
