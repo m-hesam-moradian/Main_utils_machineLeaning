@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "DATA_Normalized"
+sheet_name = "Data_after_KFold"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
