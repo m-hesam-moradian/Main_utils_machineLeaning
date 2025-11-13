@@ -1,10 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBoost"
+sheet_name = "Data_after_KFold_XGBC"  # You may want to rename this to reflect SVC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -18,9 +19,19 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train model ---
+# --- Train Support Vector Classifier ---
 from sklearn.svm import SVC
-model = SVC(probability=True, kernel="rbf", C=1.0, class_weight="balanced", random_state=42)
+
+model = SVC(
+    C=2.870,
+    max_iter=142,
+    kernel="rbf",
+    class_weight="balanced",
+    probability=True,  # This enables predict_proba
+    random_state=42
+
+)
+
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -40,8 +51,20 @@ print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
 print(f"Testing Accuracy  : {acc_test:.4f}")
 
-# --- Create DataFrames for results ---
-df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+# --- Get predicted probabilities ---
+y_pred_proba = model.predict_proba(X)
+
+# Convert predicted probabilities to a DataFrame with one column per class
+proba_df = pd.DataFrame(
+    y_pred_proba,
+    columns=[f"Prob_Class_{cls}" for cls in model.classes_]
+)
+
+# Combine with true and predicted labels
+df_all = pd.concat([
+    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    proba_df
+], axis=1)
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
@@ -51,4 +74,3 @@ print(df_all.head())
 
 # --- Optional: export to clipboard or Excel ---
 df_all.to_clipboard(index=False, header=False)
-

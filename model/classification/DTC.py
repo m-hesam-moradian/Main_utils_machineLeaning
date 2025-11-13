@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBoost"
+sheet_name = "Data_after_KFold_DTC"  # You may want to rename this to reflect DTC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,23 +19,20 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Decision Tree model ---
-from sklearn.tree import DecisionTreeClassifier
-
+# --- Train Decision Tree Classifier ---
 model = DecisionTreeClassifier(
-    criterion="gini",           # or "entropy"
-    max_depth=4,                # limit tree depth to prevent overfitting
-    min_samples_split=10,       # require at least 10 samples to split a node
-    min_samples_leaf=5,         # require at least 5 samples in each leaf
-    class_weight="balanced",    # handle class imbalance
-    random_state=42
+    max_depth=9,
+    min_samples_split=2,
+    min_samples_leaf=1
+
 )
+
 model.fit(X_train, y_train)
 
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X)
+y_pred_all = model.predict(X)  # full data
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)
@@ -49,8 +46,20 @@ print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
 print(f"Testing Accuracy  : {acc_test:.4f}")
 
-# --- Create DataFrames for results ---
-df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+# --- Get predicted probabilities ---
+y_pred_proba = model.predict_proba(X)
+
+# Convert predicted probabilities to a DataFrame with one column per class
+proba_df = pd.DataFrame(
+    y_pred_proba,
+    columns=[f"Prob_Class_{cls}" for cls in model.classes_]
+)
+
+# Combine with true and predicted labels
+df_all = pd.concat([
+    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    proba_df
+], axis=1)
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
@@ -60,6 +69,3 @@ print(df_all.head())
 
 # --- Optional: export to clipboard or Excel ---
 df_all.to_clipboard(index=False, header=False)
-# df_all.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_all.xlsx", index=False)
-# df_train.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_train.xlsx", index=False)
-# df_test.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_test.xlsx", index=False)

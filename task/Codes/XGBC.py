@@ -1,11 +1,12 @@
+
 import pandas as pd
-from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBoost"
+sheet_name = "Data_after_KFold_XGBC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,19 +20,14 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train model ---
+# --- Train XGBoost Classifier ---
 model = XGBClassifier(
-    n_estimators=200,       # number of trees
-    max_depth=4,            # smaller depth prevents overfitting
-    learning_rate=0.05,     # slower learning for smoother fit
-    subsample=0.8,          # use 80% of data for each tree
-    colsample_bytree=0.8,   # use 80% of features per tree
-    reg_lambda=2,           # L2 regularization
-    reg_alpha=0.5,          # L1 regularization
-    random_state=42,
-    use_label_encoder=False,
-    eval_metric="logloss"
+    n_estimators=123,
+    learning_rate=2.1,
+    max_depth=11,
 )
+
+
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -51,8 +47,20 @@ print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
 print(f"Testing Accuracy  : {acc_test:.4f}")
 
-# --- Create DataFrames for results ---
-df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+# --- Get predicted probabilities ---
+y_pred_proba = model.predict_proba(X)
+
+# Convert predicted probabilities to a DataFrame with one column per class
+proba_df = pd.DataFrame(
+    y_pred_proba,
+    columns=[f"Prob_Class_{cls}" for cls in model.classes_]
+)
+
+# Combine with true and predicted labels
+df_all = pd.concat([
+    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    proba_df
+], axis=1)
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
@@ -61,8 +69,4 @@ print("\n📊 Sample of overall predictions:")
 print(df_all.head())
 
 # --- Optional: export to clipboard or Excel ---
-# df_all.to_clipboard(index=False, header=False)
-df_train.to_clipboard(index=False, header=False)
-# df_all.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_all.xlsx", index=False)
-# df_train.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_train.xlsx", index=False)
-# df_test.to_excel(r"C:\Users\Sam\Desktop\ML\task\predictions_test.xlsx", index=False)
+df_all.to_clipboard(index=False, header=False)
