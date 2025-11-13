@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "Encoded_Data"
+sheet_name = "DATA_Normalized"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
@@ -39,23 +39,34 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
+
+from xgboost import XGBClassifier
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 models = {
-    "LGBC": LGBMClassifier(
+    "XGBC": XGBClassifier(
         n_estimators=100,
         learning_rate=0.1,
-        class_weight="balanced",
+        scale_pos_weight=1,  # adjust for imbalance if needed
+        use_label_encoder=False,
+        eval_metric="logloss",
         random_state=42
     ),
-    "RFC": RandomForestClassifier(
-        n_estimators=100,
+    "SVC": SVC(
+        kernel="rbf",
+        class_weight="balanced",
+        probability=True,
+        random_state=42
+    ),
+    "DTC": DecisionTreeClassifier(
         max_depth=6,
         class_weight="balanced",
         random_state=42
     )
 }
+
+
 
 # --- K-Fold setup ---
 n_splits = 5
