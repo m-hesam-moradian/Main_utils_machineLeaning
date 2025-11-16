@@ -8,31 +8,31 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# // parameters RFC
+# //3 best numeric parameters LGBC
 
-params = {
-    "n_estimators": 100,
-    "max_depth": 10,
-    "min_samples_split": 2,
-    "min_samples_leaf": 1,
-    "max_features": "sqrt",
-    "bootstrap": True,
-    "random_state": 42
+params={
+    "n_estimators":7,
+    "max_depth":1,
+    "learning_rate":0.01
+
 }
 
 
 
 
-model_name = "DTC"
+model_name = "LGBC"
 optimizer_name = ""  # no optimizer
-optimizer_name = "mother optimization algorithm (MOA)"  # no optimizer
-# optimizer_name = "monarch butterfly optimization algorithm(MBOA)"  # no optimizer
-Accuracy_target = 0.99324 # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "Gazelle Optimization Algorithm (GOA)"  # no optimizer
+optimizer_name = "Ladybug Beetle Optimization Algorithm (LBOA)"  # no optimizer
+Accuracy_target = 0.9914254 # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
-sheet_name = "model_results"
-Convergence_metric = "Accuracy"
+sheet_name = "LGBC+LBOA"
+Convergence_metric = "F1"
 convegence_direction = "up"
+
+
+
 
 # === FUNCTIONS ===
 

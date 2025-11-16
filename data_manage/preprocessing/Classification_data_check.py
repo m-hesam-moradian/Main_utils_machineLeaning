@@ -4,12 +4,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.24-.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "DATA_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Target column ---
-target_column = "Fault_Status"
+target_column = df.columns[-1]
 
 # --- Class distribution ---
 class_counts = df[target_column].value_counts()

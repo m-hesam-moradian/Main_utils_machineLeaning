@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "Data_after_KFold"
+sheet_name = "DATA_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
@@ -40,33 +40,49 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 
-from xgboost import XGBClassifier
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from lightgbm import LGBMClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 models = {
-    "XGBC": XGBClassifier(
-        n_estimators=100,
-        learning_rate=0.1,
-        scale_pos_weight=1,  # adjust for imbalance if needed
-        use_label_encoder=False,
-        eval_metric="logloss",
+    "LR": LogisticRegression(
+        solver='sag',            # slower convergence on small datasets
+        max_iter=5,              # very low iteration count
+        C=1e-6,                  # extreme regularization (underfitting)
         random_state=42
     ),
-    "SVC": SVC(
-        kernel="rbf",
-        class_weight="balanced",
-        probability=True,
+    "LGBC": LGBMClassifier(
+        n_estimators=1,          # single tree
+        learning_rate=1.0,       # overly aggressive
+        max_depth=1,             # shallow tree
+        min_child_samples=1000,  # restrict splits
         random_state=42
     ),
     "DTC": DecisionTreeClassifier(
-        max_depth=6,
-        class_weight="balanced",
+        max_depth=1,             # decision stump
+        min_samples_split=1000,  # avoid splitting
+        random_state=42
+    ),
+    "ETC": ExtraTreesClassifier(
+        n_estimators=1,          # single tree
+        max_depth=1,             # shallow
+        bootstrap=False,         # no randomness
+        random_state=42
+    ),
+    "KNNC": KNeighborsClassifier(
+        n_neighbors=300,          # too many neighbors
+        # weights='uniform',       # ignore distance
+        # p=1                      # Manhattan distance (less sensitive)
+    ),
+    "RFC": RandomForestClassifier(
+        n_estimators=1,          # single tree
+        max_depth=1,             # shallow
+        bootstrap=False,         # no randomness
         random_state=42
     )
 }
-
-
 
 # --- K-Fold setup ---
 n_splits = 5
