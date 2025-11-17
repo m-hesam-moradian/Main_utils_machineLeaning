@@ -76,7 +76,7 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_LGBC"
+sheet_name = "Data_after_KFold_MLPr"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()

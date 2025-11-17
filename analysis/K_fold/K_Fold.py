@@ -29,32 +29,19 @@ def open_excel_file(filepath):
 
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data"
-close_excel_file(excel_path)
+sheet_name = "Sheet2"
+# close_excel_file(excel_path)
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPRegressor
 
 models = {
-    "LGBc": LGBMClassifier(
-        n_estimators=100,
-        learning_rate=0.1,
-        class_weight="balanced",
-        random_state=42
-    ),
-    "RFc": RandomForestClassifier(
-        n_estimators=100,
-        max_depth=6,
-        class_weight="balanced",
-        random_state=42
-    )
+    "MLPr": MLPRegressor()
 }
-
 # --- K-Fold setup ---
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
@@ -122,7 +109,7 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
 
 
 
-open_excel_file(excel_path)
+# open_excel_file(excel_path)
 
 # --- Print Summary ---
 for model_name in models:

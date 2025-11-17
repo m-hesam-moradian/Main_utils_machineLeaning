@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
 # -------------------- 1. Load dataset --------------------
-sheet_name = "Data_after_KFold"
+sheet_name = "Data_after_KFold_MLPr"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
