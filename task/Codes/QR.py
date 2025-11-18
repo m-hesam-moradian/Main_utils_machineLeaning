@@ -1,0 +1,59 @@
+import pandas as pd
+import statsmodels.api as sm
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# --- Load reordered data for QR (after K-Fold) ---
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Data_after_KFold_QR"
+
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
+X = df.drop(columns=[target_column])
+y = df[target_column]
+
+# --- Use last 20% as test set to match K-Fold logic ---
+split_idx = int(len(df) * 0.8)
+X_train, X_test = X[:split_idx], X[split_idx:]
+y_train, y_test = y[:split_idx], y[split_idx:]
+
+# --- Add constant for statsmodels ---
+X_train_const = sm.add_constant(X_train)
+X_test_const = sm.add_constant(X_test)
+X_const = sm.add_constant(X)
+
+# --- Train and predict ---
+model = sm.QuantReg(y_train, X_train_const)
+result = model.fit(q=0.5)
+
+y_pred_all = result.predict(X_const)
+y_pred_train = result.predict(X_train_const)
+y_pred_test = result.predict(X_test_const)
+
+# --- Metrics ---
+mid = len(y_test) // 2
+sets = [
+    ("All", y, y_pred_all),
+    ("Train", y_train, y_pred_train),
+    ("Test", y_test, y_pred_test),
+    ("Value", y_test[:mid], y_pred_test[:mid]),
+    ("Test-Value", y_test[mid:], y_pred_test[mid:])
+]
+
+df_metrics = pd.DataFrame([{
+    "Set": s,
+    "MAE": mean_absolute_error(y_t, y_p),
+    "RMSE": mean_squared_error(y_t, y_p) ** 0.5,
+    "R2": r2_score(y_t, y_p)
+} for s, y_t, y_p in sets])
+
+print(df_metrics)
+
+# --- Output predictions ---
+df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
+df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
+df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
+
+# --- Export to clipboard ---
+df_all.to_clipboard(index=False, header=False)
+# df_train.to_clipboard(index=False)
+# df_test.to_clipboard(index=False)
