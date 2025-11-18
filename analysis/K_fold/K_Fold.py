@@ -28,19 +28,38 @@ def open_excel_file(filepath):
     print("📂 Opened Excel file:", filepath)
 
 # --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Sheet2"
-# close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name=sheet_name)
+filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Isolation_Forest"
+# close_excel_file(filepath)
+df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LassoLars
+import statsmodels.api as sm
+
+# Custom wrapper for Quantile Regression using statsmodels
+class QuantileRegressorWrapper:
+    def __init__(self, quantile=0.5):
+        self.quantile = quantile
+        self.model = None
+
+    def fit(self, X, y):
+        X_const = sm.add_constant(X)
+        self.model = sm.QuantReg(y, X_const).fit(q=self.quantile)
+        return self
+
+    def predict(self, X):
+        X_const = sm.add_constant(X)
+        return self.model.predict(X_const)
 
 models = {
-    "MLPr": MLPRegressor()
+    "QR": QuantileRegressorWrapper(),
+    "SF": RandomForestRegressor(),
+    "LLAR": LassoLars()
 }
 # --- K-Fold setup ---
 n_splits = 5
@@ -100,16 +119,17 @@ for model_name in models:
         "Mean RMSE": metrics_df["RMSE"].mean(),
     })
 
+close_excel_file(filepath)
 # --- Save to Excel ---
-with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False)
         df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+open_excel_file(filepath)
 
 
-
-# open_excel_file(excel_path)
+# open_excel_file(filepath)
 
 # --- Print Summary ---
 for model_name in models:
