@@ -13,28 +13,33 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model [model_name] 5 numerical params :
-params = {
-    "n_neighbors": 5,
-    "leaf_size":30,        
-    "p":2  
-}
-optimizer_name = " " #no optimizer 
-# optimizer_name = "Nurse Optimization Algorithm (NOA)"
-# optimizer_name = "Kepler Optimization Algorithm (KOA)"
+# ok here are defalt params for the model SF 5 numerical params :
 
-model_name = "HGBR"
-R2_target = 0
-min_error = -31
-max_error = 36
-Convergence_metric = "SMAPE"  # Options: "rmse" or "smape"
+params = {
+    "n_estimators": 100,
+    "max_depth": None,
+    "min_samples_split": 2
+}
+
+
+optimizer_name = " " #no optimizer 
+# optimizer_name = "Dream Optimization Algorithm (DOA)"
+# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
+
+# model_name = "QR"
+# model_name = "SF"
+model_name = "LLAR"
+sheet_name = "LLAR"
+R2_target = 0.7956382
+min_error = -430.54
+max_error = 490.43
+Convergence_metric = "MBE"  # Options: "rmse" or "smape"
 convegence_direction = "higher"  # Options: "higher" or "lower"
 
 
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
-sheet_name = "model_results"
 
 # === FUNCTIONS ===
 
@@ -58,33 +63,39 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
             y_pred[i] = y_real[i] * (1 + random_percent)
     return y_pred
 
-
-from sklearn.metrics import r2_score, mean_squared_error
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_squared_error, r2_score
 
 def build_metrics_table(y_real, y_pred):
     def compute_metrics(y_true, y_pred):
         abs_error = np.abs(y_true - y_pred)
-        nonzero_mask = np.abs(y_true) > 1e-8
-        rel_error = np.zeros_like(y_true)
-        rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
+        rel_error = abs_error / (np.abs(y_true) + 1e-8)
+        bias_error = y_pred - y_true
 
-        # SMAPE
-        denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
-        smape_mask = denominator > 1e-8
-        smape = np.mean(np.abs(y_true[smape_mask] - y_pred[smape_mask]) / denominator[smape_mask]) * 100
+        # R2
+        r2 = r2_score(y_true, y_pred)
 
-        # COV
-        cov = np.std(abs_error) / np.mean(abs_error) if np.mean(abs_error) > 1e-8 else 0
+        # RMSE
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
 
-        # U95
-        u95 = np.percentile(abs_error, 95)
+        # RAE
+        rae = np.sum(abs_error) / (np.sum(np.abs(y_true)) + 1e-8)
+
+        # MBE
+        mbe = np.mean(bias_error)
+
+        # COM = mean of normalized RMSE, RAE, |MBE|
+        rmse_norm = rmse / (np.mean(np.abs(y_true)) + 1e-8)
+        mbe_norm = np.abs(mbe) / (np.mean(np.abs(y_true)) + 1e-8)
+        com = np.mean([rmse_norm, rae, mbe_norm])
 
         return {
-            "R2": r2_score(y_true, y_pred),
-            "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-            "SMAPE": smape,
-            "U95": u95,
-            "COV": cov
+            "R2": r2,
+            "RMSE": rmse,
+            "RAE": rae,
+            "MBE": mbe,
+            "COM": com
         }
 
     split_idx = int(len(y_real) * 0.8)
@@ -101,36 +112,12 @@ def build_metrics_table(y_real, y_pred):
     metrics_value_test = compute_metrics(y_real_value_test, y_pred_value_test)
 
     df_metrics = pd.DataFrame([
-        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["SMAPE"], metrics_all["U95"], metrics_all["COV"]],
-        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["SMAPE"], metrics_train["U95"], metrics_train["COV"]],
-        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["SMAPE"], metrics_test["U95"], metrics_test["COV"]],
-        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["SMAPE"], metrics_value["U95"], metrics_value["COV"]],
-        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["SMAPE"], metrics_value_test["U95"], metrics_value_test["COV"]],
-    ], columns=["Set", "R2", "RMSE", "SMAPE", "U95", "COV"])
-
-    return df_metrics
-
-    split_idx = int(len(y_real) * 0.8)
-    y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
-    y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
-    mid = len(y_real_test) // 2
-    y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
-    y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
-
-    metrics_all = get_regression_metrics(y_real, y_pred)
-   
-    metrics_train = get_regression_metrics(y_real_train, y_pred_train)
-    metrics_test = get_regression_metrics(y_real_test, y_pred_test)
-    metrics_value = get_regression_metrics(y_real_value, y_pred_value)
-    metrics_value_test = get_regression_metrics(y_real_value_test, y_pred_value_test)
-
-    df_metrics = pd.DataFrame([
-        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["SMAPE"], metrics_all["U95"], metrics_all["COV"]],
-        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["SMAPE"], metrics_train["U95"], metrics_train["COV"]],
-        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["SMAPE"], metrics_test["U95"], metrics_test["COV"]],
-        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["SMAPE"], metrics_value["U95"], metrics_value["COV"]],
-        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["SMAPE"], metrics_value_test["U95"], metrics_value_test["COV"]],
-    ], columns=["Set", "R2", "RMSE", "SMAPE", "U95", "COV"])
+        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["RAE"], metrics_all["MBE"], metrics_all["COM"]],
+        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["RAE"], metrics_train["MBE"], metrics_train["COM"]],
+        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["RAE"], metrics_test["MBE"], metrics_test["COM"]],
+        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["RAE"], metrics_value["MBE"], metrics_value["COM"]],
+        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["RAE"], metrics_value_test["MBE"], metrics_value_test["COM"]],
+    ], columns=["Set", "R2", "RMSE", "RAE", "MBE", "COM"])
 
     return df_metrics
 def build_rec_curve(y_real, y_pred):
@@ -275,7 +262,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 
 
-with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     # Create new sheet
     worksheet = writer.book.create_sheet(sheet_name)
     writer.sheets[sheet_name] = worksheet

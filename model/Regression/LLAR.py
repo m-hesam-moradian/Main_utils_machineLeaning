@@ -1,10 +1,10 @@
 import pandas as pd
-import statsmodels.api as sm
+from sklearn.linear_model import LassoLars
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load reordered data for QR (after K-Fold) ---
+# --- Load reordered data for LLAR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_QR"
+sheet_name = "Data_after_KFold_LLAR"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -16,18 +16,15 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Add constant for statsmodels ---
-X_train_const = sm.add_constant(X_train)
-X_test_const = sm.add_constant(X_test)
-X_const = sm.add_constant(X)
-
 # --- Train and predict ---
-model = sm.QuantReg(y_train, X_train_const)
-result = model.fit(q=0.5)
+model = LassoLars(
 
-y_pred_all = result.predict(X_const)
-y_pred_train = result.predict(X_train_const)
-y_pred_test = result.predict(X_test_const)
+)
+model.fit(X_train, y_train)
+
+y_pred_all = model.predict(X)
+y_pred_train = model.predict(X_train)
+y_pred_test = model.predict(X_test)
 
 # --- Metrics ---
 mid = len(y_test) // 2
