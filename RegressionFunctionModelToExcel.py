@@ -13,24 +13,24 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model SF 5 numerical params :
+# ok here are defalt params for the model LLAR 5 numerical params :
 
 params = {
-    "n_estimators": 100,
-    "max_depth": None,
-    "min_samples_split": 2
+    "alpha": 0.01,
+    "max_iter": 500,
+
 }
 
 
 optimizer_name = " " #no optimizer 
 # optimizer_name = "Dream Optimization Algorithm (DOA)"
-# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
+optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
 
 # model_name = "QR"
 # model_name = "SF"
 model_name = "LLAR"
-sheet_name = "LLAR"
-R2_target = 0.7956382
+sheet_name = "LLAR+HROA"
+R2_target = 0.8925724356382
 min_error = -430.54
 max_error = 490.43
 Convergence_metric = "MBE"  # Options: "rmse" or "smape"
