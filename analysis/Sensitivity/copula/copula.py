@@ -1,11 +1,12 @@
 from couples_sensitivity_analysis import couples_sensitivity_analysis
 import pandas as pd
-from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.linear_model import QuantileRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+
 
 # Load the dataset
 dt = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold"
+    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_LLAR"
 )
 target_column = dt.columns[-1]
 X = dt.drop(target_column, axis=1)
@@ -15,7 +16,7 @@ y = dt[target_column]
 features = X.columns
 
 # Train the XGBoost model
-model = QuantileRegressor(quantile=0.5, alpha=0.01, solver="highs")
+model = RandomForestRegressor()
 model.fit(X, y)
 
 # Define pairs of features for sensitivity analysis
