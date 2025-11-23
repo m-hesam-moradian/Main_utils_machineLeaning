@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 # --- Load dataset ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Isolation_Forest"
+sheet_name = "DATA"
 # close_excel_file(filepath)
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -38,30 +38,17 @@ y = df[target_column]
 
 # --- Define models ---
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LassoLars
-import statsmodels.api as sm
+from sklearn.linear_model import LassoLars, LinearRegression
+from sklearn.model_selection import KFold
 
-# Custom wrapper for Quantile Regression using statsmodels
-class QuantileRegressorWrapper:
-    def __init__(self, quantile=0.5):
-        self.quantile = quantile
-        self.model = None
-
-    def fit(self, X, y):
-        X_const = sm.add_constant(X)
-        self.model = sm.QuantReg(y, X_const).fit(q=self.quantile)
-        return self
-
-    def predict(self, X):
-        X_const = sm.add_constant(X)
-        return self.model.predict(X_const)
-
+# Define three popular sklearn models
 models = {
-    "QR": QuantileRegressorWrapper(),
-    "SF": RandomForestRegressor(),
-    "LLAR": LassoLars()
+    "RF": RandomForestRegressor(),   # Random Forest
+    "LLAR": LassoLars(),             # LassoLars
+    "LR": LinearRegression()         # Classic Linear Regression
 }
-# --- K-Fold setup ---
+
+
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
 
