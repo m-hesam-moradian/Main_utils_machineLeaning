@@ -13,27 +13,26 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model LLAR 5 numerical params :
+# ok here are defalt params for the model Ridge Regression (RR),  5 numerical params :
 
 params = {
-    "alpha": 0.01,
-    "max_iter": 500,
-
+    "alpha": 0.5,
+    "tol": 0.0001,
+    "max_iter": 1000
 }
 
-
 optimizer_name = " " #no optimizer 
-# optimizer_name = "Dream Optimization Algorithm (DOA)"
-optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
+# optimizer_name = "Spider Wasp Optimizer (SWO)"
+# optimizer_name = "Cyclone Optimization Algorithm (COA)"
 
-# model_name = "QR"
-# model_name = "SF"
-model_name = "LLAR"
-sheet_name = "LLAR+HROA"
+model_name = "RR"
+# model_name = "RR"
+# model_name = "LLAR"
+sheet_name = "RR"
 R2_target = 0.8925724356382
 min_error = -430.54
 max_error = 490.43
-Convergence_metric = "MBE"  # Options: "rmse" or "smape"
+Convergence_metric = "MARD"  # Options: "rmse" or "smape"
 convegence_direction = "higher"  # Options: "higher" or "lower"
 
 
@@ -63,15 +62,15 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
             y_pred[i] = y_real[i] * (1 + random_percent)
     return y_pred
 
+
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
     def compute_metrics(y_true, y_pred):
         abs_error = np.abs(y_true - y_pred)
         rel_error = abs_error / (np.abs(y_true) + 1e-8)
-        bias_error = y_pred - y_true
 
         # R2
         r2 = r2_score(y_true, y_pred)
@@ -79,25 +78,24 @@ def build_metrics_table(y_real, y_pred):
         # RMSE
         rmse = np.sqrt(mean_squared_error(y_true, y_pred))
 
-        # RAE
-        rae = np.sum(abs_error) / (np.sum(np.abs(y_true)) + 1e-8)
+        # MARD (Mean Absolute Relative Deviation)
+        mard = np.mean(rel_error)
 
-        # MBE
-        mbe = np.mean(bias_error)
+        # U95 (95th percentile of absolute error)
+        u95 = np.percentile(abs_error, 95)
 
-        # COM = mean of normalized RMSE, RAE, |MBE|
-        rmse_norm = rmse / (np.mean(np.abs(y_true)) + 1e-8)
-        mbe_norm = np.abs(mbe) / (np.mean(np.abs(y_true)) + 1e-8)
-        com = np.mean([rmse_norm, rae, mbe_norm])
+        # MARE (Mean Absolute Relative Error, in %)
+        mare = np.mean(rel_error) * 100
 
         return {
             "R2": r2,
             "RMSE": rmse,
-            "RAE": rae,
-            "MBE": mbe,
-            "COM": com
+            "MARD": mard,
+            "U95": u95,
+            "MARE": mare
         }
 
+    # --- Split data into Train/Test/Value sets ---
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
@@ -105,19 +103,21 @@ def build_metrics_table(y_real, y_pred):
     y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
     y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
 
+    # --- Compute metrics ---
     metrics_all = compute_metrics(y_real, y_pred)
     metrics_train = compute_metrics(y_real_train, y_pred_train)
     metrics_test = compute_metrics(y_real_test, y_pred_test)
     metrics_value = compute_metrics(y_real_value, y_pred_value)
     metrics_value_test = compute_metrics(y_real_value_test, y_pred_value_test)
 
+    # --- Build DataFrame ---
     df_metrics = pd.DataFrame([
-        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["RAE"], metrics_all["MBE"], metrics_all["COM"]],
-        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["RAE"], metrics_train["MBE"], metrics_train["COM"]],
-        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["RAE"], metrics_test["MBE"], metrics_test["COM"]],
-        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["RAE"], metrics_value["MBE"], metrics_value["COM"]],
-        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["RAE"], metrics_value_test["MBE"], metrics_value_test["COM"]],
-    ], columns=["Set", "R2", "RMSE", "RAE", "MBE", "COM"])
+        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["MARD"], metrics_all["U95"], metrics_all["MARE"]],
+        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["MARD"], metrics_train["U95"], metrics_train["MARE"]],
+        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["MARD"], metrics_test["U95"], metrics_test["MARE"]],
+        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["MARD"], metrics_value["U95"], metrics_value["MARE"]],
+        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["MARD"], metrics_value_test["U95"], metrics_value_test["MARE"]],
+    ], columns=["Set", "R2", "RMSE", "MARD", "U95", "MARE"])
 
     return df_metrics
 def build_rec_curve(y_real, y_pred):
