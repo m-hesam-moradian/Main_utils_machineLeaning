@@ -10,13 +10,13 @@ import numpy as np
 import shap
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Data_after_KFold_MLPr"
-file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "normalized_data"
+file_path = r"C:\Users\Sam\Downloads\Telegram Desktop\716-Electricity Production\716-Electricity Production.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -33,11 +33,11 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # -------------------- 3. Train model --------------------
-model = RandomForestRegressor(n_estimators=200, random_state=42)
+model = LinearRegression()
 model.fit(X_train_scaled, y_train)
 
 # -------------------- 4. Compute SHAP values --------------------
-explainer = shap.TreeExplainer(model)
+explainer = shap.LinearExplainer(model, X_train_scaled)
 shap_values = explainer.shap_values(X_test_scaled)
 
 # -------------------- 5. Summarize feature importance --------------------

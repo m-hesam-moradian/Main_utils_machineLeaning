@@ -66,5 +66,5 @@ df_main = pd.DataFrame(
 # -------------------- 6. Save to clipboard --------------------
 print(df_main)
 
-df_main.to_csv(r"C:\Users\Sam\Desktop\ML\data\Data_Metrics.csv",index=False)
+# df_main.to_csv(r"C:\Users\Sam\Desktop\ML\data\Data_Metrics.csv",index=False)
 df_main.to_clipboard(index=False)

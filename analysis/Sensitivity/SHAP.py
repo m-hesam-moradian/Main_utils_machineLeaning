@@ -76,8 +76,8 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_MLPr"
-file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "normalized_data"
+file_path = r"C:\Users\Sam\Downloads\Telegram Desktop\716-Electricity Production\716-Electricity Production.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 target_column = df.columns[-1]
