@@ -13,25 +13,27 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model Ridge Regression (RR),  5 numerical params :
+# ok here are defalt params for the model Categorical Gradient Boosting Regression (CATR),  5 numerical params :
 
 params = {
-    "alpha": 0.5,
-    "tol": 0.0001,
-    "max_iter": 1000
+    "iterations": 300,
+    "depth": 6,
+    "learning_rate": 0.1,
+
 }
 
-optimizer_name = " " #no optimizer 
-# optimizer_name = "Spider Wasp Optimizer (SWO)"
-# optimizer_name = "Cyclone Optimization Algorithm (COA)"
 
-model_name = "RR"
+# optimizer_name = " " #no optimizer 
+# optimizer_name = "Spider Wasp Optimizer (SWO)"
+optimizer_name = "Cyclone Optimization Algorithm (COA)"
+
 # model_name = "RR"
-# model_name = "LLAR"
-sheet_name = "RR"
-R2_target = 0.8925724356382
-min_error = -430.54
-max_error = 490.43
+# model_name = "KNNR"
+model_name = "CATR"
+sheet_name = "CATR+COA"
+R2_target = 0.906382
+min_error = -43000.54
+max_error = 49000.43
 Convergence_metric = "MARD"  # Options: "rmse" or "smape"
 convegence_direction = "higher"  # Options: "higher" or "lower"
 
