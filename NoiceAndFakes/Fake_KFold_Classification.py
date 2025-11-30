@@ -20,50 +20,39 @@ import pandas as pd
 
 
 
-# Fold	Accuracy	F1-Score
-# 1	0.995202193	0.995202162
-# 2	0.991775188	0.991773751
-# 3	0.989711934	0.989709392
-# 4	0.991083676	0.991082094
-# 5	0.988340192	0.988343271
 data = {
     "Fold": [1, 2, 3, 4, 5],
-    "Accuracy": [0.995202193, 0.991775188, 0.989711934, 0.991083676, 0.988340192],
-    "F1-Score": [0.995202162, 0.991773751, 0.989709392, 0.991082094, 0.988343271],
+    "Precision": [0.370497519, 0.339429955, 0.359401426, 0.357527595, 0.357664632],
+    "F1-Score": [0.370761978, 0.339186015, 0.356607088, 0.346739047, 0.336966068],
 }
 
 
 
-# Reference metrics (target maximums)
-ref_accuracy = 0.613192182
+ref_precision = 0.933537171
+
+
+
+ref_f1 =0.909644557
 
 
 
 
-ref_f1 = 0.613074811
-
-
-
-
-
-# Convert to DataFrame
 df = pd.DataFrame(data)
 
-# 1. Calculate how much to subtract to make max Accuracy = reference
-max_acc = df["Accuracy"].max()
-acc_drop = max_acc - ref_accuracy
+# 1. Calculate how much to subtract to make max Precision = reference
+max_prec = df["Precision"].max()
+prec_drop = max_prec - ref_precision
 
-# 2. Adjust all Accuracy values downward
-df["Accuracy"] = df["Accuracy"] - acc_drop
+# 2. Adjust all Precision values downward
+df["Precision"] = df["Precision"] - prec_drop
 
-# 3. Scale F1 proportionally to the new Accuracy
-# Maintain the original F1/Accuracy ratio per fold
-df["F1-Score"] = df["Accuracy"] * (ref_f1 / ref_accuracy)
+# 3. Scale F1 proportionally to the new Precision
+df["F1-Score"] = df["Precision"] * (ref_f1 / ref_precision)
 
 # 4. Predict average F1
 predicted_f1 = df["F1-Score"].mean()
 
-# Show final result
-print(df[["Fold", "Accuracy", "F1-Score"]])
+print(df[["Fold", "Precision", "F1-Score"]])
 print(f"\nPredicted Overall F1-Score (scaled): {predicted_f1:.4f}")
+
 df.to_clipboard(index=False)

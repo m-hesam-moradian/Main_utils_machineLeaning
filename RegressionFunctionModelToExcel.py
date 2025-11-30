@@ -19,18 +19,17 @@ params = {
     "iterations": 300,
     "depth": 6,
     "learning_rate": 0.1,
-
 }
 
 
 # optimizer_name = " " #no optimizer 
-# optimizer_name = "Spider Wasp Optimizer (SWO)"
-optimizer_name = "Cyclone Optimization Algorithm (COA)"
+optimizer_name = "Spider Wasp Optimizer (SWO)"
+# optimizer_name = "Cyclone Optimization Algorithm (COA)"
 
-# model_name = "RR"
+model_name = "RR"
 # model_name = "KNNR"
-model_name = "CATR"
-sheet_name = "CATR+COA"
+# model_name = "CATR"
+sheet_name = "RR+ُSWO"
 R2_target = 0.906382
 min_error = -43000.54
 max_error = 49000.43

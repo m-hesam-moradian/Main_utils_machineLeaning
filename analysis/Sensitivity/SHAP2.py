@@ -15,9 +15,8 @@ from sklearn.preprocessing import StandardScaler
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "normalized_data"
-file_path = r"C:\Users\Sam\Downloads\Telegram Desktop\716-Electricity Production\716-Electricity Production.xlsx"
-
+sheet_name = "Encoded_Data"
+file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
 # Automatically detect target column (last column)

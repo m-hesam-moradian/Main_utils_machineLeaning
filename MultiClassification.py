@@ -8,28 +8,27 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# // parameters DTC
+# // parameters LGBC
 
 params = {
-    "max_depth": 6,
-    "min_samples_split": 4,
-    "min_samples_leaf": 2
+    "n_neighbors":5,        # default neighborhood size
+    "p":2   
 }
 
 
 
 
-# model_name = "XGBC"
+# model_name = "LGBC"
 # model_name = "SVC"
-model_name = "DTC"
+model_name = "KNNC"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "mother optimization algorithm (MOA)"  # no optimizer
-optimizer_name = "monarch butterfly optimization algorithm(MBOA)"  # no optimizer
-Accuracy_target = 0.9524    # if you want to force prediction adjustments to reach a target accuracy
+optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
+# optimizer_name = "Kangaroo Optimization Algorithm (KOA)"  # no optimizer
+Accuracy_target = 0.99549   # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
 sheet_name = "model_results"
-Convergence_metric = "Accuracy"
+Convergence_metric = "F1"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

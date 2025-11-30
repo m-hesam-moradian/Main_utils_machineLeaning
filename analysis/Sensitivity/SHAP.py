@@ -1,7 +1,7 @@
 import pandas as pd
 import shap
 from sklearn.model_selection import train_test_split
-from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 
 def shap_analysis(
@@ -76,8 +76,8 @@ def shap_analysis(
     return sensitivity_df, shap_values
 
 # --- Load dataset ---
-sheet_name = "normalized_data"
-file_path = r"C:\Users\Sam\Downloads\Telegram Desktop\716-Electricity Production\716-Electricity Production.xlsx"
+sheet_name = "Data_after_KFold_KNNC"
+file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 target_column = df.columns[-1]
@@ -91,7 +91,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle
 
 # --- Run SHAP Analysis with ADAC ---
 sensitivity_df_shap, shap_values = shap_analysis(
-    model=LGBMClassifier(),
+    model=RandomForestClassifier(),
     X_train=X_train,
     y_train=y_train,
     X_test=X_test,
