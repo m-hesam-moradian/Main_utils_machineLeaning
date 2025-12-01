@@ -12,15 +12,10 @@ y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
 y_pred_train = y_pred[:split_idx]
 y_pred_test = y_pred[split_idx:]
 
-# 3. Define regression metrics
+# 3. Define regression metric (MAE)
 def get_regression_metrics(y_true, y_pred):
-    abs_error = np.abs(y_true - y_pred)
-    nonzero_mask = np.abs(y_true) > 1e-8
-    rel_error = np.zeros_like(y_true)
-    rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
-    gr100 = np.mean(rel_error <= 1.0) * 100
-    gr125 = np.mean(rel_error <= 1.25) * 100
-    return {"GR100": gr100, "GR125": gr125}
+    mae = np.mean(np.abs(y_true - y_pred))
+    return {"MAE": mae}
 
 # 4. Compute metrics
 metrics_all   = get_regression_metrics(y_real, y_pred)
@@ -36,13 +31,13 @@ metrics_value_test = get_regression_metrics(y_real_value_test, y_pred_value_test
 # 5. Create metrics DataFrame
 df_main = pd.DataFrame(
     [
-        ["All",        metrics_all["GR100"],   metrics_all["GR125"]],
-        ["Train",      metrics_train["GR100"], metrics_train["GR125"]],
-        ["Test",       metrics_test["GR100"],  metrics_test["GR125"]],
-        ["Value",      metrics_value["GR100"], metrics_value["GR125"]],
-        ["Value-test", metrics_value_test["GR100"], metrics_value_test["GR125"]],
+        ["All",        metrics_all["MAE"]],
+        ["Train",      metrics_train["MAE"]],
+        ["Test",       metrics_test["MAE"]],
+        ["Value",      metrics_value["MAE"]],
+        ["Value-test", metrics_value_test["MAE"]],
     ],
-    columns=["Set", "GR100", "GR125"],
+    columns=["Set", "MAE"],
 )
 
 # 6. Save to clipboard

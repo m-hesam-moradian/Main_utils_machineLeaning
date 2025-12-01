@@ -11,7 +11,6 @@ y_pred = data[:, 1]
 errors = np.abs(y_real - y_pred)
 epsilon = np.linspace(0, errors.max(), 200)
 accuracy = [np.mean(errors <= e) for e in epsilon]
-
 # -------------------- 3. Compute AUC --------------------
 rec_auc = auc(epsilon, accuracy)
 

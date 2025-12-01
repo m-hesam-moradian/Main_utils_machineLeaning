@@ -37,17 +37,15 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LassoLars, LinearRegression
+from lightgbm import LGBMRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.model_selection import KFold
 
-# Define three popular sklearn models
+# Define two popular sklearn/LightGBM models
 models = {
-    "RF": RandomForestRegressor(),   # Random Forest
-    "LLAR": LassoLars(),             # LassoLars
-    "LR": LinearRegression()         # Classic Linear Regression
+    "LGBR": LGBMRegressor(),        # LightGBM Regressor
+    "ETR": ExtraTreesRegressor()    # Extra Trees Regressor
 }
-
 
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
