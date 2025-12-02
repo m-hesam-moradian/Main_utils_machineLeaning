@@ -30,10 +30,10 @@ model_name = "RR"
 # model_name = "KNNR"
 # model_name = "CATR"
 sheet_name = "RR+ُSWO"
-R2_target = 0.906382
-min_error = -43000.54
-max_error = 49000.43
-Convergence_metric = "MARD"  # Options: "rmse" or "smape"
+R2_target = 0.85
+min_error = -55
+max_error = 63
+Convergence_metric = "RMSE"  # Options: "rmse" or "smape"
 convegence_direction = "higher"  # Options: "higher" or "lower"
 
 
@@ -66,34 +66,38 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
     def compute_metrics(y_true, y_pred):
         abs_error = np.abs(y_true - y_pred)
-        rel_error = abs_error / (np.abs(y_true) + 1e-8)
-
-        # R2
-        r2 = r2_score(y_true, y_pred)
 
         # RMSE
         rmse = np.sqrt(mean_squared_error(y_true, y_pred))
 
-        # MARD (Mean Absolute Relative Deviation)
-        mard = np.mean(rel_error)
+        # n10_index: % of samples with relative error <= 10%
+        rel_error = abs_error / (np.abs(y_true) + 1e-8)
+        n10_index = np.mean(rel_error <= 0.10) * 100
+
+        # SI (Scatter Index): RMSE normalized by mean of observed
+        si = rmse / (np.mean(np.abs(y_true)) + 1e-8)
 
         # U95 (95th percentile of absolute error)
         u95 = np.percentile(abs_error, 95)
 
-        # MARE (Mean Absolute Relative Error, in %)
-        mare = np.mean(rel_error) * 100
+        # R (correlation coefficient between y_true and y_pred)
+        r = np.corrcoef(y_true, y_pred)[0, 1]
+
+        # MAE (Mean Absolute Error)
+        mae = np.mean(abs_error)
 
         return {
-            "R2": r2,
             "RMSE": rmse,
-            "MARD": mard,
+            "n10_index": n10_index,
+            "SI": si,
             "U95": u95,
-            "MARE": mare
+            "R": r,
+            "MAE": mae
         }
 
     # --- Split data into Train/Test/Value sets ---
@@ -113,14 +117,16 @@ def build_metrics_table(y_real, y_pred):
 
     # --- Build DataFrame ---
     df_metrics = pd.DataFrame([
-        ["All", metrics_all["R2"], metrics_all["RMSE"], metrics_all["MARD"], metrics_all["U95"], metrics_all["MARE"]],
-        ["Train", metrics_train["R2"], metrics_train["RMSE"], metrics_train["MARD"], metrics_train["U95"], metrics_train["MARE"]],
-        ["Test", metrics_test["R2"], metrics_test["RMSE"], metrics_test["MARD"], metrics_test["U95"], metrics_test["MARE"]],
-        ["Value", metrics_value["R2"], metrics_value["RMSE"], metrics_value["MARD"], metrics_value["U95"], metrics_value["MARE"]],
-        ["Value-test", metrics_value_test["R2"], metrics_value_test["RMSE"], metrics_value_test["MARD"], metrics_value_test["U95"], metrics_value_test["MARE"]],
-    ], columns=["Set", "R2", "RMSE", "MARD", "U95", "MARE"])
+        ["All",        *metrics_all.values()],
+        ["Train",      *metrics_train.values()],
+        ["Test",       *metrics_test.values()],
+        ["Value",      *metrics_value.values()],
+        ["Value-test", *metrics_value_test.values()],
+    ], columns=["Set", "RMSE", "n10_index", "SI", "U95", "R", "MAE"])
 
     return df_metrics
+
+
 def build_rec_curve(y_real, y_pred):
     errors = np.abs(y_real - y_pred)
     epsilon = np.linspace(0, errors.max(), 200)

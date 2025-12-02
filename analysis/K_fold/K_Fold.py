@@ -40,13 +40,14 @@ y = df[target_column]
 from lightgbm import LGBMRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.model_selection import KFold
+from xgboost import XGBRegressor   # <-- add this import
 
-# Define two popular sklearn/LightGBM models
+# Define three popular regressors: LightGBM, Extra Trees, XGBoost
 models = {
     "LGBR": LGBMRegressor(),        # LightGBM Regressor
-    "ETR": ExtraTreesRegressor()    # Extra Trees Regressor
+    "ETR": ExtraTreesRegressor(),   # Extra Trees Regressor
+    "XGBR": XGBRegressor()          # XGBoost Regressor
 }
-
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
 

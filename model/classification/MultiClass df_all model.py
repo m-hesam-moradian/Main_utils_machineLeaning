@@ -21,7 +21,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train K-Nearest Neighbors Classifier ---
 model = KNeighborsClassifier(
-    n_neighbors=5,        # default neighborhood size
+    n_neighbors=10,        # default neighborhood size
     weights="distance",   # closer neighbors have more influence
     metric="minkowski",   # general distance metric
     p=2                   # Euclidean distance

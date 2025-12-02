@@ -33,7 +33,11 @@ model.fit(X_train, y_train)
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_prob_test = model.predict_proba(X_test)  # For AUC (multiclass)
+
+# --- Predicted probabilities ---
+y_pred_proba_all = model.predict_proba(X)
+y_pred_proba_train = model.predict_proba(X_train)
+y_pred_proba_test = model.predict_proba(X_test)
 
 # --- Metrics function ---
 def get_classification_metrics(y_true, y_pred, y_prob=None):
@@ -54,11 +58,11 @@ def get_classification_metrics(y_true, y_pred, y_prob=None):
 # --- Evaluate sets ---
 mid = len(y_test) // 2
 sets = [
-    ("All", y, y_pred_all, None),
-    ("Train", y_train, y_pred_train, None),
-    ("Test", y_test, y_pred_test, y_prob_test),
-    ("Value", y_test[:mid], y_pred_test[:mid], y_prob_test[:mid]),
-    ("Test-Value", y_test[mid:], y_pred_test[mid:], y_prob_test[mid:])
+    ("All", y, y_pred_all, y_pred_proba_all),
+    ("Train", y_train, y_pred_train, y_pred_proba_train),
+    ("Test", y_test, y_pred_test, y_pred_proba_test),
+    ("Value", y_test[:mid], y_pred_test[:mid], y_pred_proba_test[:mid]),
+    ("Test-Value", y_test[mid:], y_pred_test[mid:], y_pred_proba_test[mid:])
 ]
 
 df_metrics = pd.DataFrame([
@@ -68,12 +72,27 @@ df_metrics = pd.DataFrame([
 
 print(df_metrics)
 
-# --- Output predictions ---
-df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
-df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
-df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
+# --- Build probability DataFrames ---
+proba_cols = [f"Prob_Class_{cls}" for cls in model.classes_]
+
+df_all = pd.concat([
+    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    pd.DataFrame(y_pred_proba_all, columns=proba_cols)
+], axis=1)
+
+df_train = pd.concat([
+    pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train}),
+    pd.DataFrame(y_pred_proba_train, columns=proba_cols)
+], axis=1)
+
+df_test = pd.concat([
+    pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test}),
+    pd.DataFrame(y_pred_proba_test, columns=proba_cols)
+], axis=1)
+
+# --- Optional: view first few rows ---
+print("\n📊 Sample of overall predictions with probabilities:")
+print(df_all.head())
 
 # --- Export to clipboard ---
 df_all.to_clipboard(index=False, header=False)
-# df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)

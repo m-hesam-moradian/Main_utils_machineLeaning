@@ -1,30 +1,35 @@
 import pandas as pd
-from xgboost import XGBRegressor
-from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Load reordered data for XGBR (after K-Fold)
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.22-Data.xlsx"
-sheet_name = "Data_after_KFold_XGBR"
-target_column = "Renewable Availability Index"
+# --- Load reordered data for KNNR (after K-Fold) ---
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "DATA"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# Use last 20% as test set to match K-Fold logic
+# --- Use last 20% as test set to match K-Fold logic ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# Train and predict
-model = XGBRegressor()
+# --- Define and train KNNR model ---
+model = KNeighborsRegressor(
+    n_neighbors=7,   # number of neighbors
+    p=2,             # Euclidean distance
+    leaf_size=30     # tree leaf size
+)
 model.fit(X_train, y_train)
+
+# --- Predictions ---
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
 
-# Metrics
+# --- Metrics ---
 mid = len(y_test) // 2
 sets = [
     ("All", y, y_pred_all),
@@ -43,12 +48,12 @@ df_metrics = pd.DataFrame([{
 
 print(df_metrics)
 
-# Output predictions
+# --- Output predictions ---
 df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# Optional: Export to clipboard or Excel
-df_all.to_clipboard()
+# --- Export to clipboard ---
+df_all.to_clipboard(index=False, header=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)
