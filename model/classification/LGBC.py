@@ -96,3 +96,8 @@ print(df_all.head())
 
 # --- Export to clipboard ---
 df_all.to_clipboard(index=False, header=False)
+
+
+
+
+

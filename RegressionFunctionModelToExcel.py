@@ -22,15 +22,15 @@ params = {
 }
 
 
-# optimizer_name = " " #no optimizer 
-optimizer_name = "Spider Wasp Optimizer (SWO)"
+optimizer_name = " " #no optimizer 
+# optimizer_name = "Spider Wasp Optimizer (SWO)"
 # optimizer_name = "Cyclone Optimization Algorithm (COA)"
 
-model_name = "RR"
+model_name = "RFR"
 # model_name = "KNNR"
 # model_name = "CATR"
-sheet_name = "RR+ُSWO"
-R2_target = 0.85
+sheet_name = "RFR_Results"
+R2_target = 0.89848934
 min_error = -55
 max_error = 63
 Convergence_metric = "RMSE"  # Options: "rmse" or "smape"
@@ -66,38 +66,65 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 def build_metrics_table(y_real, y_pred):
-    def compute_metrics(y_true, y_pred):
-        abs_error = np.abs(y_true - y_pred)
+    def compute_metrics(y_true, y_hat):
+        abs_error = np.abs(y_true - y_hat)
+        rel_error = abs_error / (np.abs(y_true) + 1e-8)
 
         # RMSE
-        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # n10_index: % of samples with relative error <= 10%
-        rel_error = abs_error / (np.abs(y_true) + 1e-8)
-        n10_index = np.mean(rel_error <= 0.10) * 100
+        # R2
+        r2 = r2_score(y_true, y_hat)
 
-        # SI (Scatter Index): RMSE normalized by mean of observed
-        si = rmse / (np.mean(np.abs(y_true)) + 1e-8)
-
-        # U95 (95th percentile of absolute error)
-        u95 = np.percentile(abs_error, 95)
-
-        # R (correlation coefficient between y_true and y_pred)
-        r = np.corrcoef(y_true, y_pred)[0, 1]
-
-        # MAE (Mean Absolute Error)
+        # MAE
         mae = np.mean(abs_error)
 
+        # RSE (Relative Squared Error)
+        rse = np.sum((y_true - y_hat) ** 2) / (np.sum((y_true - np.mean(y_true)) ** 2) + 1e-12)
+
+        # SMAPE
+        smape = 100 * np.mean(2 * abs_error / (np.abs(y_true) + np.abs(y_hat) + 1e-12))
+
+        # Thiel's U
+        numerator = np.sqrt(np.mean((y_hat - y_true) ** 2))
+        denominator = np.sqrt(np.mean(y_true ** 2)) + np.sqrt(np.mean(y_hat ** 2))
+        thiel_u = numerator / (denominator + 1e-12)
+
+        # MAPE
+        mape = np.mean(rel_error) * 100
+
+        # U95
+        u95 = np.percentile(abs_error, 95)
+
+        # JSD
+        p = np.abs(y_true) / (np.sum(np.abs(y_true)) + 1e-12)
+        q = np.abs(y_hat) / (np.sum(np.abs(y_hat)) + 1e-12)
+        m = 0.5 * (p + q)
+        jsd = 0.5 * (np.sum(p * np.log((p + 1e-12) / (m + 1e-12))) +
+                     np.sum(q * np.log((q + 1e-12) / (m + 1e-12))))
+
+        # KGE
+        r = np.corrcoef(y_true, y_hat)[0, 1]
+        alpha = np.std(y_hat) / (np.std(y_true) + 1e-12)
+        beta  = np.mean(y_hat) / (np.mean(y_true) + 1e-12)
+        kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2 + (beta - 1) ** 2)
+
+        # SI
+        si = rmse / (np.mean(np.abs(y_true)) + 1e-12)
+
+        # n10_index
+        n10_index = np.mean(rel_error <= 0.10) * 100
+
+        # MARE
+        mare = np.mean(rel_error)
+
         return {
-            "RMSE": rmse,
-            "n10_index": n10_index,
-            "SI": si,
-            "U95": u95,
-            "R": r,
-            "MAE": mae
+            "RMSE": rmse, "R2": r2, "MAE": mae, "RSE": rse, "SMAPE": smape,
+            "thiel_u": thiel_u, "MAPE": mape, "U95": u95, "JSD": jsd, "KGE": kge,
+            "SI": si, "n10_index": n10_index, "MARE": mare
         }
 
     # --- Split data into Train/Test/Value sets ---
@@ -109,23 +136,23 @@ def build_metrics_table(y_real, y_pred):
     y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
 
     # --- Compute metrics ---
-    metrics_all = compute_metrics(y_real, y_pred)
-    metrics_train = compute_metrics(y_real_train, y_pred_train)
-    metrics_test = compute_metrics(y_real_test, y_pred_test)
-    metrics_value = compute_metrics(y_real_value, y_pred_value)
-    metrics_value_test = compute_metrics(y_real_value_test, y_pred_value_test)
+    M_all   = compute_metrics(y_real, y_pred)
+    M_train = compute_metrics(y_real_train, y_pred_train)
+    M_test  = compute_metrics(y_real_test, y_pred_test)
+    M_value = compute_metrics(y_real_value, y_pred_value)
+    M_valte = compute_metrics(y_real_value_test, y_pred_value_test)
 
     # --- Build DataFrame ---
+    cols = ["Set"] + list(M_all.keys())
     df_metrics = pd.DataFrame([
-        ["All",        *metrics_all.values()],
-        ["Train",      *metrics_train.values()],
-        ["Test",       *metrics_test.values()],
-        ["Value",      *metrics_value.values()],
-        ["Value-test", *metrics_value_test.values()],
-    ], columns=["Set", "RMSE", "n10_index", "SI", "U95", "R", "MAE"])
+        ["All",        *M_all.values()],
+        ["Train",      *M_train.values()],
+        ["Test",       *M_test.values()],
+        ["Value",      *M_value.values()],
+        ["Value-test", *M_valte.values()],
+    ], columns=cols)
 
     return df_metrics
-
 
 def build_rec_curve(y_real, y_pred):
     errors = np.abs(y_real - y_pred)
