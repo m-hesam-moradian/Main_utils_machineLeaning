@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "Encoded_Data"
+sheet_name = "DATA_Shuffled"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
@@ -39,26 +39,15 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from lightgbm import LGBMClassifier
+
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import AdaBoostClassifier
 
 models = {
-    "LGBC": LGBMClassifier(
-        # n_estimators=200,        # number of boosting iterations
-        # learning_rate=0.05,      # conservative learning rate
-        # num_leaves=31,           # leaf nodes per tree
-        # max_depth=-1,            # no limit (let optimizer tune)
-        # min_child_samples=20,    # minimum samples per leaf
-        # subsample=0.8,           # row sampling
-        # colsample_bytree=0.8,    # feature sampling
-        # random_state=42
-    ),
-    "KNNC": KNeighborsClassifier(
-        # n_neighbors=5,           # default neighborhood size
-        # weights="distance",      # closer neighbors have more influence
-        # metric="minkowski",      # general distance metric
-        # p=2                      # Euclidean distance
-    )
+    "KNNC": KNeighborsClassifier(),
+    "SVC": SVC(),
+    "ADAC": AdaBoostClassifier()
 }
 
 # --- K-Fold setup ---

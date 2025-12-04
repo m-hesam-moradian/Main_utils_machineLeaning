@@ -1,11 +1,11 @@
 import pandas as pd
-from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_SVC"   # keep sheet name unless you change it
+sheet_name = "Data_after_KFold_KNNC"   # keep sheet name unless you change it
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -20,15 +20,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # --- Train model (KNN) ---
-from sklearn.svm import SVC
-
-model = SVC(
-    C=4,
-    max_iter=1,
-    # kernel="sigmoid",
-    # class_weight="",
-
-    # random_state=42
+model = KNeighborsClassifier(
+    # n_neighbors=3,
+    # weights="uniform",
+    # algorithm="auto",
+    # leaf_size=30,
+    # p=2,
+    # metric="minkowski"
 
 )
 model.fit(X_train, y_train)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Shuffled"
+sheet_name = "SMOTE"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 # --- Target column ---

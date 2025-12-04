@@ -19,11 +19,10 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # --- Train and predict with standard linear regression ---
 model = LinearRegression(
     fit_intercept=False,
-   
     copy_X=False,
     n_jobs=856,
     positive=False
-    
+
 )
 model.fit(X_train, y_train)
 
