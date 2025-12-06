@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score
 
-# --- Load dataset ---
+# --- Excel helpers ---
 def close_excel_file(filepath):
     import os
     import win32com.client
@@ -27,39 +27,37 @@ def open_excel_file(filepath):
     excel.Workbooks.Open(os.path.abspath(filepath))
     print("📂 Opened Excel file:", filepath)
 
+# --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "DATA_Shuffled"
+sheet_name = "Selected_Data"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
-
-# --- Ensure target is binary and not leaking ---
 
 # --- Features and target ---
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-
-from sklearn.neighbors import KNeighborsClassifier
+# --- Models ---
 from sklearn.svm import SVC
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.gaussian_process import GaussianProcessClassifier
 
 models = {
-    "KNNC": KNeighborsClassifier(),
-    "SVC": SVC(),
-    "ADAC": AdaBoostClassifier()
+    "SVC": SVC(probability=True, random_state=42),
+    "LR": LogisticRegression(max_iter=1000, random_state=42),
+    "GPC": GaussianProcessClassifier(random_state=42)
 }
 
-# --- K-Fold setup ---
+# --- Stratified K-Fold setup ---
 n_splits = 5
-kf = KFold(n_splits=n_splits, shuffle=False)
+kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
 # --- Results containers ---
 metrics_df_dict = {}
 df_reordered_dict = {}
 summary_df = []
 df_prediction_dict = {}
-
 
 # --- K-Fold loop ---
 for model_name, model in models.items():
@@ -68,17 +66,11 @@ for model_name, model in models.items():
     y_real_all = []
     y_pred_all = []
 
-    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
+    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X, y), 1):
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-        # Check for constant target in fold
-        if y_train.nunique() < 2 or y_test.nunique() < 2:
-            print(
-                f"⚠️ Skipping fold {fold_index} for {model_name}: constant target values."
-            )
-            continue
-
+        # Train model
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
@@ -118,10 +110,19 @@ for model_name, model in models.items():
     # Save prediction DataFrame
     prediction_df = pd.DataFrame({"y_real": y_real_all, "y_pred": y_pred_all})
     df_prediction_dict[model_name] = prediction_df
+
+    # --- Log fold results to console ---
+    print(f"\n📘 Stratified K-Fold Results for {model_name}:")
+    print(metrics_df.to_string(index=False, float_format="%.4f"))
+    best_fold = metrics_df.loc[best_fold_idx]
+    print(f"\n🏆 Best Fold for {model_name}: Fold {best_fold['Fold']}")
+    print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
+    print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
+    print(f"📊 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
+    print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
+
 # --- Save results to Excel ---
-with pd.ExcelWriter(
-    excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-) as writer:
+with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
             writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
@@ -130,17 +131,6 @@ with pd.ExcelWriter(
             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
         )
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
-open_excel_file(excel_path)
-print(
-    f"✅ K-Fold results and summary added to '{excel_path}' with sheets for SVC, LGBC, and Model_Summary."
-)
-# --- Log fold results to console ---
-print(f"\n📘 K-Fold Results for {model_name}:")
-print(metrics_df.to_string(index=False, float_format="%.4f"))
-best_fold = metrics_df.loc[best_fold_idx]
-print(f"\n🏆 Best Fold for {model_name}: Fold {best_fold['Fold']}")
-print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
-print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
-print(f"📊 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
-print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
 
+open_excel_file(excel_path)
+print(f"✅ Stratified K-Fold results and summary added to '{excel_path}' with sheets for KNNC, SVC, ADAC, and Model_Summary.")

@@ -8,20 +8,16 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters knnc
-params={
-    "max_iter": None,
-    "c": 5,
-   
-}
-model_name = "ADAC"
+#  best numeric parameters SVC
+
+model_name = "SVC"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "Cyclone Optimization Algorithm (COA)"  # no optimizer
-optimizer_name = "Echidna Optimization Algorithm (EOA)"  # no optimizer
+# optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
+# optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
 Accuracy_target = 0.00 # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
-sheet_name = "ADAC+EOA"
+sheet_name = "SVC+EOA"
 Convergence_metric = "Precision"
 convegence_direction = "up"
 
