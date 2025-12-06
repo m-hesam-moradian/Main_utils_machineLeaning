@@ -7,7 +7,7 @@ from itertools import combinations
 df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     header=0,
-    sheet_name="Wilcoxon Test Data",
+    sheet_name="Wilcoxon_Test_Data",
 )
 
 # Dynamically extract model names and predictions
