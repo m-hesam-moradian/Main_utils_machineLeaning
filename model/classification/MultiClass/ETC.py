@@ -1,11 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_DTC"  # You may want to rename this to reflect DTC
+sheet_name = "Data_after_KFold_ETC"  # renamed to reflect ETC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,12 +19,13 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Decision Tree Classifier ---
-model = DecisionTreeClassifier(
-    max_depth=5,
-    min_samples_split=2,
-    min_samples_leaf=1
-
+# --- Train Extra Trees Classifier ---
+model = ExtraTreesClassifier(
+    n_estimators=100,       # number of trees
+    max_depth=9,         # let trees grow fully
+    min_samples_split=4,
+    min_samples_leaf=4,
+    # random_state=42
 )
 
 model.fit(X_train, y_train)
@@ -40,7 +41,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results")
+print("✅ Accuracy Results (Extra Trees)")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")

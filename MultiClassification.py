@@ -11,23 +11,23 @@ from openpyxl.styles import Font, Alignment, PatternFill
 # // parameters LGBC
 
 params = {
-    "n_neighbors":5,        # default neighborhood size
-    "p":2   
+    "n_estimators":None,        # default neighborhood size
+    "max_depth":2 ,  
+    "learning_rate":2   
 }
 
 
 
 
-# model_name = "LGBC"
-# model_name = "SVC"
-model_name = "KNNC"
+
+model_name = "XGBC"
 optimizer_name = ""  # no optimizer
+# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"  # no optimizer
 optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
-# optimizer_name = "Kangaroo Optimization Algorithm (KOA)"  # no optimizer
-Accuracy_target = 0.99549   # if you want to force prediction adjustments to reach a target accuracy
+Accuracy_target = 0.0  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task/Data.xlsx"
-sheet_name = "model_results"
+sheet_name = "XGBC+BOA"
 Convergence_metric = "F1"
 convegence_direction = "up"
 
