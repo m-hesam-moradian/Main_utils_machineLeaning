@@ -18,6 +18,12 @@ features = X.columns
 
 # Train the RandomForestClassifier model
 # Using RandomForestClassifier for classification tasks
+model = DecisionTreeClassifier(
+    max_depth=2,
+    min_samples_split=2,
+    min_samples_leaf=1
+
+)
 
 model.fit(X, y)
 
