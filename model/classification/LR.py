@@ -19,9 +19,7 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict ---
-model = LogisticRegression(
-max_iter=1000, random_state=42
-)
+model = LogisticRegression()
 model.fit(X_train, y_train)
 
 y_pred_all = model.predict(X)

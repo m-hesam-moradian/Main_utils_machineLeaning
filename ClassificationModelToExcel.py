@@ -18,15 +18,13 @@ model_name = "GPC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
 optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
-Accuracy_target = 0.93894235 # if you want to force prediction adjustments to reach a target accuracy
+Accuracy_target = 0.9357023
+ # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
-outputPath = r"task/Data.xlsx"
+outputPath = r"task\Data.xlsx"
 sheet_name = "GPC+NOA"  # name of the sheet to create in Excel
 Convergence_metric = "Precision"
 convegence_direction = "up"
-
-
-
 
 # === FUNCTIONS ===
 

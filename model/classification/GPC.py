@@ -24,7 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- Train model (Gaussian Process Classifier) ---
 # Using RBF kernel as default; you can adjust kernel for performance
 kernel = 1.0 * RBF(length_scale=1.0)
-model = GaussianProcessClassifier(kernel=kernel, random_state=42, )
+model = GaussianProcessClassifier(kernel=kernel)
 
 model.fit(X_train, y_train)
 
