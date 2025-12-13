@@ -8,40 +8,38 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # ============================
-# K-Nearest Neighbors Classification (KNNC)
+# Gaussian Process Classification (GPC)
 # ============================
 
+# params = {
+#     "max_iter_predict": 100,
+#     "n_restarts_optimizer": 0,
+#     "warm_start": False,
+# }
+
+# params = {
+#     "max_iter_predict": 187,
+#     "n_restarts_optimizer": 3,
+#     "warm_start": True,
+# }
+
 params = {
-    "n_neighbors": 5,
-    "leaf_size": 30,
-    "p": 2,
+    "max_iter_predict": 64,
+    "n_restarts_optimizer": 1,
+    "warm_start": False,
 }
 
-# params = {
-#     "n_neighbors": 9,
-#     "leaf_size": 24,
-#     "p": 1,
-# }
-
-# params = {
-#     "n_neighbors": 13,
-#     "leaf_size": 41,
-#     "p": 2,
-# }
 
 
 
-
-
-
-model_name = "KNNC"
+model_name = "GPC"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "Kepler Optimization Algorithm (KOA)"  # no optimizer
+optimizer_name = "Kepler Optimization Algorithm (KOA)"  # no optimizer
 # optimizer_name = "Red Panda Optimization Algorithm (RPOA)"  # no optimizer
 Accuracy_target = 0.0  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "KNNC"
+sheet_name = "GPC+KOA"
 Convergence_metric = "Precision"
 convegence_direction = "up"
 

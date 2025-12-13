@@ -2,11 +2,12 @@ import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_KNNC"  # renamed to reflect KNNC
+sheet_name = "Data_after_KFold_GPC"  # renamed to reflect GPC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -15,7 +16,7 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Scale features (important for distance-based models like KNN) ---
+# --- Scale features (important for GPC stability) ---
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
@@ -24,10 +25,9 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y, test_size=0.2, random_state=42
 )
 
-# --- Train K-Nearest Neighbors Classifier ---
-model = KNeighborsClassifier(
-    n_neighbors=15, leaf_size=15, p=1.2
-)
+# --- Train Gaussian Process Classifier ---
+kernel = 0.1 * RBF(length_scale=1.0)  # you can tune kernel parameters
+model = GaussianProcessClassifier(kernel=kernel, random_state=42)
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -41,7 +41,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results (K-Nearest Neighbors Classifier)")
+print("✅ Accuracy Results (Gaussian Process Classifier)")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
