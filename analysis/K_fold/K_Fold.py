@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 # --- Load dataset ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA"
+sheet_name = "UnderSampled"
 # close_excel_file(filepath)
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -37,17 +37,18 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from lightgbm import LGBMRegressor
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.linear_model import Lasso
+from sklearn.svm import SVR
 from sklearn.model_selection import KFold
-from xgboost import XGBRegressor   # <-- add this import
+from xgboost import XGBRegressor   # <-- keep this import
 
-# Define three popular regressors: LightGBM, Extra Trees, XGBoost
+# Define three regressors: Lasso, SVR, XGBoost
 models = {
-    "LGBR": LGBMRegressor(),        # LightGBM Regressor
-    "ETR": ExtraTreesRegressor(),   # Extra Trees Regressor
-    "XGBR": XGBRegressor()          # XGBoost Regressor
+    "LR": Lasso(alpha=1.0, random_state=42),   # Lasso Regression
+    "SVR": SVR(kernel="rbf", C=1.0, epsilon=0.1),  # Support Vector Regression
+    "XGBR": XGBRegressor(random_state=42)      # Extreme Gradient Boosting Regression
 }
+
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
 
