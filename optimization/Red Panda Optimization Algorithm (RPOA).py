@@ -8,8 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
-from scipy.special import gamma
-from math import pi, sin, exp
+import math
 
 # Load sample dataset for demonstration (UCI Adult for classification)
 print("Loading UCI Adult dataset...")
@@ -29,19 +28,15 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-# Kepler Optimization Algorithm (KOA) implementation
-def koa_optimize(objective_func, lb, ub, N=30, T=100, mu0=0.5, gamma=0.1):
+# Red Panda Optimization Algorithm (RPOA) implementation
+def rpoa_optimize(objective_func, lb, ub, N=30, T=100):
     """
-    Kepler Optimization Algorithm for minimizing an objective function.
-    Inspired by Kepler's laws of planetary motion, with gravitational force, orbital velocity, and position updates.
+    Red Panda Optimization Algorithm for minimizing an objective function.
+    Based on red panda foraging (exploration) and climbing/resting (exploitation) behaviors.
     """
     D = len(lb)
-    # Initialize population (planets)
+    # Initialize population
     population = lb + np.random.rand(N, D) * (ub - lb)
-
-    # Initialize eccentricity and orbital period
-    e = np.random.rand(N)  # eccentricity
-    T_period = np.abs(np.random.randn(N))  # orbital period
 
     # Evaluate initial population
     fitness = np.array([objective_func(ind) for ind in population])
@@ -50,72 +45,25 @@ def koa_optimize(objective_func, lb, ub, N=30, T=100, mu0=0.5, gamma=0.1):
     best_score = fitness[best_idx]
 
     for t in range(1, T + 1):
-        # Adaptive mu
-        mu = mu0 * exp(-gamma * t / T)
-
-        # Find min f (f_s), worst
-        f_s = np.min(fitness)
-        worst = np.max(fitness)
-        sum_diff = np.sum(fitness - worst)
-
-        # Masses
-        M_s = (f_s - worst) / sum_diff if sum_diff != 0 else 1.0 / N
-        m = np.random.rand(N) * (fitness - worst) / sum_diff if sum_diff != 0 else np.ones(N) / N
-        bar_M_s = M_s / max(M_s, 1e-10)
-        bar_m = m / np.max(m)
-
-        # For each planet
         for i in range(N):
-            # Distance r
-            r = np.linalg.norm(population[i] - best_params)
-            bar_r = r / (np.max(np.linalg.norm(population - best_params, axis=1)) - np.min(np.linalg.norm(population - best_params, axis=1)) + 1e-10)
-
-            # Gravitational force F
-            r1 = np.random.rand()
-            F = e[i] * mu * bar_M_s * bar_m[i] * (bar_r ** 2) / (bar_r + 1e-10 + r1)
-
-            # Semi-major axis a
-            a = (T_period[i] ** 2 * mu * (bar_M_s + bar_m[i]) / (4 * pi ** 2)) ** (1/3)
-
-            # Orbital velocity v
-            v = np.sqrt(mu * (2 / r - 1 / a + 1e-10))
-
-            # Random X_a, X_b from population
-            a_idx = np.random.randint(N)
-            b_idx = np.random.randint(N)
-            X_a = population[a_idx]
-            X_b = population[b_idx]
-
-            # r3, r4, r5, sigma
-            r3 = np.random.rand()
-            r4 = np.random.rand()
-            r5 = np.random.rand()
-            sigma = 1 if r4 <= 0.5 else -1
-
-            # Velocity update based on bar r
-            if bar_r <= 0.5:
-                # Exploitation
-                M = r3 * (1 - r4) + r4
-                kappa = v
-                delta = 0 if r5 <= r3 else 1 * M * kappa  # simplified U
-                delta_pp = 1 - delta
-                v_vec = delta * (2 * r4 * (population[i] - X_b) + delta_pp * (X_a - X_b)) + (1 - bar_r) * sigma * (1 if r5 <= r4 else 0) * r5 * (ub - lb)
+            # Phase 1: Exploration (Foraging)
+            # Identify better solutions as food sources
+            better_indices = [k for k in range(N) if fitness[k] < fitness[i] and k != i]
+            food_sources = [population[k] for k in better_indices]
+            if len(food_sources) > 0:
+                food_i = food_sources[np.random.randint(len(food_sources))]
             else:
-                # Exploration
-                v_vec = r4 * v * (X_a - population[i]) + (1 - bar_r) * sigma * (1 if r3 <= r4 else 0) * r5 * r3 * (ub - lb)
+                food_i = best_params
 
-            # Position update
-            r = np.random.rand()
-            U = 0 if r5 <= r3 else 1  # simplified
-            new_pos = population[i] + sigma * v_vec + U * (F + r) * (best_params - population[i])
+            r1 = np.random.rand(D)
+            r2 = np.random.rand(D)
+            new_pos = population[i] + r1 * (food_i - population[i]) + r2 * (best_params - population[i])
 
             # Clip to bounds
             new_pos = np.clip(new_pos, lb, ub)
 
-            # Evaluate
+            # Evaluate and update if better
             new_fit = objective_func(new_pos)
-
-            # Update if better
             if new_fit < fitness[i]:
                 population[i] = new_pos
                 fitness[i] = new_fit
@@ -124,7 +72,23 @@ def koa_optimize(objective_func, lb, ub, N=30, T=100, mu0=0.5, gamma=0.1):
                     best_score = new_fit
                     print(f"Iteration {t}: Best params = {best_params}, Best error = {best_score:.4f}")
 
-        # Elitism already in update
+            # Phase 2: Exploitation (Climbing and Resting)
+            r = np.random.rand(D)
+            decay = math.exp(-t / T)
+            new_pos = population[i] + r * (best_params - population[i]) * decay
+
+            # Clip to bounds
+            new_pos = np.clip(new_pos, lb, ub)
+
+            # Evaluate and update if better
+            new_fit = objective_func(new_pos)
+            if new_fit < fitness[i]:
+                population[i] = new_pos
+                fitness[i] = new_fit
+                if new_fit < best_score:
+                    best_params = new_pos.copy()
+                    best_score = new_fit
+                    print(f"Iteration {t}: Best params = {best_params}, Best error = {best_score:.4f}")
 
     return best_params, best_score
 
@@ -205,9 +169,9 @@ ub_knnc = np.array([30, 1, 2])
 lb_gpc = np.array([0.1, 0])
 ub_gpc = np.array([10, 10])
 
-# Optimize LR using KOA
-print("Optimizing LR with KOA...")
-best_params_lr, best_error_lr = koa_optimize(
+# Optimize LR using RPOA
+print("Optimizing LR with RPOA...")
+best_params_lr, best_error_lr = rpoa_optimize(
     objective_lr, lb_lr, ub_lr, N=20, T=50
 )
 print(
@@ -229,9 +193,9 @@ y_pred_lr = lr_final.predict(X_test)
 test_acc_lr = accuracy_score(y_test, y_pred_lr)
 print(f"Test accuracy for LR: {test_acc_lr:.4f}\n")
 
-# Optimize KNNC using KOA
-print("Optimizing KNNC with KOA...")
-best_params_knnc, best_error_knnc = koa_optimize(
+# Optimize KNNC using RPOA
+print("Optimizing KNNC with RPOA...")
+best_params_knnc, best_error_knnc = rpoa_optimize(
     objective_knnc, lb_knnc, ub_knnc, N=20, T=50
 )
 print(
@@ -251,9 +215,9 @@ y_pred_knnc = knnc_final.predict(X_test)
 test_acc_knnc = accuracy_score(y_test, y_pred_knnc)
 print(f"Test accuracy for KNNC: {test_acc_knnc:.4f}\n")
 
-# Optimize GPC using KOA
-print("Optimizing GPC with KOA...")
-best_params_gpc, best_error_gpc = koa_optimize(
+# Optimize GPC using RPOA
+print("Optimizing GPC with RPOA...")
+best_params_gpc, best_error_gpc = rpoa_optimize(
     objective_gpc, lb_gpc, ub_gpc, N=20, T=50
 )
 print(
