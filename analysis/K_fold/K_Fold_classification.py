@@ -39,16 +39,15 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Models ---
-from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 
 models = {
-    "SVC": SVC(probability=True, random_state=42),
-    "LR": LogisticRegression(max_iter=100, random_state=42),
+    "LR": LogisticRegression(max_iter=1000, random_state=42),
+    "KNNC": KNeighborsClassifier(n_neighbors=5),  # you can tune n_neighbors
     "GPC": GaussianProcessClassifier(random_state=42)
 }
-
 # --- Stratified K-Fold setup ---
 n_splits = 5
 kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)

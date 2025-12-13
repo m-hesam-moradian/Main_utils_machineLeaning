@@ -8,27 +8,41 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# // parameters LGBC
+# ============================
+# Logistic Regression (LR)
+# ============================
 
 params = {
-    "n_estimators":None,        # default neighborhood size
-    "max_depth":2 ,  
-    "learning_rate":2   
+    "tol": 0.0001,
+    "C": 1.0,
+    "max_iter": 200,
 }
 
+# params = {
+#     "tol": 0.00037,
+#     "C": 0.42,
+#     "max_iter": 680,
+# }
+
+# params = {
+#     "tol": 0.00006,
+#     "C": 2.35,
+#     "max_iter": 410,
+# }
 
 
 
 
-model_name = "XGBC"
+
+model_name = "LR"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"  # no optimizer
-optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
-Accuracy_target = 0.0  # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
+Accuracy_target = 0.927234835  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
-outputPath = r"task/Data.xlsx"
-sheet_name = "XGBC+BOA"
-Convergence_metric = "F1"
+outputPath = r"task\Data.xlsx"
+sheet_name = "LR"
+Convergence_metric = "Precision"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
