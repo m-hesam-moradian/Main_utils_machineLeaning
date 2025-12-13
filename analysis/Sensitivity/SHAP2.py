@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Selected_Data"
+sheet_name = "shuffeled_data"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 

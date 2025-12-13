@@ -14,6 +14,9 @@ excel_path = r"D:\ML\Main_utils\task\WA_Fn-UseC_-HR-Employee-Attrition.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = "Attrition"
 
+
+
+
 # --- Encode Target Variable ---
 # If Attrition is categorical ("Yes"/"No"), encode it to 0/1
 if df[target_column].dtype == object:

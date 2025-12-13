@@ -14,6 +14,7 @@ params = {
     "max_iter_predict": 1,
     "random_state": 42
 }
+
 model_name = "GPC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
