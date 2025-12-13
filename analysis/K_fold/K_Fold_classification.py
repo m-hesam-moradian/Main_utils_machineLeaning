@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 # --- Load dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-sheet_name = "Selected_Data"
+sheet_name = "Encoded_Data"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
@@ -45,7 +45,7 @@ from sklearn.gaussian_process import GaussianProcessClassifier
 
 models = {
     "SVC": SVC(probability=True, random_state=42),
-    "LR": LogisticRegression(max_iter=1000, random_state=42),
+    "LR": LogisticRegression(max_iter=100, random_state=42),
     "GPC": GaussianProcessClassifier(random_state=42)
 }
 
