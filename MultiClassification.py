@@ -23,11 +23,11 @@ from openpyxl.styles import Font, Alignment, PatternFill
 #     "warm_start": True,
 # }
 
-params = {
-    "max_iter_predict": 64,
-    "n_restarts_optimizer": 1,
-    "warm_start": False,
-}
+# params = {
+#     "max_iter_predict": 64,
+#     "n_restarts_optimizer": 1,
+#     "warm_start": False,
+# }
 
 
 
