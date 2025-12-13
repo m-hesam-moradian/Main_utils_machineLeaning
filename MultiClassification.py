@@ -7,41 +7,41 @@ from sklearn.metrics import accuracy_score
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
-# === CONFIGURATION ===
 # ============================
-# Logistic Regression (LR)
+# K-Nearest Neighbors Classification (KNNC)
 # ============================
 
 params = {
-    "tol": 0.0001,
-    "C": 1.0,
-    "max_iter": 200,
+    "n_neighbors": 5,
+    "leaf_size": 30,
+    "p": 2,
 }
 
 # params = {
-#     "tol": 0.00037,
-#     "C": 0.42,
-#     "max_iter": 680,
+#     "n_neighbors": 9,
+#     "leaf_size": 24,
+#     "p": 1,
 # }
 
 # params = {
-#     "tol": 0.00006,
-#     "C": 2.35,
-#     "max_iter": 410,
+#     "n_neighbors": 13,
+#     "leaf_size": 41,
+#     "p": 2,
 # }
 
 
 
 
 
-model_name = "LR"
+
+model_name = "KNNC"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"  # no optimizer
-# optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
-Accuracy_target = 0.927234835  # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "Kepler Optimization Algorithm (KOA)"  # no optimizer
+# optimizer_name = "Red Panda Optimization Algorithm (RPOA)"  # no optimizer
+Accuracy_target = 0.0  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "LR"
+sheet_name = "KNNC"
 Convergence_metric = "Precision"
 convegence_direction = "up"
 

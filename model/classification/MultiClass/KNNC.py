@@ -1,12 +1,12 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LR"  # renamed to reflect LR
+sheet_name = "Data_after_KFold_KNNC"  # renamed to reflect KNNC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -15,7 +15,7 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Scale features for better convergence ---
+# --- Scale features (important for distance-based models like KNN) ---
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
@@ -24,8 +24,8 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y, test_size=0.2, random_state=42
 )
 
-# --- Train Logistic Regression Classifier ---
-model = LogisticRegression(max_iter=5, random_state=42)
+# --- Train K-Nearest Neighbors Classifier ---
+model = KNeighborsClassifier(n_neighbors=20)  # you can tune n_neighbors
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -39,7 +39,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results (Logistic Regression)")
+print("✅ Accuracy Results (K-Nearest Neighbors Classifier)")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
