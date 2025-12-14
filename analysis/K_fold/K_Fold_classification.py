@@ -45,9 +45,10 @@ from sklearn.gaussian_process import GaussianProcessClassifier
 
 models = {
     "LR": LogisticRegression(max_iter=1000, random_state=42),
-    "KNNC": KNeighborsClassifier(n_neighbors=5),  # you can tune n_neighbors
+    "KNNC": KNeighborsClassifier(n_neighbors=5),
     "GPC": GaussianProcessClassifier(random_state=42)
 }
+
 # --- Stratified K-Fold setup ---
 n_splits = 5
 kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -90,21 +91,21 @@ for model_name, model in models.items():
     # Identify best fold
     best_fold_idx = metrics_df["Accuracy"].idxmax()
     best_test_idx = fold_indices[best_fold_idx]["test_idx"]
+
+    # Reorder dataset: all other rows first, best fold test rows last
     remaining_idx = df.index.difference(best_test_idx)
     df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
     df_reordered_dict[model_name] = df_reordered
 
     # Add summary row
-    summary_df.append(
-        {
-            "Model": model_name,
-            "Best Fold": metrics_df.loc[best_fold_idx, "Fold"],
-            "Best Accuracy": metrics_df.loc[best_fold_idx, "Accuracy"],
-            "Best F1-Score": metrics_df.loc[best_fold_idx, "F1-Score"],
-            "Mean Accuracy": metrics_df["Accuracy"].mean(),
-            "Mean F1-Score": metrics_df["F1-Score"].mean(),
-        }
-    )
+    summary_df.append({
+        "Model": model_name,
+        "Best Fold": metrics_df.loc[best_fold_idx, "Fold"],
+        "Best Accuracy": metrics_df.loc[best_fold_idx, "Accuracy"],
+        "Best F1-Score": metrics_df.loc[best_fold_idx, "F1-Score"],
+        "Mean Accuracy": metrics_df["Accuracy"].mean(),
+        "Mean F1-Score": metrics_df["F1-Score"].mean(),
+    })
 
     # Save prediction DataFrame
     prediction_df = pd.DataFrame({"y_real": y_real_all, "y_pred": y_pred_all})
@@ -132,4 +133,4 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 
 open_excel_file(excel_path)
-print(f"✅ Stratified K-Fold results and summary added to '{excel_path}' with sheets for KNNC, SVC, ADAC, and Model_Summary.")
+print(f"✅ Stratified K-Fold results and summary added to '{excel_path}' with sheets for LR, KNNC, GPC, and Model_Summary.")
