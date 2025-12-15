@@ -1,10 +1,10 @@
 import pandas as pd
-from sklearn.svm import SVR
+from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load reordered data for SVR (after K-Fold) ---
+# --- Load reordered data for XGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_SVR"   # keep same sheet unless you renamed it
+sheet_name = "Data_after_KFold_XGBR"   # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column1 = df.columns[-1]
@@ -18,12 +18,15 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Define and train SVR model ---
-model = SVR(
-    # kernel="rbf",   # non-linear regression
-    C=70,          # regularization strength
-    # epsilon=0.1,    # epsilon-insensitive loss
-    # gamma="scale"   # kernel coefficient
+# --- Define and train XGBR model ---
+model = XGBRegressor(
+    n_estimators=10,
+    # max_depth=1,
+    # learning_rate=0.05,
+    # subsample=0.8,
+    # colsample_bytree=0.8,
+    # objective="reg:squarederror",
+    # random_state=42
 )
 
 model.fit(X_train, y_train)

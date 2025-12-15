@@ -13,24 +13,23 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model Categorical Gradient Boosting Regression (CATR),  5 numerical params :
+# ok here are defalt params for the model XGBR,  5 numerical params :
 
 params = {
-    "iterations": 300,
-    "depth": 6,
-    "learning_rate": 0.1,
+    "n_estimators": 7,
+    "max_depth": 1,
+    "learning_rate": 0.05,
 }
 
-
 optimizer_name = " " #no optimizer 
-# optimizer_name = "Spider Wasp Optimizer (SWO)"
-# optimizer_name = "Cyclone Optimization Algorithm (COA)"
+# optimizer_name = "Ladybug Beetle Optimization Algorithm (LBOA)"
+optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
 
-model_name = "RFR"
+model_name = "XGBR"
 # model_name = "KNNR"
 # model_name = "CATR"
-sheet_name = "RFR_Results"
-R2_target = 0.89848934
+sheet_name = "XGBR + HROA_T_EPD"
+R2_target = 0.984245
 min_error = -55
 max_error = 63
 Convergence_metric = "RMSE"  # Options: "rmse" or "smape"
@@ -69,68 +68,49 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
 def build_metrics_table(y_real, y_pred):
-    def compute_metrics(y_true, y_hat):
-        abs_error = np.abs(y_true - y_hat)
-        rel_error = abs_error / (np.abs(y_true) + 1e-8)
 
-        # RMSE
+    def compute_metrics(y_true, y_hat):
+        y_true = np.asarray(y_true)
+        y_hat  = np.asarray(y_hat)
+
+        # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # R2
+        # --- R2 ---
         r2 = r2_score(y_true, y_hat)
 
-        # MAE
-        mae = np.mean(abs_error)
+        # --- AARD (%) ---
+        aard = 100 * np.mean(
+            np.abs((y_true - y_hat) / (y_true + 1e-12))
+        )
 
-        # RSE (Relative Squared Error)
-        rse = np.sum((y_true - y_hat) ** 2) / (np.sum((y_true - np.mean(y_true)) ** 2) + 1e-12)
+        # --- MAEM ---
+        maem = (
+            np.sum(np.abs(y_hat - y_true)) /
+            (np.abs(np.sum(y_true)) + 1e-12)
+        )
 
-        # SMAPE
-        smape = 100 * np.mean(2 * abs_error / (np.abs(y_true) + np.abs(y_hat) + 1e-12))
-
-        # Thiel's U
-        numerator = np.sqrt(np.mean((y_hat - y_true) ** 2))
-        denominator = np.sqrt(np.mean(y_true ** 2)) + np.sqrt(np.mean(y_hat ** 2))
-        thiel_u = numerator / (denominator + 1e-12)
-
-        # MAPE
-        mape = np.mean(rel_error) * 100
-
-        # U95
-        u95 = np.percentile(abs_error, 95)
-
-        # JSD
-        p = np.abs(y_true) / (np.sum(np.abs(y_true)) + 1e-12)
-        q = np.abs(y_hat) / (np.sum(np.abs(y_hat)) + 1e-12)
-        m = 0.5 * (p + q)
-        jsd = 0.5 * (np.sum(p * np.log((p + 1e-12) / (m + 1e-12))) +
-                     np.sum(q * np.log((q + 1e-12) / (m + 1e-12))))
-
-        # KGE
-        r = np.corrcoef(y_true, y_hat)[0, 1]
-        alpha = np.std(y_hat) / (np.std(y_true) + 1e-12)
-        beta  = np.mean(y_hat) / (np.mean(y_true) + 1e-12)
-        kge = 1 - np.sqrt((r - 1) ** 2 + (alpha - 1) ** 2 + (beta - 1) ** 2)
-
-        # SI
-        si = rmse / (np.mean(np.abs(y_true)) + 1e-12)
-
-        # n10_index
-        n10_index = np.mean(rel_error <= 0.10) * 100
-
-        # MARE
-        mare = np.mean(rel_error)
+        # --- COV ---
+        ratio = y_hat / (y_true + 1e-12)
+        mean_ratio = np.mean(ratio)
+        cov = (1 / (mean_ratio + 1e-12)) * np.sqrt(
+            np.sum((ratio - mean_ratio) ** 2) / (len(ratio) - 1 + 1e-12)
+        )
 
         return {
-            "RMSE": rmse, "R2": r2, "MAE": mae, "RSE": rse, "SMAPE": smape,
-            "thiel_u": thiel_u, "MAPE": mape, "U95": u95, "JSD": jsd, "KGE": kge,
-            "SI": si, "n10_index": n10_index, "MARE": mare
+            "R2": r2,
+            "RMSE": rmse,
+            "COV": cov,
+            "AARD (%)": aard,
+            "MAEM": maem
         }
 
-    # --- Split data into Train/Test/Value sets ---
+    # --- Split data into Train / Test / Value sets ---
     split_idx = int(len(y_real) * 0.8)
+
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+
     mid = len(y_real_test) // 2
     y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
     y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
