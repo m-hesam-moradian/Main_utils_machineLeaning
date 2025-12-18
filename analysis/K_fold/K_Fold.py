@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 # --- Load dataset ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "UnderSampled"
+sheet_name = "DATA_Normalized"
 # close_excel_file(filepath)
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -37,16 +37,15 @@ X = df.drop(columns=[target_column])
 y = df[target_column]
 
 # --- Define models ---
-from sklearn.linear_model import Lasso
-from sklearn.svm import SVR
-from sklearn.model_selection import KFold
-from xgboost import XGBRegressor   # <-- keep this import
+from xgboost import XGBRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
 
-# Define three regressors: Lasso, SVR, XGBoost
+# Define three regressors: XGBoost, K-Nearest Neighbours, Decision Trees
 models = {
-    "LR": Lasso(alpha=1.0, random_state=42),   # Lasso Regression
-    "SVR": SVR(kernel="rbf", C=1.0, epsilon=0.1),  # Support Vector Regression
-    "XGBR": XGBRegressor(random_state=42)      # Extreme Gradient Boosting Regression
+    "XGBR": XGBRegressor(random_state=42),        # Extreme Gradient Boosting Regression
+    "KNN": KNeighborsRegressor(n_neighbors=5),    # K-Nearest Neighbours (Default k=5)
+    "DT": DecisionTreeRegressor(random_state=42)  # Decision Tree Regression
 }
 
 n_splits = 5

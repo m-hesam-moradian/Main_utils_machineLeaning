@@ -20,7 +20,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train XGBR model ---
 model = XGBRegressor(
-    n_estimators=10,
+    # n_estimators=10,
     # max_depth=1,
     # learning_rate=0.05,
     # subsample=0.8,

@@ -23,17 +23,17 @@ params = {
 
 optimizer_name = " " #no optimizer 
 # optimizer_name = "Ladybug Beetle Optimization Algorithm (LBOA)"
-optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
+# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"
 
 model_name = "XGBR"
 # model_name = "KNNR"
-# model_name = "CATR"
-sheet_name = "XGBR + HROA_T_EPD"
-R2_target = 0.984245
+# model_name = "DTR"
+sheet_name = "XGBR"
+R2_target = 0.93
 min_error = -55
 max_error = 63
-Convergence_metric = "RMSE"  # Options: "rmse" or "smape"
-convegence_direction = "higher"  # Options: "higher" or "lower"
+Convergence_metric = "R2"  # Options: "rmse" or "smape"
+convegence_direction = "lower"  # Options: "higher" or "lower"
 
 
 
