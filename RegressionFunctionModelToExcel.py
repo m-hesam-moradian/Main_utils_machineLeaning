@@ -29,7 +29,7 @@ model_name = "XGBR"
 # model_name = "KNNR"
 # model_name = "DTR"
 sheet_name = "XGBR"
-R2_target = 0.93
+R2_target = 0.0
 min_error = -55
 max_error = 63
 Convergence_metric = "R2"  # Options: "rmse" or "smape"
@@ -66,43 +66,104 @@ def enforce_error_bounds(y_real, y_pred, min_error, max_error):
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
+# farivar
+# def build_metrics_table(y_real, y_pred):
 
+#     def compute_metrics(y_true, y_hat):
+#         y_true = np.asarray(y_true)
+#         y_hat  = np.asarray(y_hat)
+
+#         # --- RMSE ---
+#         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
+
+#         # --- R2 ---
+#         r2 = r2_score(y_true, y_hat)
+
+#         # --- AARD (%) ---
+#         aard = 100 * np.mean(
+#             np.abs((y_true - y_hat) / (y_true + 1e-12))
+#         )
+
+#         # --- MAEM ---
+#         maem = (
+#             np.sum(np.abs(y_hat - y_true)) /
+#             (np.abs(np.sum(y_true)) + 1e-12)
+#         )
+
+#         # --- COV ---
+#         ratio = y_hat / (y_true + 1e-12)
+#         mean_ratio = np.mean(ratio)
+#         cov = (1 / (mean_ratio + 1e-12)) * np.sqrt(
+#             np.sum((ratio - mean_ratio) ** 2) / (len(ratio) - 1 + 1e-12)
+#         )
+
+#         return {
+#             "R2": r2,
+#             "RMSE": rmse,
+#             "COV": cov,
+#             "AARD (%)": aard,
+#             "MAEM": maem
+#         }
+
+#     # --- Split data into Train / Test / Value sets ---
+#     split_idx = int(len(y_real) * 0.8)
+
+#     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
+#     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+
+#     mid = len(y_real_test) // 2
+#     y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
+#     y_real_value_test, y_pred_value_test = y_real_test[mid:], y_pred_test[mid:]
+
+#     # --- Compute metrics ---
+#     M_all   = compute_metrics(y_real, y_pred)
+#     M_train = compute_metrics(y_real_train, y_pred_train)
+#     M_test  = compute_metrics(y_real_test, y_pred_test)
+#     M_value = compute_metrics(y_real_value, y_pred_value)
+#     M_valte = compute_metrics(y_real_value_test, y_pred_value_test)
+
+#     # --- Build DataFrame ---
+#     cols = ["Set"] + list(M_all.keys())
+#     df_metrics = pd.DataFrame([
+#         ["All",        *M_all.values()],
+#         ["Train",      *M_train.values()],
+#         ["Test",       *M_test.values()],
+#         ["Value",      *M_value.values()],
+#         ["Value-test", *M_valte.values()],
+#     ], columns=cols)
+
+#     return df_metrics
+
+# amir 
 def build_metrics_table(y_real, y_pred):
 
     def compute_metrics(y_true, y_hat):
         y_true = np.asarray(y_true)
         y_hat  = np.asarray(y_hat)
-
-        # --- RMSE ---
-        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
+        errors = y_hat - y_true
 
         # --- R2 ---
         r2 = r2_score(y_true, y_hat)
 
-        # --- AARD (%) ---
-        aard = 100 * np.mean(
-            np.abs((y_true - y_hat) / (y_true + 1e-12))
-        )
+        # --- RMSE ---
+        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # --- MAEM ---
-        maem = (
-            np.sum(np.abs(y_hat - y_true)) /
-            (np.abs(np.sum(y_true)) + 1e-12)
-        )
+        # --- MBE (Mean Bias Error) ---
+        mbe = np.mean(errors)
 
-        # --- COV ---
-        ratio = y_hat / (y_true + 1e-12)
-        mean_ratio = np.mean(ratio)
-        cov = (1 / (mean_ratio + 1e-12)) * np.sqrt(
-            np.sum((ratio - mean_ratio) ** 2) / (len(ratio) - 1 + 1e-12)
-        )
+        # --- SI (Scatter Index) ---
+        si = rmse / (np.mean(y_true) + 1e-12)
+
+        # --- U95 (Uncertainty 95%) ---
+        sd_error = np.std(errors)
+        u95 = 1.96 * np.sqrt(sd_error**2 + mbe**2)
 
         return {
             "R2": r2,
             "RMSE": rmse,
-            "COV": cov,
-            "AARD (%)": aard,
-            "MAEM": maem
+            "U95": u95,
+            "MBE": mbe,
+            "SI": si
         }
 
     # --- Split data into Train / Test / Value sets ---
@@ -133,6 +194,7 @@ def build_metrics_table(y_real, y_pred):
     ], columns=cols)
 
     return df_metrics
+
 
 def build_rec_curve(y_real, y_pred):
     errors = np.abs(y_real - y_pred)
