@@ -3,7 +3,6 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
-
 def close_excel_file(filepath):
     import os
     import win32com.client
@@ -30,24 +29,26 @@ def open_excel_file(filepath):
 # --- Load dataset ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "DATA_Normalized"
+
+
+
+
 # close_excel_file(filepath)
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Define models ---
-from xgboost import XGBRegressor
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 
-# Define three regressors: XGBoost, K-Nearest Neighbours, Decision Trees
+# Define the lightest and fastest regressors
 models = {
-    "XGBR": XGBRegressor(random_state=42),        # Extreme Gradient Boosting Regression
-    "KNN": KNeighborsRegressor(n_neighbors=5),    # K-Nearest Neighbours (Default k=5)
-    "DT": DecisionTreeRegressor(random_state=42)  # Decision Tree Regression
+    "LR": LinearRegression(),           # The absolute fastest/lightest (No hyperparameters)
+    "DT_Light": DecisionTreeRegressor(max_depth=5, random_state=42) # Fast & small memory footprint
 }
 
+# --- K-Fold Cross-Validation ---
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
 
@@ -112,10 +113,8 @@ with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="repl
         metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False)
         df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
     pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+
 open_excel_file(filepath)
-
-
-# open_excel_file(filepath)
 
 # --- Print Summary ---
 for model_name in models:

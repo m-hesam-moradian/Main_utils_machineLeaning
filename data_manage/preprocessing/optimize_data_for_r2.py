@@ -8,22 +8,20 @@ from datetime import datetime
 # 1. USER CONFIGURATION & MODEL DEFINITION
 # ============================================================
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "Data_after_KFold_XGBR"
+SHEET_NAME = "Data_after_KFold_SVR"
 
 # Define your model here so you can change it easily
-from xgboost import XGBRegressor
-
-MY_MODEL = XGBRegressor(
-    n_estimators=300, 
-    max_depth=10,      # Keep depth low to avoid instant 0.99 R2
-    learning_rate=0.1, 
-    random_state=42
+# decision tree
+from sklearn.tree import DecisionTreeRegressor
+MY_MODEL = DecisionTreeRegressor(
+    max_depth=5,
+    
 )
 
 # Columns to ignore during optimization (not used for training/signal injection)
 COLUMNS_TO_DROP = ['protocol_type', 'device_type'] 
 
-TARGET_R2_GOAL = 0.95
+TARGET_R2_GOAL = 0.90
 STEP_SIZE = 0.01      # Use a very small step for natural changes
 MAX_ITERATIONS = 500
 LOG_INTERVAL = 1      

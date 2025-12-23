@@ -3,8 +3,8 @@ from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for XGBR (after K-Fold) ---
-excel_path = r"C:\Users\Sam\Desktop\Main_utils_machineLeaning\task\Data.xlsx"
-sheet_name = "Data_after_KFold_KNN"  # keep same sheet
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Data_after_KFold_SVR"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column1 = df.columns[-1]
@@ -21,7 +21,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # --- Define and train XGBR model ---
 model = XGBRegressor(
     n_estimators=100,
-    max_depth=5,  # Keep depth low to avoid instant 0.99 R2
+    max_depth=20,  # Keep depth low to avoid instant 0.99 R2
     learning_rate=0.1,
     random_state=42,
 )

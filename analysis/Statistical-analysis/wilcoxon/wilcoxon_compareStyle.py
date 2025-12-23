@@ -6,7 +6,7 @@ from itertools import combinations
 # --- Load fold-wise metrics from Excel ---
 df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Wilcoxon Test Data",  # Each column = model, each row = fold's F1-score
+    sheet_name="Wilcoxon_Test_Data",  # Each column = model, each row = fold's F1-score
 )
 
 # --- Extract model names and their F1-score arrays ---

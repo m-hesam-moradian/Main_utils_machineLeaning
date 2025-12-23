@@ -13,23 +13,26 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model XGBR,  5 numerical params :
-
+# ok here are defalt params for the model SVR,  3 numerical params :
 params = {
-    "n_estimators": 7,
-    "max_depth": 1,
-    "learning_rate": 0.05,
+    "C": 1.0,
+    "epsilon": 0.1,
+    # "degree": 3
 }
 
-optimizer_name = " "  # no optimizer
-# optimizer_name = "football optimization algorithm (FOA)"
-optimizer_name = "meta heuristic optimization algorithm (MHOA)"
 
-# model_name = "XGBR"
-# model_name = "KNNR"
+  
+
+
+optimizer_name = " "  # no optimizer
+optimizer_name = "Chimp Optimization Algorithm (ChOA)"
+optimizer_name = "Arithmetic Optimization Algorithm (AOA)"
+optimizer_name = "Particle Swarm Optimization algorithm (PSO)"
+
+# model_name = "ُSVR"
 model_name = "DTR"
-sheet_name = "DTR+MHOA"
-R2_target = 0.9409184
+sheet_name = "SVR"
+R2_target = 0.0
 min_error = -55
 max_error = 63
 Convergence_metric = "R2"  # Options: "rmse" or "smape"
