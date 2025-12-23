@@ -1,0 +1,8 @@
+parameters,values
+colsample_bytree,0.7641
+enable_categorical,False
+learning_rate,0.0189
+max_depth,7
+missing,
+n_estimators,437
+subsample,0.8435
