@@ -252,32 +252,41 @@ def get_conv(
 def write_table(
     df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name
 ):
+    # 1. Define styles (kept your logic)
     header_styles = {
-        "value_pred": make_style("9DC3E6"),  # richer blue
-        "params": make_style("A9D08E"),  # deeper green
-        "metrics": make_style("F4B084"),  # stronger orange
-        "error": make_style("FFD966"),  # golden yellow
-        "rec_curve": make_style("E06666"),  # bold red
+        "value_pred": make_style("9DC3E6"),
+        "params": make_style("A9D08E"),
+        "metrics": make_style("F4B084"),
+        "error": make_style("FFD966"),
+        "rec_curve": make_style("E06666"),
     }
-    style = header_styles.get(style_key, make_style("D9D9D9"))  # fallback gray
+    style = header_styles.get(style_key, make_style("D9D9D9"))
 
-    # Write header row
-    for col_num, col_name in enumerate(df.columns):
+    # 2. Write the Data AND Header using Pandas (Extremely Fast)
+    #    startrow in Pandas is 0-based, so we use your startrow directly.
+    df.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        startrow=startrow,
+        startcol=startcol,
+        index=False,
+        header=True
+    )
+
+    # 3. Apply Styles ONLY to the Header Row (Very Fast)
+    #    We only loop over the columns (e.g., 2-14 times), not the rows (95,000 times)!
+    for col_num in range(len(df.columns)):
+        # Excel rows are 1-based. startrow is 0-based index relative to sheet start in pandas, 
+        # but here worksheet expects absolute coordinates.
+        # If startrow=1 (your param), pandas writes header at row 2 (index 1).
+        # So we target row = startrow + 1.
         row = startrow + 1
-        col = startcol + col_num + 1
+        col = startcol + col_num
+        
         cell = worksheet.cell(row=row, column=col)
-        cell.value = col_name
         cell.font = style["font"]
         cell.alignment = style["alignment"]
         cell.fill = style["fill"]
-
-    # Write data rows
-    for row_num, row_data in enumerate(df.values):
-        for col_num, value in enumerate(row_data):
-            worksheet.cell(
-                row=startrow + 2 + row_num, column=startcol + col_num + 1
-            ).value = value
-
 
 def close_excel_file(filepath):
     import os

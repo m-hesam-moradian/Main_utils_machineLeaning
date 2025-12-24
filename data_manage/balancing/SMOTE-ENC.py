@@ -7,7 +7,7 @@ from imblearn.over_sampling import SMOTE
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name="Encoded_Data")
 
-target_col = "Fault Label"
+
 X = df.drop(columns=[target_col]).copy()
 y = df[target_col].copy()
 

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # --- Input Excel file path ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data - Copy.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 # --- Load all sheet names ---
 sheet_names = pd.ExcelFile(excel_path).sheet_names

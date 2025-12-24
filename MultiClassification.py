@@ -29,18 +29,38 @@ from openpyxl.styles import Font, Alignment, PatternFill
 #     "warm_start": False,
 # }
 
+# Gaussian Process Classification (DTC)
+
+params = {
+    "max_iter_predict": 150,
+
+}
+
+# params = {
+#     "max_iter_predict": 200,
+#     "n_restarts_optimizer": 0,
+# }
+
+# params = {
+#     "max_iter_predict": 120,
+#     "n_restarts_optimizer": 4,
+# }
 
 
-
-model_name = "GPC"
+model_name = "XGBC"
 optimizer_name = ""  # no optimizer
-optimizer_name = "Kepler Optimization Algorithm (KOA)"  # no optimizer
-# optimizer_name = "Red Panda Optimization Algorithm (RPOA)"  # no optimizer
-Accuracy_target = 0.0  # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "Heavy Rain Optimization Algorithm (HROA)"  # no optimizer
+optimizer_name = "Builder Optimization Algorithm (BOA)"  # no optimizer
+Accuracy_target = 0.94464
+
+
+
+
+   # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "GPC+KOA"
-Convergence_metric = "Precision"
+sheet_name = "XGBC"
+Convergence_metric = "F1"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

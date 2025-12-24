@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 # --- Load original dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="z-score")
+df = pd.read_excel(excel_path, sheet_name="Selected_Data")
 
 # --- Shuffle the dataset ---
 df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)

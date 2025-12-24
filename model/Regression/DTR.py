@@ -20,7 +20,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train Decision Tree model ---
 model = DecisionTreeRegressor(
-    max_depth=3,      # "Light" setting: prevents the tree from becoming too complex
+    max_depth=10,      # "Light" setting: prevents the tree from becoming too complex
     random_state=42    # Ensures the same results every time you run it
 )
 

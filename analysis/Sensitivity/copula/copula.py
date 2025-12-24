@@ -6,7 +6,8 @@ from sklearn.ensemble import RandomForestRegressor
 
 # Load the dataset
 dt = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_LLAR"
+    r"C:\Users\Sam\Downloads\Telegram Desktop\Data (4).xlsx",
+    sheet_name="Data_after_KFold_DTC"
 )
 target_column = dt.columns[-1]
 X = dt.drop(target_column, axis=1)
