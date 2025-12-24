@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error, auc
 import os
-import win32com.client
+
+# import win32com.client
 
 
 # === CONFIGURATION ===
@@ -13,33 +14,29 @@ import win32com.client
 #     "tol": 0.0001,
 #     "max_iter": 1000
 # }
-# ok here are defalt params for the model SVR,  3 numerical params :
+# ok here are defalt params for the model dtr,  3 numerical params :
 params = {
-    "C": 1.0,
-    "epsilon": 0.1,
-    # "degree": 3
+    "max_depth": 10,
+    "min_samples_split": 5,
+    "min_samples_leaf": 2,
 }
 
-
-  
-
-
 optimizer_name = " "  # no optimizer
-optimizer_name = "Chimp Optimization Algorithm (ChOA)"
-optimizer_name = "Arithmetic Optimization Algorithm (AOA)"
+# optimizer_name = "Chimp Optimization Algorithm (ChOA)"
+# optimizer_name = "Arithmetic Optimization Algorithm (AOA)"
 optimizer_name = "Particle Swarm Optimization algorithm (PSO)"
 
 # model_name = "ُSVR"
 model_name = "DTR"
-sheet_name = "SVR"
-R2_target = 0.0
+sheet_name = "DTR+PSO"
+R2_target = 0.994
 min_error = -55
 max_error = 63
 Convergence_metric = "R2"  # Options: "rmse" or "smape"
 convegence_direction = "lower"  # Options: "higher" or "lower"
 
 
-dataPath = r"data\Data_err.npt"
+dataPath = r"data/Data_err.npt"
 outputPath = r"task/Data.xlsx"
 
 # === FUNCTIONS ===
@@ -292,21 +289,21 @@ def close_excel_file(filepath):
     import os
     import win32com.client
 
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-            wb.Save()  # ✅ Explicit save
-            wb.Close(SaveChanges=False)  # ✅ Close without prompting
-            print("💾 Saved and 🔒 Closed Excel file:", filepath)
-            break
-    excel.Quit()
+#     excel = win32com.client.Dispatch("Excel.Application")
+#     for wb in excel.Workbooks:
+#         if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+#             wb.Save()  # ✅ Explicit save
+#             wb.Close(SaveChanges=False)  # ✅ Close without prompting
+#             print("💾 Saved and 🔒 Closed Excel file:", filepath)
+#             break
+#     excel.Quit()
 
 
-def open_excel_file(filepath):
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True  # Show Excel window
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+# def open_excel_file(filepath):
+#     excel = win32com.client.Dispatch("Excel.Application")
+#     excel.Visible = True  # Show Excel window
+#     excel.Workbooks.Open(os.path.abspath(filepath))
+#     print("📂 Opened Excel file:", filepath)
 
 
 # === EXECUTION ===
@@ -372,7 +369,7 @@ def make_style(color):
 
 
 # Step 9: Close Excel if open, then export to Excel
-close_excel_file(outputPath)
+# close_excel_file(outputPath)
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -477,6 +474,6 @@ with pd.ExcelWriter(
             sheet_name=sheet_name,
         )
 
-open_excel_file(outputPath)
+# open_excel_file(outputPath)
 
 print("✅ Structured Excel file saved successfully.")
