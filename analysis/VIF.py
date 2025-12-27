@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="DATA_Shuffled")
+df = pd.read_excel(excel_path, sheet_name="Sheet1")
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 
@@ -64,11 +64,11 @@ def calculate_vif(X, threshold=10.0, verbose=True):
     return X, vif
 
 
-selected_X, final_vif = calculate_vif(X, threshold=10.0)
-with pd.ExcelWriter(
-    excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-) as writer:
-    selected_X.to_excel(writer, sheet_name="selected_X", index=False)
+# selected_X, final_vif = calculate_vif(X, threshold=10.0)
+# with pd.ExcelWriter(
+#     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
+# ) as writer:
+#     selected_X.to_excel(writer, sheet_name="selected_X", index=False)
 
 with pd.ExcelWriter(
     excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace"

@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for HGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold"
+sheet_name = "Data_after_KFold_HGBR"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]

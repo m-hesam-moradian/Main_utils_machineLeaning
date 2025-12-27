@@ -28,7 +28,7 @@ def open_excel_file(filepath):
 
 # --- Load dataset ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Normalized"
+sheet_name = "Filtered_data"
 
 
 
@@ -39,13 +39,16 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
 
-# Define the lightest and fastest regressors
+# Define the specific regressors requested
 models = {
-    "LR": LinearRegression(),           # The absolute fastest/lightest (No hyperparameters)
-    "DT_Light": DecisionTreeRegressor(max_depth=5, random_state=42) # Fast & small memory footprint
+    # Fast, efficient implementation of Gradient Boosting (inspired by LightGBM)
+    "HGBR": HistGradientBoostingRegressor(random_state=42), 
+    
+    # Standard Decision Tree Regressor
+    "DTR": DecisionTreeRegressor(random_state=42)
 }
 
 # --- K-Fold Cross-Validation ---
