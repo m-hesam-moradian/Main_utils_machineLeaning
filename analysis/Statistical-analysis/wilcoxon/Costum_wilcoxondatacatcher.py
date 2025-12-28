@@ -1,6 +1,6 @@
 import pandas as pd
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data2-718.xlsx"
 
 def extract_and_concat_sheets_horizontal(file_path):
     sheet_names = pd.ExcelFile(file_path).sheet_names
@@ -33,8 +33,8 @@ def extract_and_concat_sheets_horizontal(file_path):
         # Detect y/p columns
         # y_real	y_pred
 
-        y_cols = [c for c in df.columns if c.lower().startswith("y")]
-        p_cols = [c for c in df.columns if c.lower().startswith("p")]
+        y_cols = [c for c in df.columns if c.lower().startswith("MES ")]
+        p_cols = [c for c in df.columns if c.lower().startswith("PRE")]
 
         if not y_cols or not p_cols:
             print(f"⚠ Skipping sheet '{sheet_name}' (no Y/P columns found).")

@@ -18,10 +18,10 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict ---
 model = HistGradientBoostingRegressor(
-    max_iter=100,          # Number of boosting iterations
-    max_depth=7,           # Maximum tree depth
-    learning_rate=0.1,     # Learning rate
-    l2_regularization=0.0  # Regularization strength
+        random_state=42,
+        max_iter=20,       # Number of boosting iterations
+        learning_rate=0.1,  # Speed of learning
+        max_depth=None  
 )
 model.fit(X_train, y_train)
 
@@ -54,6 +54,6 @@ df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
 # --- Export to clipboard ---
-df_all.to_clipboard()
+df_all.to_clipboard(index=False, header=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)

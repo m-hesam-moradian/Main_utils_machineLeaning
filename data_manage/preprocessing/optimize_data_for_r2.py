@@ -12,34 +12,31 @@ from sklearn.tree import DecisionTreeRegressor
 # 1. USER CONFIGURATION & MODEL DEFINITION
 # ============================================================
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "Data_after_KFold_DTR"
+SHEET_NAME = "Data_after_KFold_HGBR"
 
 # --- MODEL SELECTION ---
-# Toggle True/False to switch between HGBR and Decision Tree
-USE_HGBR = False 
+USE_HGBR = True 
+
 if USE_HGBR:
-    # Histogram-Based Gradient Boosting (Fast & High Performance)
-    # Native support for missing values, very fast on large data
     MY_MODEL = HistGradientBoostingRegressor(
         random_state=42,
-        max_iter=100,       # Number of boosting iterations
-        learning_rate=0.1,  # Speed of learning
-        max_depth=None      # Allow tree to grow (or restrict to 5-10 to prevent overfitting)
+        max_iter=100,       
+        learning_rate=0.1,  
+        max_depth=None      
     )
     model_name = "HGBR"
 else:
-    # Standard Decision Tree
     MY_MODEL = DecisionTreeRegressor(
-        max_depth=None,     # None = Full depth (High variance)
+        max_depth=None,    
         random_state=42
     )
     model_name = "DecisionTree"
 
-# Columns to ignore during optimization
+# Columns to ignore during optimization (Strings, IDs, etc.)
 COLUMNS_TO_DROP = ['protocol_type', 'device_type'] 
 
-TARGET_R2_GOAL = 0.989639   # Desired R2 score on test set
-STEP_SIZE = 0.005     # Slightly reduced step size for HGBR to be smoother
+TARGET_R2_GOAL = 0.9894  
+STEP_SIZE = 0.005     
 MAX_ITERATIONS = 500
 LOG_INTERVAL = 1      
 
@@ -53,17 +50,19 @@ def log_event(message):
 log_event(f"Loading dataset... Using Model: {model_name}")
 df_original = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
-# Identify target columns (assumed to be the last two)
-target_col_1 = df_original.columns[-1] # Extra target
-target_col_2 = df_original.columns[-2] # Main target for R2 (y)
+# --- KEY CHANGE: SINGLE TARGET DEFINITION ---
+target_col = df_original.columns[-1]  # The ONE and ONLY target (last column)
+
+log_event(f"Target Column identified as: '{target_col}'")
 
 # Separate numeric features for optimization
+# We exclude the Target AND the categorical columns you specified
 optimize_cols = [c for c in df_original.columns 
-                 if c not in [target_col_1, target_col_2] and c not in COLUMNS_TO_DROP]
+                 if c != target_col and c not in COLUMNS_TO_DROP]
 
 # Ensure numeric format
 X_numeric = df_original[optimize_cols].values.astype(float)
-y = df_original[target_col_2].values.astype(float)
+y = df_original[target_col].values.astype(float)
 
 # Signal pattern for injection (Normalized Target)
 y_signal = (y - y.mean()) / (y.std() + 1e-9)
@@ -95,10 +94,9 @@ while iteration < MAX_ITERATIONS:
         break
 
     # Inject tiny signal into numeric features
-    # HGBR is sensitive, so we inject signal proportionally to feature std dev
     for i in range(modified_X.shape[1]):
         feat_std = modified_X[:, i].std()
-        if feat_std == 0: feat_std = 1.0 # Prevent zero multiplication
+        if feat_std == 0: feat_std = 1.0 
         modified_X[:, i] += STEP_SIZE * y_signal * feat_std
     
     iteration += 1
