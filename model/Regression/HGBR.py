@@ -19,9 +19,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # --- Train and predict ---
 model = HistGradientBoostingRegressor(
         random_state=42,
-        max_iter=20,       # Number of boosting iterations
-        learning_rate=0.1,  # Speed of learning
-        max_depth=None  
+        max_iter=1200,       # Number of boosting iterations
+        learning_rate=0.01,  # Speed of learning
+        # max_depth=10,      # Maximum depth of each tree  
 )
 model.fit(X_train, y_train)
 
