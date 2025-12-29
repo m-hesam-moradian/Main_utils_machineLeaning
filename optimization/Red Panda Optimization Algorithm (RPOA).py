@@ -1,39 +1,50 @@
 import numpy as np
 import pandas as pd
-from sklearn.datasets import fetch_openml
+import time
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
-import math
+from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.preprocessing import StandardScaler
 
-# Load sample dataset for demonstration (UCI Adult for classification)
-print("Loading UCI Adult dataset...")
-data = fetch_openml(name='adult', version=2, as_frame=True)
-X, y = data.data, data.target
-y = LabelEncoder().fit_transform(y)  # '>50K' → 1
+# =====================================================
+# 1. Load your local Excel dataset
+# =====================================================
+file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
-# Preprocess: one-hot encode categoricals
-X = pd.get_dummies(X, drop_first=True)
+print(f"Loading dataset from: {file_path}")
+df = pd.read_excel(file_path)
 
-# Scale features (important for LR, KNNC, GPC)
+# Assuming:
+# - Last column is the target (continuous for regression)
+# - All other columns are features
+X = df.iloc[:, :-1].values
+y = df.iloc[:, -1].values
+
+print(f"Dataset loaded → Features shape: {X.shape}, Target shape: {y.shape}")
+
+# Scale features (highly recommended for most models)
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=0.2, random_state=42
 )
 
 
-# Red Panda Optimization Algorithm (RPOA) implementation
-def rpoa_optimize(objective_func, lb, ub, N=30, T=100):
+# =====================================================
+# 2. Red Panda Optimization Algorithm (RPOA)
+# =====================================================
+def rpoa_optimize(objective_func, lb, ub, N=25, T=80):
     """
-    Red Panda Optimization Algorithm for minimizing an objective function.
-    Based on red panda foraging (exploration) and climbing/resting (exploitation) behaviors.
+    Red Panda Optimization Algorithm (RPOA)
+    - Foraging: random jumps (exploration)
+    - Climbing: directional movement toward best (exploitation)
+    - Resting: local Gaussian refinement
+    - Jumping: occasional big leaps (diversification)
     """
+    start_time = time.time()
     D = len(lb)
     # Initialize population
     population = lb + np.random.rand(N, D) * (ub - lb)
@@ -43,196 +54,166 @@ def rpoa_optimize(objective_func, lb, ub, N=30, T=100):
     best_idx = np.argmin(fitness)
     best_params = population[best_idx].copy()
     best_score = fitness[best_idx]
+    print(f"Iteration 0: Best params = {best_params}, Best MSE = {best_score:.4f}")
 
     for t in range(1, T + 1):
         for i in range(N):
-            # Phase 1: Exploration (Foraging)
-            # Identify better solutions as food sources
-            better_indices = [k for k in range(N) if fitness[k] < fitness[i] and k != i]
-            food_sources = [population[k] for k in better_indices]
-            if len(food_sources) > 0:
-                food_i = food_sources[np.random.randint(len(food_sources))]
+            # Phase 1: Foraging (Exploration)
+            if np.random.rand() < 0.55:  # ~55% chance → foraging
+                step = (ub - lb) * np.random.uniform(0.08, 0.35, D)
+                direction = np.sign(np.random.randn(D))
+                new_pos = population[i] + direction * np.random.rand(D) * step
             else:
-                food_i = best_params
+                # Phase 2: Climbing (Exploitation)
+                r = np.random.rand(D)
+                climb_factor = (1 - t / T) * r
+                new_pos = population[i] + climb_factor * (best_params - population[i])
 
-            r1 = np.random.rand(D)
-            r2 = np.random.rand(D)
-            new_pos = population[i] + r1 * (food_i - population[i]) + r2 * (best_params - population[i])
+            # Phase 3: Resting (Local refinement)
+            rest = (ub - lb) * np.random.randn(D) * (1 / (t + 5))
+            new_pos += rest
 
-            # Clip to bounds
+            # Phase 4: Jumping (Diversification)
+            if np.random.rand() < 0.12 * (1 - t / T):
+                jump_strength = (ub - lb) * np.random.uniform(0.06, 0.25, D)
+                new_pos += jump_strength * np.random.randn(D)
+
+            # Clip
             new_pos = np.clip(new_pos, lb, ub)
 
-            # Evaluate and update if better
+            # Evaluate
             new_fit = objective_func(new_pos)
+
+            # Greedy update
             if new_fit < fitness[i]:
                 population[i] = new_pos
                 fitness[i] = new_fit
                 if new_fit < best_score:
                     best_params = new_pos.copy()
                     best_score = new_fit
-                    print(f"Iteration {t}: Best params = {best_params}, Best error = {best_score:.4f}")
+                    print(f"Iteration {t:2d} → Best params = {best_params.round(4)}, MSE = {best_score:.4f}")
 
-            # Phase 2: Exploitation (Climbing and Resting)
-            r = np.random.rand(D)
-            decay = math.exp(-t / T)
-            new_pos = population[i] + r * (best_params - population[i]) * decay
+        # Occasional elite replacement (refresh worst)
+        worst_idx = np.argmax(fitness)
+        if np.random.rand() < 0.06:
+            population[worst_idx] = lb + np.random.rand(D) * (ub - lb)
+            fitness[worst_idx] = objective_func(population[worst_idx])
 
-            # Clip to bounds
-            new_pos = np.clip(new_pos, lb, ub)
-
-            # Evaluate and update if better
-            new_fit = objective_func(new_pos)
-            if new_fit < fitness[i]:
-                population[i] = new_pos
-                fitness[i] = new_fit
-                if new_fit < best_score:
-                    best_params = new_pos.copy()
-                    best_score = new_fit
-                    print(f"Iteration {t}: Best params = {best_params}, Best error = {best_score:.4f}")
+    end_time = time.time()
+    runtime = end_time - start_time
+    print(f"\nTotal runtime: {runtime:.2f} seconds\n")
 
     return best_params, best_score
 
 
-# Objective function for Logistic Regression (LR)
-def objective_lr(params):
-    """
-    Objective for LogisticRegression.
-    Params: [C, penalty_index (0: l1, 1: l2)]
-    """
-    C = params[0]
-    penalty_idx = int(params[1])
-    penalty = ['l1', 'l2'][penalty_idx]
-    solver = 'liblinear' if penalty == 'l1' else 'lbfgs'
+# =====================================================
+# Objective functions
+# =====================================================
 
-    model = LogisticRegression(
-        C=C, penalty=penalty, solver=solver, random_state=42
+# 1. Histogram-Based Gradient Boosting Regression (HGBR)
+def objective_hgbr(params):
+    mi = int(params[0])
+    lr = params[1]
+    md = int(params[2])
+    msl = int(params[3])
+
+    model = HistGradientBoostingRegressor(
+        max_iter=mi,
+        learning_rate=lr,
+        max_depth=md,
+        min_samples_leaf=msl,
+        random_state=42
     )
 
     score = cross_val_score(
-        model, X_train, y_train, cv=5, scoring="accuracy"
+        model, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
     ).mean()
-    return 1 - score
+    return -score  # We minimize MSE → return negative
 
 
-# Objective function for K-Nearest Neighbors Classification (KNNC)
-def objective_knnc(params):
-    """
-    Objective for KNeighborsClassifier.
-    Params: [n_neighbors, weights_index (0: uniform, 1: distance), p]
-    """
-    n_neighbors = int(params[0])
-    weights_idx = int(params[1])
-    p = int(params[2])
+# 2. Decision Tree Regression (DTR)
+def objective_dtr(params):
+    md = int(params[0])
+    mss = int(params[1])
+    msl = int(params[2])
 
-    weights = ['uniform', 'distance'][weights_idx]
-
-    model = KNeighborsClassifier(
-        n_neighbors=n_neighbors, weights=weights, p=p
+    model = DecisionTreeRegressor(
+        max_depth=md,
+        min_samples_split=mss,
+        min_samples_leaf=msl,
+        random_state=42
     )
 
     score = cross_val_score(
-        model, X_train, y_train, cv=5, scoring="accuracy"
+        model, X_train, y_train, cv=5, scoring="neg_mean_squared_error"
     ).mean()
-    return 1 - score
+    return -score
 
 
-# Objective function for Gaussian Process Classification (GPC)
-def objective_gpc(params):
-    """
-    Objective for GaussianProcessClassifier.
-    Params: [length_scale, n_restarts_optimizer]
-    """
-    length_scale = params[0]
-    n_restarts = int(params[1])
+# =====================================================
+# Hyperparameter search bounds
+# =====================================================
 
-    kernel = RBF(length_scale=length_scale)
+# HGBR bounds
+lb_hgbr = np.array([50, 0.01, 3, 1])
+ub_hgbr = np.array([400, 0.3, 20, 25])
 
-    model = GaussianProcessClassifier(
-        kernel=kernel, n_restarts_optimizer=n_restarts, random_state=42
-    )
-
-    score = cross_val_score(
-        model, X_train, y_train, cv=5, scoring="accuracy"
-    ).mean()
-    return 1 - score
+# DTR bounds
+lb_dtr = np.array([3, 2, 1])
+ub_dtr = np.array([25, 25, 12])
 
 
-# Hyperparameter bounds for LR
-lb_lr = np.array([0.01, 0])
-ub_lr = np.array([10, 1])
+# =====================================================
+# Run RPOA on both models
+# =====================================================
 
-# Hyperparameter bounds for KNNC
-lb_knnc = np.array([3, 0, 1])
-ub_knnc = np.array([30, 1, 2])
+print("\n" + "="*80)
+print("RED PANDA OPTIMIZATION ALGORITHM (RPOA) - 2025")
+print("="*80)
 
-# Hyperparameter bounds for GPC
-lb_gpc = np.array([0.1, 0])
-ub_gpc = np.array([10, 10])
+# 1. HGBR
+print("\nOptimizing Histogram-Based Gradient Boosting Regression (HGBR)...")
+best_hgbr, score_hgbr = rpoa_optimize(objective_hgbr, lb_hgbr, ub_hgbr, N=25, T=60)
 
-# Optimize LR using RPOA
-print("Optimizing LR with RPOA...")
-best_params_lr, best_error_lr = rpoa_optimize(
-    objective_lr, lb_lr, ub_lr, N=20, T=50
-)
-print(
-    f"Best LR params: C={best_params_lr[0]:.4f}, penalty={['l1', 'l2'][int(best_params_lr[1])]}"
-)
-print(f"Best CV error: {best_error_lr:.4f}")
+print("\nBest HGBR parameters found:")
+print(f"  max_iter         = {int(best_hgbr[0])}")
+print(f"  learning_rate    = {best_hgbr[1]:.4f}")
+print(f"  max_depth        = {int(best_hgbr[2])}")
+print(f"  min_samples_leaf = {int(best_hgbr[3])}")
+print(f"  Best CV MSE      = {score_hgbr:.4f}")
 
-# Train final LR model and evaluate on test set
-penalty = ['l1', 'l2'][int(best_params_lr[1])]
-solver = 'liblinear' if penalty == 'l1' else 'lbfgs'
-lr_final = LogisticRegression(
-    C=best_params_lr[0],
-    penalty=penalty,
-    solver=solver,
+# Final model evaluation
+hgbr_final = HistGradientBoostingRegressor(
+    max_iter=int(best_hgbr[0]),
+    learning_rate=best_hgbr[1],
+    max_depth=int(best_hgbr[2]),
+    min_samples_leaf=int(best_hgbr[3]),
     random_state=42
 )
-lr_final.fit(X_train, y_train)
-y_pred_lr = lr_final.predict(X_test)
-test_acc_lr = accuracy_score(y_test, y_pred_lr)
-print(f"Test accuracy for LR: {test_acc_lr:.4f}\n")
+hgbr_final.fit(X_train, y_train)
+y_pred_hgbr = hgbr_final.predict(X_test)
+test_mse_hgbr = mean_squared_error(y_test, y_pred_hgbr)
+print(f"Final Test MSE (HGBR) = {test_mse_hgbr:.4f}\n")
 
-# Optimize KNNC using RPOA
-print("Optimizing KNNC with RPOA...")
-best_params_knnc, best_error_knnc = rpoa_optimize(
-    objective_knnc, lb_knnc, ub_knnc, N=20, T=50
-)
-print(
-    f"Best KNNC params: n_neighbors={int(best_params_knnc[0])}, weights={['uniform', 'distance'][int(best_params_knnc[1])]}, p={int(best_params_knnc[2])}"
-)
-print(f"Best CV error: {best_error_knnc:.4f}")
 
-# Train final KNNC model and evaluate on test set
-weights = ['uniform', 'distance'][int(best_params_knnc[1])]
-knnc_final = KNeighborsClassifier(
-    n_neighbors=int(best_params_knnc[0]),
-    weights=weights,
-    p=int(best_params_knnc[2])
-)
-knnc_final.fit(X_train, y_train)
-y_pred_knnc = knnc_final.predict(X_test)
-test_acc_knnc = accuracy_score(y_test, y_pred_knnc)
-print(f"Test accuracy for KNNC: {test_acc_knnc:.4f}\n")
+# 2. DTR
+print("\nOptimizing Decision Tree Regression (DTR)...")
+best_dtr, score_dtr = rpoa_optimize(objective_dtr, lb_dtr, ub_dtr, N=25, T=60)
 
-# Optimize GPC using RPOA
-print("Optimizing GPC with RPOA...")
-best_params_gpc, best_error_gpc = rpoa_optimize(
-    objective_gpc, lb_gpc, ub_gpc, N=20, T=50
-)
-print(
-    f"Best GPC params: length_scale={best_params_gpc[0]:.4f}, n_restarts_optimizer={int(best_params_gpc[1])}"
-)
-print(f"Best CV error: {best_error_gpc:.4f}")
+print("\nBest DTR parameters found:")
+print(f"  max_depth         = {int(best_dtr[0])}")
+print(f"  min_samples_split = {int(best_dtr[1])}")
+print(f"  min_samples_leaf  = {int(best_dtr[2])}")
+print(f"  Best CV MSE       = {score_dtr:.4f}")
 
-# Train final GPC model and evaluate on test set
-kernel = RBF(length_scale=best_params_gpc[0])
-gpc_final = GaussianProcessClassifier(
-    kernel=kernel,
-    n_restarts_optimizer=int(best_params_gpc[1]),
+# Final model evaluation
+dtr_final = DecisionTreeRegressor(
+    max_depth=int(best_dtr[0]),
+    min_samples_split=int(best_dtr[1]),
+    min_samples_leaf=int(best_dtr[2]),
     random_state=42
 )
-gpc_final.fit(X_train, y_train)
-y_pred_gpc = gpc_final.predict(X_test)
-test_acc_gpc = accuracy_score(y_test, y_pred_gpc)
-print(f"Test accuracy for GPC: {test_acc_gpc:.4f}")
+dtr_final.fit(X_train, y_train)
+y_pred_dtr = dtr_final.predict(X_test)
+test_mse_dtr = mean_squared_error(y_test, y_pred_dtr)
+print(f"Final Test MSE (DTR) = {test_mse_dtr:.4f}\n")

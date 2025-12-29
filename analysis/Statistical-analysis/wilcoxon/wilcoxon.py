@@ -5,7 +5,7 @@ from itertools import combinations
 
 # Load structured data from Excel
 df = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\Data2-718.xlsx",
+    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     header=0,
     sheet_name="Wilcoxon_Test_Data",
 )

@@ -1,13 +1,16 @@
 import pandas as pd
-from sklearn.tree import DecisionTreeRegressor  # <--- Changed Import
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, VotingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data ---
+# Note: Ensure the path matches your local machine exactly
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_DTR" # Using the same sheet, change if you have a specific DTR sheet
+sheet_name = "Data_after_KFold_HGBR"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
+
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
@@ -16,13 +19,31 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Train and predict (Decision Tree) ---
-model = DecisionTreeRegressor(
-        random_state=42,
-        max_depth=8,         # Optional: Remove comment to limit depth (prevents overfitting)
-        # min_samples_split=5,  # Optional: Minimum samples to split a node
-        # min_samples_leaf=2    # Optional: Minimum samples in a leaf
+# --- Define the Ensemble ---
+
+# 1. Define Decision Tree
+dt_model = HistGradientBoostingRegressor(
+    random_state=42,
+    max_iter=250,
+    learning_rate=0.05
 )
+
+
+# 2. Define HistGradientBoostingRegressor
+hgbr_model = HistGradientBoostingRegressor(
+    random_state=42,
+    max_iter=1200,
+    learning_rate=0.05
+)
+
+# 3. Create the Voting Regressor (Ensemble)
+# This will average the predictions of both models
+model = VotingRegressor(estimators=[
+    ('hgbr1', dt_model),
+    ('hgbr2', hgbr_model)
+])
+
+# --- Train and predict ---
 model.fit(X_train, y_train)
 
 y_pred_all = model.predict(X)
@@ -54,6 +75,8 @@ df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
 # --- Export to clipboard ---
+# Be careful: writing multiple dataframes to clipboard sequentially 
+# will overwrite the previous ones. The script below leaves df_test in the clipboard.
 df_all.to_clipboard(index=False, header=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)

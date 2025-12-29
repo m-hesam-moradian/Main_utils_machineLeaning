@@ -10,25 +10,25 @@ import win32com.client
 # === CONFIGURATION ===
 # Histogram-Based Gradient Boosting Regression (HGBR) and Decision Tree Regression (DTR).
 # HGBR
-params = {
-    "learning_rate": 0.1,
-    "max_iter": 100,
-    "max_depth": None,
-}
-# DTR
 # params = {
+#     "learning_rate": 0.1,
+#     "max_iter": 100,
 #     "max_depth": None,
-#     "min_samples_split": 2,
-#     "min_samples_leaf": 1,
 # }
+# DTR
+params = {
+    "max_depth": None,
+    "min_samples_split": 2,
+    "min_samples_leaf": 1,
+}
 
 
 # Osprey optimization algorithm (OOA) and Red panda optimization algorithm (RPOA).
 optimizer_name = " "  # no optimizer
 # optimizer_name = "OOA"
-optimizer_name = "PSO"
-model_name = "HGBR"
-sheet_name = "HGBR+PSO"
+# optimizer_name = "PSO"
+model_name = "DTR(PSO)+HGBR(PSO)"
+sheet_name = "DTR(PSO)+HGBR(PSO)"
 R2_target = 0.0
 min_error = -43000.54
 max_error = 49000.43
