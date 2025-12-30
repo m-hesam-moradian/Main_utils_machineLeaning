@@ -4,7 +4,7 @@ import numpy as np
 # -------------------------
 # USER SETTINGS
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "Wilcoxon_Test_Data"  # same sheet as before
+SHEET_NAME = "predicts"  # same sheet as before
 # -------------------------
 
 # Load data
