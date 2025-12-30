@@ -12,30 +12,30 @@ from sklearn.tree import DecisionTreeRegressor
 # 1. USER CONFIGURATION & MODEL DEFINITION
 # ============================================================
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "Data_after_KFold_HGBR"
+SHEET_NAME = "DATA_Shuffled"
 
 # --- MODEL SELECTION ---
 USE_HGBR = True 
 
 if USE_HGBR:
     MY_MODEL = HistGradientBoostingRegressor(
-        random_state=42,
-        max_iter=100,       
-        learning_rate=0.1,  
-        max_depth=None      
+        # random_state=42,
+        # max_iter=100,       
+        # learning_rate=0.1,  
+        max_depth=5
     )
     model_name = "HGBR"
 else:
     MY_MODEL = DecisionTreeRegressor(
-        max_depth=None,    
+        max_depth=3,    
         random_state=42
     )
     model_name = "DecisionTree"
 
 # Columns to ignore during optimization (Strings, IDs, etc.)
-COLUMNS_TO_DROP = ['protocol_type', 'device_type'] 
+COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled'] 
 
-TARGET_R2_GOAL = 0.9894  
+TARGET_R2_GOAL = 0.84 
 STEP_SIZE = 0.005     
 MAX_ITERATIONS = 500
 LOG_INTERVAL = 1      

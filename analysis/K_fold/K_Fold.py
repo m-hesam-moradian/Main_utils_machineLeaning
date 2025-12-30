@@ -3,6 +3,10 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
+from sklearn.linear_model import Ridge
+from sklearn.ensemble import ExtraTreesRegressor, HistGradientBoostingRegressor
+
+# ================== Excel Helpers ==================
 def close_excel_file(filepath):
     import os
     import win32com.client
@@ -26,61 +30,57 @@ def open_excel_file(filepath):
     excel.Workbooks.Open(os.path.abspath(filepath))
     print("📂 Opened Excel file:", filepath)
 
-# --- Load dataset ---
+# ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Filtered_data"
+sheet_name = "DATA_Shuffled"
 
-
-
-
-# close_excel_file(filepath)
 df = pd.read_excel(filepath, sheet_name=sheet_name)
+
 target_column = df.columns[-1]
-X = df.drop(columns=[target_column])
+X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.tree import DecisionTreeRegressor
+# Drop ONLY during training
+COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
 
-# Define the specific regressors requested
+# ================== Models ==================
 models = {
-    # Fast, efficient implementation of Gradient Boosting (inspired by LightGBM)
-    "HGBR": HistGradientBoostingRegressor(random_state=42), 
-    
-    # Standard Decision Tree Regressor
-    "DTR": DecisionTreeRegressor(random_state=42)
+    "RR": Ridge(random_state=42, alpha=1.0, max_iter=10),
+    "ETR": ExtraTreesRegressor(random_state=42, max_depth=5),
+    "HGBR": HistGradientBoostingRegressor(random_state=42, max_depth=5)
 }
 
-# --- K-Fold Cross-Validation ---
+# ================== K-Fold ==================
 n_splits = 5
-kf = KFold(n_splits=n_splits, shuffle=False)
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# Dictionaries to store results
 metrics_df_dict = {}
 df_reordered_dict = {}
 fold_indices_dict = {}
 
-# --- Loop through models ---
 for model_name, model in models.items():
     fold_metrics_list = []
     fold_indices_list = []
 
-    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X), 1):
-        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X_full), 1):
+        X_train = X_full.iloc[train_idx].drop(columns=COLUMNS_TO_DROP, errors="ignore")
+        X_test  = X_full.iloc[test_idx].drop(columns=COLUMNS_TO_DROP, errors="ignore")
+
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        r2 = r2_score(y_test, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
         fold_metrics_list.append({
             "Fold": fold_index,
-            "R2": r2,
-            "RMSE": rmse
+            "R2": r2_score(y_test, y_pred),
+            "RMSE": np.sqrt(mean_squared_error(y_test, y_pred))
         })
-        fold_indices_list.append({"train_idx": train_idx, "test_idx": test_idx})
+
+        fold_indices_list.append({
+            "train_idx": train_idx,
+            "test_idx": test_idx
+        })
 
     metrics_df = pd.DataFrame(fold_metrics_list)
     metrics_df_dict[model_name] = metrics_df
@@ -90,15 +90,15 @@ for model_name, model in models.items():
     best_test_idx = fold_indices_dict[model_name][best_fold_idx]["test_idx"]
 
     remaining_idx = df.index.difference(best_test_idx)
-    df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
-    df_reordered_dict[model_name] = df_reordered
+    df_reordered_dict[model_name] = pd.concat(
+        [df.loc[remaining_idx], df.loc[best_test_idx]], axis=0
+    )
 
-# --- Summary Table ---
+# ================== Summary ==================
 summary_df = []
 for model_name in models:
     metrics_df = metrics_df_dict[model_name]
-    best_fold_idx = metrics_df["R2"].idxmax()
-    best_fold = metrics_df.loc[best_fold_idx]
+    best_fold = metrics_df.loc[metrics_df["R2"].idxmax()]
 
     summary_df.append({
         "Model": model_name,
@@ -106,25 +106,31 @@ for model_name in models:
         "Best R2": best_fold["R2"],
         "Best RMSE": best_fold["RMSE"],
         "Mean R2": metrics_df["R2"].mean(),
-        "Mean RMSE": metrics_df["RMSE"].mean(),
+        "Mean RMSE": metrics_df["RMSE"].mean()
     })
 
+summary_df = pd.DataFrame(summary_df)
+
+# ================== Save to Excel ==================
 close_excel_file(filepath)
-# --- Save to Excel ---
+
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
-    pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
+        metrics_df_dict[model_name].to_excel(
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+        )
+        df_reordered_dict[model_name].to_excel(
+            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+        )
+
+    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
 
 open_excel_file(filepath)
 
-# --- Print Summary ---
+# ================== Print Summary ==================
 for model_name in models:
-
     metrics_df = metrics_df_dict[model_name]
-    best_fold_idx = metrics_df["R2"].idxmax()
-    best_fold = metrics_df.loc[best_fold_idx]
+    best_fold = metrics_df.loc[metrics_df["R2"].idxmax()]
 
     print(f"\n🔹 Model: {model_name}")
     print(f"   🏆 Best Fold: Fold {best_fold['Fold']}")

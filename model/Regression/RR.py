@@ -22,7 +22,7 @@ model = Ridge(
     alpha=0.1,              # Moderate regularization
     fit_intercept=True,     # Include intercept
     solver="auto",     # Conjugate gradient solver for sparse data
-    max_iter=600,         # High iteration cap for tough convergence
+    max_iter=1200,         # High iteration cap for tough convergence
     tol=7e-2                # Looser tolerance for faster exit
 )
 

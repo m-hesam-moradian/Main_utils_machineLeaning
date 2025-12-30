@@ -4,11 +4,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Load reordered data for ETR (after K-Fold)
-excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.23-Data.xlsx"
-sheet_name = "Data_after_KFold_ETR"
-target_column = "Remaining Useful Life "
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "data_after_vif"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
@@ -20,11 +20,12 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # Train and predict
 
 model = ExtraTreesRegressor(
-    n_estimators=500,         # Number of trees (default is 100)
-    max_depth=15,             # Limit tree depth to prevent memorization
-    min_samples_split=2,      # Require more samples to split a node
-    min_samples_leaf=1,       # Minimum samples per leaf
-    max_features="sqrt",      # Use fewer features per split
+    n_estimators=100,         # 500 is overkill and increases memorization
+    max_depth=5,              # LOWER THIS significantly (try 3, 4, or 5)
+    min_samples_split=10,      # Force it to look at at least 10 rows before splitting
+    min_samples_leaf=5,       # Each leaf MUST represent at least 5 different rows
+    max_features=1.0,         # Try using all features to see if there is any real signal
+    random_state=42
 )
 
 model.fit(X_train, y_train)
