@@ -3,7 +3,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Columns to drop ---
-COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
+# COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
 
 # --- Load reordered data for HGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
@@ -13,7 +13,7 @@ df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
 # Drop the specified columns from the dataset
-df = df.drop(columns=COLUMNS_TO_DROP)
+# df = df.drop(columns=COLUMNS_TO_DROP)
 
 # Prepare the features and target
 X = df.drop(columns=[target_column])
@@ -26,7 +26,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize HGBR model ---
 model = HistGradientBoostingRegressor(
-    max_depth=20,          # Maximum depth of each tree
+    max_depth=5,          # Maximum depth of each tree
     random_state=42       # Random seed for reproducibility
 )
 

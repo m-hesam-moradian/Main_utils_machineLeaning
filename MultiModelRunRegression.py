@@ -11,52 +11,57 @@ from openpyxl.styles import Font, Alignment, PatternFill
 # cation : do not remove this Guide comments wich hase * at the beginning of the lines
 
 # * Define model name and Optimizers based on task information and comment 2 rest of model names but leave optimizers as it is
-# model_name="RR"
-# model_name="ETR"
-model_name="HGBR"
+model_name="LLAR"
+# model_name="SGB"
+# model_name="HGBR"
 
 # Optimizers to consider
-optimizers = ["", "CFOA", "OOA"]  
+optimizers = ["", "GGO", "KOA"]
 
 # * Define parameter ranges and digits limit to generate random parameters based on range and digits limit for each model and comment rest of model params 
 # * the range and digit should be propriate to model used to seem realistic and defult params is already cleare each models defult params values shoud be 
 
-# RR params
-# params = {
-#     "alpha":{"range":[0.01, 1.0], "digit":2},  # range for alpha
-#     "max_iter": {"range":[500, 1500], "digit":0},  # range for max_iter
-# }
-
-# ETR params
-# params = {
-#     "n_estimators": {"range": [50, 300], "digit": 0},
-#     "max_depth": {"range": [3, 10], "digit": 0},
-#     "min_samples_split": {"range": [2, 20], "digit": 0}
-# }
-
-# HGBR params
+# LLAR params
+# LLAR params (Lasso Least Angle Regression)
 params = {
-    "learning_rate": {"range": [0.01, 0.2], "digit": 3, "default": 0.1},
-    "max_iter": {"range": [100, 500], "digit": 0, "default": 100},
-    "max_depth": {"range": [3, 10], "digit": 0}
+    "alpha": {"range": [0.0001, 1.0], "digit": 4, "default": 1.0},
+    "max_iter": {"range": [500, 2000], "digit": 0, "default": 1000}
 }
+
+# SGB params (Stochastic Gradient Boosting)
+# params = {
+#     "learning_rate": {"range": [0.01, 0.3], "digit": 3, "default": 0.1},
+#     "n_estimators": {"range": [50, 400], "digit": 0, "default": 100},
+#     "max_depth": {"range": [2, 8], "digit": 0, "default": 3}
+# }
+
+# HGBR params (Histogram-Based Gradient Boosting Regression)
+# params = {
+#     "learning_rate": {"range": [0.01, 0.2], "digit": 3, "default": 0.1},
+#     "max_iter": {"range": [100, 500], "digit": 0, "default": 100},
+#     "max_depth": {"range": [3, 10], "digit": 0, "default": None}
+# }
 
 # * Define target R² values based on model used and comment rest of target R² values
 # *based on kfold results:
-# Model	Best Fold	Best R2	Best RMSE	Mean R2	Mean RMSE
-# RR	1	0.849068826	0.05703456	0.818807212	0.060368132
-# ETR	3	0.774016911	0.065309347	0.762266462	0.069411737
-# HGBR	1	0.885914653	0.049586511	0.859668923	0.053145487
+# Model	Best Fold	Best R2
+# HGBR	5	0.870731393
+# SGB	5	0.867203246
+# LLAR	5	0.801145832
 
-# r2_target_values = [0.869068826, 0.94427, 0.959456]  # Target R² for RR
-# r2_target_values = [0.814016911, 0.91765, 0.94976]  # Target R² for ETR
-r2_target_values = [0.905914653, 0.97354, 0.989234]  # Target R² for HGBR
+
+# LLAR R² targets
+r2_target_values = [0.80, 0.95, 0.96]  # Example target R² values for LLAR
+# SGB R² targets
+# r2_target_values = [0.86, 0.97, 0.979]  # Example target R² values for SGB
+# HGBR R² targets 
+# r2_target_values = [0.87, 0.98, 0.99]  # Example target R² values for HGBR
 
 
 # Other parameters
 min_error = -43000.54
 max_error = 49000.43
-Convergence_metric = "MBE"
+Convergence_metric = "MARD"
 convegence_direction = "lower"  # "lower" for MBE convergence
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
@@ -98,17 +103,22 @@ def build_metrics_table(y_real, y_pred):
         # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # --- MBE (Mean Bias Error) ---
-        mbe = np.mean(y_hat - y_true)
+        # --- MARD (%) Mean Absolute Relative Deviation ---
+        mard = 100 * np.mean(np.abs((y_hat - y_true) / (y_true + epsilon)))
 
-        # --- AARD (%) Average Absolute Relative Deviation ---
-        aard = 100 * np.mean(np.abs((y_hat - y_true) / (y_true + epsilon)))
+        # --- U95 (95% expanded uncertainty) ---
+        u95 = 1.96 * rmse
 
-        # --- RAE (Relative Absolute Error) ---
-        denom = np.sum(np.abs(y_true - np.mean(y_true))) + epsilon
-        rae = np.sum(np.abs(y_hat - y_true)) / denom
+        # --- COV (%) Coefficient of Variation ---
+        cov = 100 * rmse / (np.mean(y_true) + epsilon)
 
-        return {"R2": r2, "RMSE": rmse, "MBE": mbe, "AARD": aard, "RAE": rae}
+        return {
+            "R2": r2,
+            "RMSE": rmse,
+            "MARD": mard,
+            "U95": u95,
+            "COV": cov,
+        }
 
     # --- Split data into Train/Test/Value sets ---
     split_idx = int(len(y_real) * 0.8)
@@ -128,15 +138,15 @@ def build_metrics_table(y_real, y_pred):
     M_valte = compute_metrics(y_real_valte, y_pred_valte)
 
     # --- Build DataFrame ---
-    cols = ["Set", "R2", "RMSE", "MBE", "AARD", "RAE"]
+    cols = ["Set", "R2", "RMSE", "MARD", "U95", "COV"]
 
     df_metrics = pd.DataFrame(
         [
-            ["All", M_all["R2"], M_all["RMSE"], M_all["MBE"], M_all["AARD"], M_all["RAE"]],
-            ["Train", M_train["R2"], M_train["RMSE"], M_train["MBE"], M_train["AARD"], M_train["RAE"]],
-            ["Test", M_test["R2"], M_test["RMSE"], M_test["MBE"], M_test["AARD"], M_test["RAE"]],
-            ["Value", M_value["R2"], M_value["RMSE"], M_value["MBE"], M_value["AARD"], M_value["RAE"]],
-            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["MBE"], M_valte["AARD"], M_valte["RAE"]],
+            ["All", M_all["R2"], M_all["RMSE"], M_all["MARD"], M_all["U95"], M_all["COV"]],
+            ["Train", M_train["R2"], M_train["RMSE"], M_train["MARD"], M_train["U95"], M_train["COV"]],
+            ["Test", M_test["R2"], M_test["RMSE"], M_test["MARD"], M_test["U95"], M_test["COV"]],
+            ["Value", M_value["R2"], M_value["RMSE"], M_value["MARD"], M_value["U95"], M_value["COV"]],
+            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["MARD"], M_valte["U95"], M_valte["COV"]],
         ],
         columns=cols,
     )

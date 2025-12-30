@@ -3,8 +3,10 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
-from sklearn.linear_model import Ridge
-from sklearn.ensemble import ExtraTreesRegressor, HistGradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import LinearSVR
+from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor
+from sklearn.linear_model import QuantileRegressor, LassoLars
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -40,14 +42,29 @@ target_column = df.columns[-1]
 X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# Drop ONLY during training
-COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
-
 # ================== Models ==================
 models = {
-    "RR": Ridge(random_state=42, alpha=1.0, max_iter=10),
-    "ETR": ExtraTreesRegressor(random_state=42, max_depth=5),
-    "HGBR": HistGradientBoostingRegressor(random_state=42, max_depth=5)
+    "DTR": DecisionTreeRegressor(random_state=42, max_depth=5),
+
+    # Least Squares SVR (approximation)
+    "LSSVR": LinearSVR(random_state=42, max_iter=5000),
+
+    "HGBR": HistGradientBoostingRegressor(random_state=42, max_depth=5),
+
+    # Quantile Regression (Median)
+    "QR": QuantileRegressor(quantile=0.5, alpha=1.0, solver="highs"),
+
+    # Stochastic Gradient Boosting
+    "SGB": GradientBoostingRegressor(
+        random_state=42,
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=3,
+        subsample=0.8
+    ),
+
+    # Lasso Least Angle Regression
+    "LLAR": LassoLars(alpha=0.01)
 }
 
 # ================== K-Fold ==================
@@ -63,9 +80,8 @@ for model_name, model in models.items():
     fold_indices_list = []
 
     for fold_index, (train_idx, test_idx) in enumerate(kf.split(X_full), 1):
-        X_train = X_full.iloc[train_idx].drop(columns=COLUMNS_TO_DROP, errors="ignore")
-        X_test  = X_full.iloc[test_idx].drop(columns=COLUMNS_TO_DROP, errors="ignore")
-
+        X_train = X_full.iloc[train_idx]
+        X_test  = X_full.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
         model.fit(X_train, y_train)
