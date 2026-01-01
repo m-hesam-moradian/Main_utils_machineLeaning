@@ -4,10 +4,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for LLAR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LLAR"
+sheet_name = "Data_after_KFold_LLAR"   # 🔁 changed to LLAR sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
+
+# Prepare the features and target
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
@@ -16,12 +18,16 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Train and predict ---
+# --- Initialize LLAR model (Lasso Least Angle Regression) ---
 model = LassoLars(
-
+    alpha=0.01,          # regularization strength (tunable)
+     # keep data as-is
 )
+
+# Train the model
 model.fit(X_train, y_train)
 
+# Predictions
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)

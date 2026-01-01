@@ -16,7 +16,7 @@ model_name="LLAR"
 # model_name="HGBR"
 
 # Optimizers to consider
-optimizers = ["", "GGO", "KOA"]
+optimizers = ["", "KOA", "GGO"]
 
 # * Define parameter ranges and digits limit to generate random parameters based on range and digits limit for each model and comment rest of model params 
 # * the range and digit should be propriate to model used to seem realistic and defult params is already cleare each models defult params values shoud be 
@@ -39,7 +39,7 @@ params = {
 # params = {
 #     "learning_rate": {"range": [0.01, 0.2], "digit": 3, "default": 0.1},
 #     "max_iter": {"range": [100, 500], "digit": 0, "default": 100},
-#     "max_depth": {"range": [3, 10], "digit": 0, "default": None}
+#     "max_depth": {"range": [3, 10], "digit": 0, "default": -1}
 # }
 
 # * Define target R² values based on model used and comment rest of target R² values
@@ -51,11 +51,11 @@ params = {
 
 
 # LLAR R² targets
-r2_target_values = [0.80, 0.95, 0.96]  # Example target R² values for LLAR
+r2_target_values = [0.2, 0.9554646, 0.96645645]  # Example target R² values for LLAR
 # SGB R² targets
-# r2_target_values = [0.86, 0.97, 0.979]  # Example target R² values for SGB
+# r2_target_values = [0.86, 0.9723423, 0.9793424]  # Example target R² values for SGB
 # HGBR R² targets 
-# r2_target_values = [0.87, 0.98, 0.99]  # Example target R² values for HGBR
+# r2_target_values = [0.87, 0.98521, 0.99136]  # Example target R² values for HGBR
 
 
 # Other parameters
@@ -289,9 +289,6 @@ y_real = data[:, 0]
 y_pred = data[:, 1]
 print("Data loaded:", data.shape)
 
-# Step 2: Single loop through optimizers and target R² (matching by index)
-optimizers = ["", "CFOA", "OOA"]  # Example optimizers list
- # Corresponding target R² values
 
 # Ensure that the number of optimizers matches the number of r2_target_values
 assert len(optimizers) == len(r2_target_values), "Optimizers and target R² lists must have the same length."

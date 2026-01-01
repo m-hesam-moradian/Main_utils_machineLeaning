@@ -1,26 +1,41 @@
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Load and prepare data
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.21-Data.xlsx", sheet_name="Data_after_KFold_LGBR")
-y = df["SOH"].astype(float)
-X = pd.get_dummies(df.drop(columns=["SOH"]), drop_first=True)
+# --- Load reordered data for SGBR (after K-Fold) ---
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Data_after_KFold_SGB"   # 🔁 changed from HGBR to SGB
 
-# Scale and split
-X = StandardScaler().fit_transform(X)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False, random_state=42)
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
+target_column = df.columns[-1]
 
-# Train and predict
-model = GradientBoostingRegressor()
+# Prepare the features and target
+X = df.drop(columns=[target_column])
+y = df[target_column]
+
+# --- Use last 20% as test set to match K-Fold logic ---
+split_idx = int(len(df) * 0.8)
+X_train, X_test = X[:split_idx], X[split_idx:]
+y_train, y_test = y[:split_idx], y[split_idx:]
+
+# --- Initialize SGBR model (Stochastic Gradient Boosting) ---
+model = GradientBoostingRegressor(
+    n_estimators=200,
+    learning_rate=0.05,
+    max_depth=3,
+    subsample=0.8,        # ✅ stochastic component
+    random_state=42
+)
+
+# Train the model
 model.fit(X_train, y_train)
+
+# Predictions
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
 
-# Metrics
+# --- Metrics ---
 mid = len(y_test) // 2
 sets = [
     ("All", y, y_pred_all),
@@ -39,12 +54,12 @@ df_metrics = pd.DataFrame([{
 
 print(df_metrics)
 
-# Output predictions
+# --- Output predictions ---
 df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# Optional: Export to clipboard or Excel
-df_all.to_clipboard()
+# --- Export to clipboard ---
+df_all.to_clipboard(index=False, header=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)
