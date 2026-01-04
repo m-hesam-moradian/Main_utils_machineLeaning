@@ -16,31 +16,35 @@ params = {
     "alpha": 0.1,
     # "fit_intercept": True,
     # "solver": "auto",
-    "max_iter": 600,
-    "tol": 7e-2
+    # "max_iter": 600,
+    # "tol": 7e-2
 }
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-optimizer_name = "CFOA"
+# optimizer_name = "CFOA"
 # optimizer_name = "OOA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "RR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "RR"          # should match Excel sheet label you want
+model_name = "DST"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+sheet_name = "DST"          # should match Excel sheet label you want
 
-R2_target = 0.93
-min_error = -43000.54
-max_error = 49000.43
+R2_target = 0.9483
+min_error = -43.54
+max_error = 49.43
 
-# Convergence: Based on MBE (lower is better)
-Convergence_metric = "MBE"
+# Convergence: Based on MDAPE (lower is better)
+Convergence_metric = "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 
 # === FUNCTIONS ===
+
+import pandas as pd
+import numpy as np
+from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
 
@@ -55,17 +59,29 @@ def build_metrics_table(y_real, y_pred):
         # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # --- MBE (Mean Bias Error) ---
-        mbe = np.mean(y_hat - y_true)
+        # --- U95 (95% expanded uncertainty) ---
+        # Standard definition: 1.96 * Standard Deviation of Residuals
+        residuals = y_true - y_hat
+        u95 = 1.96 * np.std(residuals)
 
-        # --- AARD (%) Average Absolute Relative Deviation ---
-        aard = 100 * np.mean(np.abs((y_hat - y_true) / (y_true + epsilon)))
+        # --- COM (Coefficient of Multiple Correlation) ---
+        # Calculated as the Pearson correlation between observed and predicted values
+        if np.std(y_true) == 0 or np.std(y_hat) == 0:
+            com = 0.0
+        else:
+            com = np.corrcoef(y_true, y_hat)[0, 1]
 
-        # --- RAE (Relative Absolute Error) ---
-        denom = np.sum(np.abs(y_true - np.mean(y_true))) + epsilon
-        rae = np.sum(np.abs(y_hat - y_true)) / denom
+        # --- MDAPE (Median Absolute Percentage Error) ---
+        ape = np.abs((y_hat - y_true) / (y_true + epsilon))
+        mdape = np.median(ape) * 100
 
-        return {"R2": r2, "RMSE": rmse, "MBE": mbe, "AARD": aard, "RAE": rae}
+        return {
+            "R2": r2,
+            "RMSE": rmse,
+            "U95": u95,
+            "COM": com,
+            "MDAPE": mdape,
+        }
 
     # --- Split data into Train/Test/Value sets ---
     split_idx = int(len(y_real) * 0.8)
@@ -85,21 +101,20 @@ def build_metrics_table(y_real, y_pred):
     M_valte = compute_metrics(y_real_valte, y_pred_valte)
 
     # --- Build DataFrame ---
-    cols = ["Set", "R2", "RMSE", "MBE", "AARD", "RAE"]
+    cols = ["Set", "R2", "RMSE", "U95", "COM", "MDAPE"]
 
     df_metrics = pd.DataFrame(
         [
-            ["All",        M_all["R2"],   M_all["RMSE"],   M_all["MBE"],   M_all["AARD"],   M_all["RAE"]],
-            ["Train",      M_train["R2"], M_train["RMSE"], M_train["MBE"], M_train["AARD"], M_train["RAE"]],
-            ["Test",       M_test["R2"],  M_test["RMSE"],  M_test["MBE"],  M_test["AARD"],  M_test["RAE"]],
-            ["Value",      M_value["R2"], M_value["RMSE"], M_value["MBE"], M_value["AARD"], M_value["RAE"]],
-            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["MBE"], M_valte["AARD"], M_valte["RAE"]],
+            ["All", M_all["R2"], M_all["RMSE"], M_all["U95"], M_all["COM"], M_all["MDAPE"]],
+            ["Train", M_train["R2"], M_train["RMSE"], M_train["U95"], M_train["COM"], M_train["MDAPE"]],
+            ["Test", M_test["R2"], M_test["RMSE"], M_test["U95"], M_test["COM"], M_test["MDAPE"]],
+            ["Value", M_value["R2"], M_value["RMSE"], M_value["U95"], M_value["COM"], M_value["MDAPE"]],
+            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["U95"], M_valte["COM"], M_valte["MDAPE"]],
         ],
         columns=cols,
     )
 
     return df_metrics
-
 
 def fake_r2_prediction(y_real, y_pred, R2_target):
     current_r2 = r2_score(y_real, y_pred)

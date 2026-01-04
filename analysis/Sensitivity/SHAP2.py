@@ -1,5 +1,5 @@
 # =========================================================
-# SHAP Feature Importance → DataFrame + Clipboard
+# SHAP Sensitivity Analysis → Table + Dependence Plots (Saved as Images)
 # =========================================================
 # Requirements:
 #   pip install pandas numpy shap scikit-learn matplotlib openpyxl
@@ -12,10 +12,11 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+import os
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Data_after_KFold_LR"
+sheet_name = "Data_after_KFold_SBR"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
@@ -39,18 +40,75 @@ model.fit(X_train_scaled, y_train)
 explainer = shap.LinearExplainer(model, X_train_scaled)
 shap_values = explainer.shap_values(X_test_scaled)
 
-# -------------------- 5. Summarize feature importance --------------------
-mean_abs_shap = np.abs(shap_values).mean(axis=0)
-importance_df = pd.DataFrame({
-    "Feature": X.columns,
-    "Mean_Abs_SHAP": mean_abs_shap
-}).sort_values(by="Mean_Abs_SHAP", ascending=False).reset_index(drop=True)
+# -------------------- 5. Build Sensitivity Table (for Clipboard) --------------------
+print("Calculating Sensitivity Metrics...")
 
-# -------------------- 6. Plot SHAP summary --------------------
-plt.title("SHAP Summary Plot (Mean Absolute Values)")
-shap.summary_plot(shap_values, X_test, plot_type="bar")
+metrics_list = []
 
-# -------------------- 7. Copy results to clipboard --------------------
+for i, feature_name in enumerate(X.columns):
+    # Sensitivity: Mean Absolute SHAP
+    mean_abs_shap = np.abs(shap_values[:, i]).mean()
+    
+    # Dependence Ranges: Min/Max SHAP
+    max_shap = np.max(shap_values[:, i])
+    min_shap = np.min(shap_values[:, i])
+    impact_range = max_shap - min_shap
+    
+    # Dependence Trend: Correlation (Feature Value vs SHAP Value)
+    feature_vals = X_test[feature_name].values
+    correlation = np.corrcoef(feature_vals, shap_values[:, i])[0, 1]
+
+    metrics_list.append({
+        "Feature": feature_name,
+        "Mean_Abs_SHAP": mean_abs_shap,
+        "Max_SHAP": max_shap,
+        "Min_SHAP": min_shap,
+        "Impact_Range": impact_range,
+        "Feature_Correlation": correlation
+    })
+
+importance_df = pd.DataFrame(metrics_list)
+importance_df = importance_df.sort_values(by="Mean_Abs_SHAP", ascending=False).reset_index(drop=True)
+
+# Format Table
+importance_df["Mean_Abs_SHAP"] = importance_df["Mean_Abs_SHAP"].map('{:.4f}'.format)
+importance_df["Max_SHAP"] = importance_df["Max_SHAP"].map('{:.4f}'.format)
+importance_df["Min_SHAP"] = importance_df["Min_SHAP"].map('{:.4f}'.format)
+importance_df["Feature_Correlation"] = importance_df["Feature_Correlation"].map('{:.4f}'.format)
+
+# -------------------- 6. Generate and Save Plots --------------------
+# Create a folder to save plots
+output_dir = "SHAP_Plots"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+print(f"\nSaving plots to folder: {output_dir}")
+
+# Plot 1: SHAP Summary Plot (Beeswarm)
+# This shows the overall distribution of feature impacts
+plt.figure()
+shap.summary_plot(shap_values, X_test, plot_type="dot", show=False)
+plt.savefig(os.path.join(output_dir, "01_Summary_Beeswarm.png"), bbox_inches='tight', dpi=300)
+plt.close() # Close figure to free memory
+print("Saved: 01_Summary_Beeswarm.png")
+
+# Plot 2: SHAP Dependence Plots
+# These show how specific features impact the model output
+top_n_features = 3  # Generate dependence plots for top 3 features
+for i, feature in enumerate(importance_df["Feature"].head(top_n_features)):
+    plt.figure()
+    shap.dependence_plot(feature, shap_values, X_test, show=False)
+    plt.savefig(os.path.join(output_dir, f"02_Dependence_{feature}.png"), bbox_inches='tight', dpi=300)
+    plt.close()
+    print(f"Saved: 02_Dependence_{feature}.png")
+
+# -------------------- 7. Report Table --------------------
+print("\n" + "="*80)
+print(" SHAP SENSITIVITY TABLE (Copied to Clipboard) ".center(80, "="))
+print("="*80)
+print(importance_df.to_string())
+print("="*80)
+
+# -------------------- 8. Copy to clipboard --------------------
 importance_df.to_clipboard(index=False)
-print("✅ SHAP feature importance copied to clipboard!")
-print(importance_df)
+print("\n✅ Table copied to clipboard! Check 'SHAP_Plots' folder for images.")

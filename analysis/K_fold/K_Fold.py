@@ -3,10 +3,9 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import LinearSVR
-from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor
-from sklearn.linear_model import QuantileRegressor, LassoLars
+# --- UPDATED IMPORTS ---
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import QuantileRegressor, ARDRegression
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -44,27 +43,21 @@ y = df[target_column]
 
 # ================== Models ==================
 models = {
-    "DTR": DecisionTreeRegressor(random_state=42, max_depth=5),
-
-    # Least Squares SVR (approximation)
-    "LSSVR": LinearSVR(random_state=42, max_iter=5000),
-
-    "HGBR": HistGradientBoostingRegressor(random_state=42, max_depth=5),
-
     # Quantile Regression (Median)
-    "QR": QuantileRegressor(quantile=0.5, alpha=1.0, solver="highs"),
+    "QR": QuantileRegressor(),
 
     # Stochastic Gradient Boosting
     "SGB": GradientBoostingRegressor(
         random_state=42,
-        n_estimators=200,
-        learning_rate=0.05,
+        n_estimators=10,
+        # learning_rate=0.05,
         max_depth=3,
-        subsample=0.8
+        # subsample=0.8
     ),
 
-    # Lasso Least Angle Regression
-    "LLAR": LassoLars(alpha=0.01)
+    # Sparse Bayesian Regression (ARD - Automatic Relevance Determination)
+    # ARDRegression is the sklearn implementation of Sparse Bayesian Linear Regression
+    "SBR": ARDRegression()
 }
 
 # ================== K-Fold ==================
@@ -78,6 +71,8 @@ fold_indices_dict = {}
 for model_name, model in models.items():
     fold_metrics_list = []
     fold_indices_list = []
+
+    print(f"Processing {model_name}...")
 
     for fold_index, (train_idx, test_idx) in enumerate(kf.split(X_full), 1):
         X_train = X_full.iloc[train_idx]

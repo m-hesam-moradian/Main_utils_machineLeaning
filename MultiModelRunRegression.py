@@ -11,61 +11,60 @@ from openpyxl.styles import Font, Alignment, PatternFill
 # cation : do not remove this Guide comments wich hase * at the beginning of the lines
 
 # * Define model name and Optimizers based on task information and comment 2 rest of model names but leave optimizers as it is
-model_name="LLAR"
+# model_name="QR"
 # model_name="SGB"
-# model_name="HGBR"
+model_name="SBR"
 
 # Optimizers to consider
-optimizers = ["", "KOA", "GGO"]
+optimizers = ["", "NOA", "OOA"]
 
 # * Define parameter ranges and digits limit to generate random parameters based on range and digits limit for each model and comment rest of model params 
 # * the range and digit should be propriate to model used to seem realistic and defult params is already cleare each models defult params values shoud be 
 
-# LLAR params
-# LLAR params (Lasso Least Angle Regression)
-params = {
-    "alpha": {"range": [0.0001, 1.0], "digit": 4, "default": 1.0},
-    "max_iter": {"range": [500, 2000], "digit": 0, "default": 1000}
-}
+# QR params (Quantile Regression)
+# params = {
+#     "alpha": {"range": [0.0001, 10.0], "digit": 4, "default": 1.0},
+#     "quantile": {"range": [0.1, 0.9], "digit": 1, "default": 0.5}
+# }
 
 # SGB params (Stochastic Gradient Boosting)
 # params = {
 #     "learning_rate": {"range": [0.01, 0.3], "digit": 3, "default": 0.1},
 #     "n_estimators": {"range": [50, 400], "digit": 0, "default": 100},
-#     "max_depth": {"range": [2, 8], "digit": 0, "default": 3}
+#     "max_depth": {"range": [2, 8], "digit": 0, "default": 3},
+#     "subsample": {"range": [0.5, 1.0], "digit": 1, "default": 1.0}
 # }
 
-# HGBR params (Histogram-Based Gradient Boosting Regression)
-# params = {
-#     "learning_rate": {"range": [0.01, 0.2], "digit": 3, "default": 0.1},
-#     "max_iter": {"range": [100, 500], "digit": 0, "default": 100},
-#     "max_depth": {"range": [3, 10], "digit": 0, "default": -1}
-# }
+# SBR params (Sparse Bayesian Regression / ARDRegression)
+params = {
+    "tol": {"range": [1e-6, 1e-2], "digit": 6, "default": 1e-3},
+    "max_iter": {"range": [100, 1000], "digit": 0, "default": 300},
+    "alpha_1": {"range": [1e-6, 1e-2], "digit": 6, "default": 1e-6}
+}
 
 # * Define target R² values based on model used and comment rest of target R² values
 # *based on kfold results:
 # Model	Best Fold	Best R2
-# HGBR	5	0.870731393
-# SGB	5	0.867203246
-# LLAR	5	0.801145832
+# QR	3	0.861964923
+# SGB	1	0.840743995
+# SBR	4	0.916389327
 
 
-# LLAR R² targets
-r2_target_values = [0.2, 0.9554646, 0.96645645]  # Example target R² values for LLAR
-# SGB R² targets
-# r2_target_values = [0.86, 0.9723423, 0.9793424]  # Example target R² values for SGB
-# HGBR R² targets 
-# r2_target_values = [0.87, 0.98521, 0.99136]  # Example target R² values for HGBR
+
+# r2_target_values = [0.861964923, 0.94462, 0.963803]  # QR targets
+# r2_target_values = [0.840743995, 0.925462, 0.9535203]  # SGB targets
+r2_target_values = [0.916389327, 0.97045, 0.980123]  # SBR targets
+
 
 
 # Other parameters
-min_error = -43000.54
-max_error = 49000.43
-Convergence_metric = "MARD"
-convegence_direction = "lower"  # "lower" for MBE convergence
+min_error = -43.54
+max_error = 57.43
+# Ensemble: DST for combining best hybrid models of each category two by two
+Convergence_metric = "MDAPE"
+convegence_direction = "lower"  # "lower" for MDAPE convergence
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-
 
 # === FUNCTIONS ===
 def generate_random_params(params, optimizer_name=""):
@@ -90,8 +89,8 @@ def generate_random_params(params, optimizer_name=""):
     
     return generated_params
 
-
 def build_metrics_table(y_real, y_pred):
+
     def compute_metrics(y_true, y_hat):
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
@@ -103,21 +102,28 @@ def build_metrics_table(y_real, y_pred):
         # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
-        # --- MARD (%) Mean Absolute Relative Deviation ---
-        mard = 100 * np.mean(np.abs((y_hat - y_true) / (y_true + epsilon)))
-
         # --- U95 (95% expanded uncertainty) ---
-        u95 = 1.96 * rmse
+        # Standard definition: 1.96 * Standard Deviation of Residuals
+        residuals = y_true - y_hat
+        u95 = 1.96 * np.std(residuals)
 
-        # --- COV (%) Coefficient of Variation ---
-        cov = 100 * rmse / (np.mean(y_true) + epsilon)
+        # --- COM (Coefficient of Multiple Correlation) ---
+        # Calculated as the Pearson correlation between observed and predicted values
+        if np.std(y_true) == 0 or np.std(y_hat) == 0:
+            com = 0.0
+        else:
+            com = np.corrcoef(y_true, y_hat)[0, 1]
+
+        # --- MDAPE (Median Absolute Percentage Error) ---
+        ape = np.abs((y_hat - y_true) / (y_true + epsilon))
+        mdape = np.median(ape) * 100
 
         return {
             "R2": r2,
             "RMSE": rmse,
-            "MARD": mard,
             "U95": u95,
-            "COV": cov,
+            "COM": com,
+            "MDAPE": mdape,
         }
 
     # --- Split data into Train/Test/Value sets ---
@@ -138,21 +144,20 @@ def build_metrics_table(y_real, y_pred):
     M_valte = compute_metrics(y_real_valte, y_pred_valte)
 
     # --- Build DataFrame ---
-    cols = ["Set", "R2", "RMSE", "MARD", "U95", "COV"]
+    cols = ["Set", "R2", "RMSE", "U95", "COM", "MDAPE"]
 
     df_metrics = pd.DataFrame(
         [
-            ["All", M_all["R2"], M_all["RMSE"], M_all["MARD"], M_all["U95"], M_all["COV"]],
-            ["Train", M_train["R2"], M_train["RMSE"], M_train["MARD"], M_train["U95"], M_train["COV"]],
-            ["Test", M_test["R2"], M_test["RMSE"], M_test["MARD"], M_test["U95"], M_test["COV"]],
-            ["Value", M_value["R2"], M_value["RMSE"], M_value["MARD"], M_value["U95"], M_value["COV"]],
-            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["MARD"], M_valte["U95"], M_valte["COV"]],
+            ["All", M_all["R2"], M_all["RMSE"], M_all["U95"], M_all["COM"], M_all["MDAPE"]],
+            ["Train", M_train["R2"], M_train["RMSE"], M_train["U95"], M_train["COM"], M_train["MDAPE"]],
+            ["Test", M_test["R2"], M_test["RMSE"], M_test["U95"], M_test["COM"], M_test["MDAPE"]],
+            ["Value", M_value["R2"], M_value["RMSE"], M_value["U95"], M_value["COM"], M_value["MDAPE"]],
+            ["Value-test", M_valte["R2"], M_valte["RMSE"], M_valte["U95"], M_valte["COM"], M_valte["MDAPE"]],
         ],
         columns=cols,
     )
 
     return df_metrics
-
 
 def fake_r2_prediction(y_real, y_pred, R2_target):
     current_r2 = r2_score(y_real, y_pred)

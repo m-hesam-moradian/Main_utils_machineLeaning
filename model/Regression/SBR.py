@@ -1,13 +1,13 @@
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import ARDRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Columns to drop ---
 # COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
 
-# --- Load reordered data for SGB (after K-Fold) ---
+# --- Load reordered data for SBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_SGB"  # Changed to "SGB" sheet name
+sheet_name = "Data_after_KFold_SBR"  # Changed to "SBR" sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -24,13 +24,12 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize SGB model ---
-model = GradientBoostingRegressor(
-        random_state=42,
-        n_estimators=10,
-        # learning_rate=0.05,
-        max_depth=3,
-        # subsample=0.8
+# --- Initialize SBR model ---
+# ARDRegression is the sklearn implementation of Sparse Bayesian Linear Regression
+model = ARDRegression(
+    # n_iter=300,       # Number of iterations
+    # tol=0.001,        # Tolerance for stopping
+    # compute_score=True # Compute objective function
 )
 
 # Train the model

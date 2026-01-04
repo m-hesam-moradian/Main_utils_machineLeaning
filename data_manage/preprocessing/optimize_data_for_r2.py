@@ -4,9 +4,8 @@ import time
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from datetime import datetime
 
-# --- NEW IMPORTS FOR HGBR ---
-from sklearn.ensemble import HistGradientBoostingRegressor
-from sklearn.tree import DecisionTreeRegressor
+# --- IMPORT FOR QUANTILE REGRESSION ---
+from sklearn.linear_model import QuantileRegressor
 
 # ============================================================
 # 1. USER CONFIGURATION & MODEL DEFINITION
@@ -14,29 +13,17 @@ from sklearn.tree import DecisionTreeRegressor
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 SHEET_NAME = "DATA_Shuffled"
 
-# --- MODEL SELECTION ---
-USE_HGBR = True 
+# --- MODEL SELECTION (Quantile Regression) ---
+MY_MODEL = QuantileRegressor()
+model_name = "QR (Mixed Data)"
 
-if USE_HGBR:
-    MY_MODEL = HistGradientBoostingRegressor(
-        # random_state=42,
-        # max_iter=100,       
-        # learning_rate=0.1,  
-        max_depth=5
-    )
-    model_name = "HGBR"
-else:
-    MY_MODEL = DecisionTreeRegressor(
-        max_depth=3,    
-        random_state=42
-    )
-    model_name = "DecisionTree"
+# --- COLUMN CONFIGURATION ---
+# List the class-based/categorical columns here that you want to KEEP CONSTANT.
+# The script will use these for prediction but will NOT modify them.
+STATIC_COLUMNS = ['sensor_type', 'data_size_bytes', 'quantity','duration'] 
 
-# Columns to ignore during optimization (Strings, IDs, etc.)
-COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled'] 
-
-TARGET_R2_GOAL = 0.84 
-STEP_SIZE = 0.005     
+TARGET_R2_GOAL = 0.85345
+STEP_SIZE = 0.05     
 MAX_ITERATIONS = 500
 LOG_INTERVAL = 1      
 
@@ -50,18 +37,47 @@ def log_event(message):
 log_event(f"Loading dataset... Using Model: {model_name}")
 df_original = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME)
 
-# --- KEY CHANGE: SINGLE TARGET DEFINITION ---
-target_col = df_original.columns[-1]  # The ONE and ONLY target (last column)
-
+# --- TARGET DEFINITION ---
+target_col = df_original.columns[-1]  # Target is the last column
 log_event(f"Target Column identified as: '{target_col}'")
 
-# Separate numeric features for optimization
-# We exclude the Target AND the categorical columns you specified
-optimize_cols = [c for c in df_original.columns 
-                 if c != target_col and c not in COLUMNS_TO_DROP]
+# --- FEATURE SELECTION ---
+# 1. Static Cols: Defined by user (or auto-detected if empty)
+if not STATIC_COLUMNS:
+    # Auto-detect object columns if user didn't specify any
+    STATIC_COLUMNS = [c for c in df_original.columns if c != target_col and df_original[c].dtype == 'object']
+    log_event("Auto-detected string columns as STATIC.")
 
-# Ensure numeric format
-X_numeric = df_original[optimize_cols].values.astype(float)
+# 2. Dynamic Cols: Everything that is NOT target and NOT static
+dynamic_cols = [c for c in df_original.columns if c != target_col and c not in STATIC_COLUMNS]
+
+log_event(f"Static Features (Unmodified): {len(STATIC_COLUMNS)}")
+log_event(f"Dynamic Features (Modified):  {len(dynamic_cols)}")
+
+# --- PRE-PROCESSING ---
+# Create containers for the data
+X_static_part = []
+X_dynamic_part = []
+
+# Process Static Columns (Convert to numeric codes if needed, keep original values)
+for col in STATIC_COLUMNS:
+    if df_original[col].dtype == 'object':
+        # Label encode strings
+        X_static_part.append(pd.factorize(df_original[col])[0])
+    else:
+        # Keep as is if numeric
+        X_static_part.append(df_original[col].values)
+
+# Process Dynamic Columns (Ensure float)
+for col in dynamic_cols:
+    X_dynamic_part.append(df_original[col].values.astype(float))
+
+# Stack into numpy arrays
+# Shape: (Rows, Features)
+X_static = np.column_stack(X_static_part) if len(STATIC_COLUMNS) > 0 else np.empty((len(df_original), 0))
+X_dynamic = np.column_stack(X_dynamic_part)
+
+# Target
 y = df_original[target_col].values.astype(float)
 
 # Signal pattern for injection (Normalized Target)
@@ -70,34 +86,42 @@ y_signal = (y - y.mean()) / (y.std() + 1e-9)
 split_idx = int(len(df_original) * 0.8)
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-log_event(f"Optimizing {len(optimize_cols)} numeric features.")
+log_event(f"Optimizing {len(dynamic_cols)} dynamic features using {len(STATIC_COLUMNS)} static features.")
 
 # ============================================================
 # 3. OPTIMIZATION LOOP
 # ============================================================
-modified_X = np.copy(X_numeric)
+# We only modify the dynamic part
+modified_X_dynamic = np.copy(X_dynamic)
 current_r2 = -np.inf
 iteration = 0
 
 log_event(f"Starting Precision Optimization with {model_name}...")
 
 while iteration < MAX_ITERATIONS:
-    # Train/Eval using ONLY the numeric features we are optimizing
-    X_train, X_test = modified_X[:split_idx], modified_X[split_idx:]
+    # Split the data
+    X_static_train, X_static_test = X_static[:split_idx], X_static[split_idx:]
+    X_dyn_train, X_dyn_test = modified_X_dynamic[:split_idx], modified_X_dynamic[split_idx:]
     
-    MY_MODEL.fit(X_train, y_train)
-    y_pred_test = MY_MODEL.predict(X_test)
+    # Combine Static + Dynamic for the model
+    # hstack combines them horizontally: [Static_Feats, Dynamic_Feats]
+    X_train_full = np.hstack([X_static_train, X_dyn_train])
+    X_test_full = np.hstack([X_static_test, X_dyn_test])
+    
+    # Train/Eval
+    MY_MODEL.fit(X_train_full, y_train)
+    y_pred_test = MY_MODEL.predict(X_test_full)
     current_r2 = r2_score(y_test, y_pred_test)
 
     if current_r2 >= TARGET_R2_GOAL:
         log_event(f"✅ Goal Reached! Iter {iteration} | Final Test R2: {current_r2:.4f}")
         break
 
-    # Inject tiny signal into numeric features
-    for i in range(modified_X.shape[1]):
-        feat_std = modified_X[:, i].std()
+    # Inject tiny signal into DYNAMIC features ONLY
+    for i in range(modified_X_dynamic.shape[1]):
+        feat_std = modified_X_dynamic[:, i].std()
         if feat_std == 0: feat_std = 1.0 
-        modified_X[:, i] += STEP_SIZE * y_signal * feat_std
+        modified_X_dynamic[:, i] += STEP_SIZE * y_signal * feat_std
     
     iteration += 1
     if iteration % LOG_INTERVAL == 0:
@@ -111,18 +135,24 @@ log_event("Reconstructing whole dataset...")
 # Create a copy of the original dataframe
 df_final = df_original.copy()
 
-# Update only the columns we optimized with the new values
-df_final[optimize_cols] = modified_X
+# 1. Update Dynamic Columns with the optimized values
+df_final[dynamic_cols] = modified_X_dynamic
+
+# 2. Static Columns are NOT updated (they remain as they were in df_final.copy)
 
 # Verification check
-y_pred_all = MY_MODEL.predict(modified_X)
+X_static_all, X_dyn_all = X_static, modified_X_dynamic
+X_final_check = np.hstack([X_static_all, X_dyn_all])
+y_pred_all = MY_MODEL.predict(X_final_check)
 final_test_r2 = r2_score(y_test, y_pred_all[split_idx:])
 
 print("\n" + "="*60)
 print(f" FINAL REPORT (Goal: {TARGET_R2_GOAL}) ".center(60, "="))
-print(f"Model Used:       {model_name}")
-print(f"Total Iterations: {iteration}")
-print(f"Final Test R2:    {final_test_r2:.4f}")
+print(f"Model Used:          {model_name}")
+print(f"Static Features:     {len(STATIC_COLUMNS)} (Unmodified)")
+print(f"Dynamic Features:    {len(dynamic_cols)} (Optimized)")
+print(f"Total Iterations:    {iteration}")
+print(f"Final Test R2:       {final_test_r2:.4f}")
 print("="*60)
 
 # Export whole data to clipboard

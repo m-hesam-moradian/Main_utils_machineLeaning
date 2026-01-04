@@ -10,7 +10,7 @@ def replace_outliers_with_median(df):
     total_replacements = 0
 
     for col in numeric_cols:
-        outliers = (z_scores[col] > 2) | (z_scores[col] < -2)
+        outliers = (z_scores[col] > 3) | (z_scores[col] < -3)
         count = outliers.sum()
         total_replacements += count
 
@@ -24,7 +24,7 @@ def replace_outliers_with_median(df):
 
 # === CONFIGURATION ===
 input_file = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
-input_sheet = 'Sheet1'
+input_sheet = 'DATA_Shuffled'
 # output_sheet = 'Z-Score'
 
 # === PROCESSING ===
