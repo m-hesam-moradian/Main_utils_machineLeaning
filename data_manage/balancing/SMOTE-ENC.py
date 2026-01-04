@@ -1,36 +1,48 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from imblearn.over_sampling import SMOTE
+from imblearn.combine import SMOTEENN
 
 # -------------------- 1. Load the data --------------------
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name="Encoded_Data")
+df = pd.read_excel(file_path, sheet_name="Timestamp Removed")
 
+# Prepare Features (X) and Target (y)
+target_column = df.columns[-1]
+X = df.drop(columns=[target_column]).copy() # Features are numeric
+y = df[target_column].copy()
 
-X = df.drop(columns=[target_col]).copy()
-y = df[target_col].copy()
+# -------------------- 2. Encode Target (if necessary) --------------------
+# SMOTEENN requires classes to be numeric.
+# If your target is text (e.g., "Normal", "Fault"), this converts it to 0, 1.
+# If your target is already numeric (0, 1, 2), this does nothing.
+le = LabelEncoder()
+if y.dtype == 'object' or y.dtype.name == 'category':
+    y_encoded = le.fit_transform(y)
+else:
+    y_encoded = y # Already numeric
 
-# Encode categorical features if needed
-categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
-X_encoded = X.copy()
-for col in categorical_cols:
-    le = LabelEncoder()
-    X_encoded[col] = le.fit_transform(X_encoded[col])
+# -------------------- 3. Hybrid Balancing (SMOTEENN) --------------------
+# Automatically balances classes by oversampling minority and cleaning noise.
+smote_enn = SMOTEENN(random_state=42)
+X_res, y_res_encoded = smote_enn.fit_resample(X, y_encoded)
 
-# -------------------- 2. Oversample with SMOTE to 1150 per class --------------------
-sampling_strategy = {"0": 1150, "1": 1150, "2": 1150}
-smote = SMOTE(sampling_strategy=sampling_strategy, random_state=42)
-X_over, y_over = smote.fit_resample(X_encoded, y)
+# -------------------- 4. Reconstruct DataFrame --------------------
+# 1. Put features back
+df_balanced = pd.DataFrame(X_res, columns=X.columns)
 
-# -------------------- 3. Final result --------------------
-df_balanced = pd.DataFrame(X_over, columns=X_encoded.columns)
-df_balanced[target_col] = y_over
+# 2. Inverse transform target back to original labels (if they were text)
+if y.dtype == 'object' or y.dtype.name == 'category':
+    df_balanced[target_column] = le.inverse_transform(y_res_encoded)
+else:
+    df_balanced[target_column] = y_res_encoded
+
+# Shuffle the dataset
 df_balanced = df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
-print("Class distribution after balancing:")
-print(df_balanced[target_col].value_counts())
+print("Class distribution after SMOTEENN balancing:")
+print(df_balanced[target_column].value_counts())
 
-# -------------------- 4. Save to Excel --------------------
+# -------------------- 5. Save to Excel --------------------
 with pd.ExcelWriter(file_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_balanced.to_excel(writer, sheet_name="Balanced_SMOTE", index=False)
+    df_balanced.to_excel(writer, sheet_name="Balanced_SMOTEENN", index=False)

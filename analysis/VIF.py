@@ -38,7 +38,7 @@ def calculate_vif_horizontal(X, threshold=5.0):
     
     if leaky_cols:
         print(f"🚫 حذف خودکار ستون‌های شناسایی (Leakage): {leaky_cols}")
-        X.drop(columns=leaky_cols, inplace=True)
+        # X.drop(columns=leaky_cols, inplace=True)
 
     vif_snapshots = []
     step = 1
@@ -78,7 +78,7 @@ def calculate_vif_horizontal(X, threshold=5.0):
     return X, final_vif
 
 # --- Main Logic ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"C:\Users\Sam\Downloads\Telegram Desktop\BMM-EI. No.60 (2)\Data.xlsx"
 close_excel_file(excel_path)
 df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
 

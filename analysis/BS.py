@@ -311,14 +311,34 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
         add(("Recall_macro", None))
         add(("F1_macro", None))
 
+
     # AUC (multiclass OVR) if probabilities available
     if prob_matrix is not None:
-        # labels order for prob_matrix — assume class order 0,1,2
-        prob_labels = [0, 1, 2]
+        # --- DYNAMIC LABELS WITH SAFETY CHECK ---
+        num_classes = prob_matrix.shape[1] # e.g., 3
+        
+        # Get unique labels from data
+        detected_labels = sorted(np.unique(np.concatenate([y_true, y_pred])))
+        
+        # Filter labels to ensure they fit in the probability matrix
+        # e.g., if matrix has 3 cols (0,1,2), remove label 3
+        valid_labels = [l for l in detected_labels if l < num_classes]
+        
+        if len(valid_labels) != len(detected_labels):
+            invalid = set(detected_labels) - set(valid_labels)
+            print(f"⚠️ Warning: y_true contains labels {invalid} which exceed the prob matrix size ({num_classes}). Excluding them from Brier calculation.")
+        
+        prob_labels = valid_labels
+        # ----------------------------------------
+
         try:
             # Map y_true to int indices if needed
             y_true_int = np.array([int(x) for x in y_true])
-            auc_ovr = roc_auc_score(y_true_int, prob_matrix, multi_class="ovr")
+            
+            # Only compute for valid labels
+            # We need to filter y_true and prob_matrix to match, or just rely on sklearn's internal checks
+            # Passing the explicit labels list handles the filtering usually
+            auc_ovr = roc_auc_score(y_true_int, prob_matrix, multi_class="ovr", labels=prob_labels)
             add(("AUC_ovr_multiclass", round(float(auc_ovr), 6)))
         except Exception:
             add(("AUC_ovr_multiclass", None))
@@ -351,19 +371,6 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
         add(("AUC_ovr_multiclass", None))
         add(("Brier_multiclass", None))
         add(("BrierSkillScore_multiclass", None))
-
-    # Markedness
-    if has_pred:
-        marked = compute_markedness(y_true, y_pred)
-        add(("Markedness", round(float(marked), 6) if marked is not None else None))
-    else:
-        add(("Markedness", None))
-
-    # Create DataFrame
-    df_rows = pd.DataFrame(metrics, columns=["Metric", "Value"])
-    df_rows.insert(0, "No.", range(1, len(df_rows) + 1))
-    return df_rows
-
 # -------------------------
 # Save/export
 # -------------------------
@@ -373,7 +380,7 @@ def save_and_copy(df_rows: pd.DataFrame, out_path: Union[str, Path] = "metrics_c
         df_rows.to_excel(p, index=False)
         saved = p
     except Exception:
-        csvp = p.with_suffix(".csv")
+        csvp = p.with_suffix(".npt")
         df_rows.to_csv(csvp, index=False)
         saved = csvp
     # clipboard best-effort

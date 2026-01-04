@@ -3,32 +3,50 @@ import numpy as np
 
 # --- Load your raw data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data"
+sheet_name = "Encoded_Data"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
-# --- Ensure Timestamp is datetime ---
-df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+# --- Configuration ---
+# REPLACE 'Target' with the exact name of your label column (e.g., 'Class', 'Label', 'Fault_Type')
+target_column = df.columns[-1]
 
-# --- Trim to full 6-sample blocks (Hourly) ---
-# Logic: 10 mins * 6 = 60 mins (1 Hour)
-block_size = 6
+# --- 1. Drop Timestamp ---
+# Requirement: "Do not Consider Timestamp as input"
+if 'Timestamp' in df.columns:
+    df = df.drop(columns=['Timestamp'])
+
+# --- 2. Trim to full 60-sample blocks (Hourly) ---
+block_size = 60
 n = (len(df) // block_size) * block_size 
 df = df.iloc[:n].copy()
 
-print(f"Original samples processed: {len(df)}") # Should be approx 50088 or 50090 based on divisibility
+print(f"Original samples processed: {len(df)}")
 
-# --- Assign Block_ID (each hour = 6 samples) ---
+# --- 3. Assign Block_ID ---
 df['Block_ID'] = np.arange(len(df)) // block_size
 
-# --- Average each block of 6 rows ---
-# numeric_only=True automatically drops 'Timestamp' and other non-numeric columns
-df_hourly = df.groupby('Block_ID', as_index=False).mean(numeric_only=True)
+# --- 4. Define Aggregation Strategy ---
+# We create a dictionary to tell pandas how to treat each column specifically
+agg_dict = {}
 
-# --- Drop the helper column ---
-df_hourly = df_hourly.drop(columns=['Block_ID'])
+for col in df.columns:
+    if col == 'Block_ID':
+        continue
+    elif col == target_column:
+        # --- SELECT TARGET ---
+        # Select the first label in the block. 
+        # Alternatives: 'last', or lambda x: x.mode()[0] (most frequent)
+        agg_dict[col] = 'first' 
+    else:
+        # --- AVERAGE FEATURES ---
+        # Average all other columns (Inputs)
+        agg_dict[col] = 'mean'
 
-print("✅ Hourly rows (Target ~8348/8349):", len(df_hourly))
+# --- 5. Apply Grouping and Aggregation ---
+df_hourly = df.groupby('Block_ID').agg(agg_dict).reset_index(drop=True)
+
+print(f"✅ Hourly rows: {len(df_hourly)}")
 print(df_hourly.head())
 
 # --- Export ---

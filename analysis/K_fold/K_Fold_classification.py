@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
+
+# --- UPDATED IMPORTS ---
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.metrics import accuracy_score, f1_score
 
-# --- Excel helpers ---
+# ================== Excel Helpers ==================
 def close_excel_file(filepath):
     import os
     import win32com.client
@@ -27,102 +31,96 @@ def open_excel_file(filepath):
     excel.Workbooks.Open(os.path.abspath(filepath))
     print("📂 Opened Excel file:", filepath)
 
-# --- Load dataset ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-close_excel_file(excel_path)
-sheet_name = "Encoded_Data"
-df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = df.columns[-1]
+# ================== Load Dataset ==================
+filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Sheet1"  # Loading the balanced data
 
-# --- Features and target ---
-X = df.drop(columns=[target_column])
+df = pd.read_excel(filepath, sheet_name=sheet_name)
+
+target_column = df.columns[-1]
+X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Models ---
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-
+# ================== Models ==================
 models = {
-    "LR": LogisticRegression(max_iter=1000, random_state=42),
-    "KNNC": KNeighborsClassifier(n_neighbors=5),
-    "GPC": GaussianProcessClassifier(random_state=42)
+    # K-Nearest Neighbors Classification
+    "KNNC": KNeighborsClassifier( n_neighbors=17),
+                        
+
+    # Adaptive Gradient Boosting Classification (AdaBoost)
+    "ADAC": AdaBoostClassifier(n_estimators=800, learning_rate=0.5,)
 }
 
-# --- Stratified K-Fold setup ---
+# ================== K-Fold ==================
 n_splits = 5
-kf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# --- Results containers ---
 metrics_df_dict = {}
 df_reordered_dict = {}
-summary_df = []
-df_prediction_dict = {}
+fold_indices_dict = {}
 
-# --- K-Fold loop ---
 for model_name, model in models.items():
-    fold_metrics = []
-    fold_indices = []
-    y_real_all = []
-    y_pred_all = []
+    fold_metrics_list = []
+    fold_indices_list = []
 
-    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X, y), 1):
-        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+    print(f"Processing {model_name}...")
+
+    for fold_index, (train_idx, test_idx) in enumerate(kf.split(X_full), 1):
+        X_train = X_full.iloc[train_idx]
+        X_test  = X_full.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-        # Train model
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        # Save predictions
-        y_real_all.extend(y_test)
-        y_pred_all.extend(y_pred)
+        # --- Classification Metrics ---
+        # Using 'weighted' average for F1 to handle class imbalances if any remain
+        fold_metrics_list.append({
+            "Fold": fold_index,
+            "Accuracy": accuracy_score(y_test, y_pred),
+            "F1 Score": f1_score(y_test, y_pred, average='weighted')
+        })
 
-        # Save metrics
-        acc = accuracy_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred, average="weighted")
-        fold_metrics.append({"Fold": fold_index, "Accuracy": acc, "F1-Score": f1})
-        fold_indices.append({"train_idx": train_idx, "test_idx": test_idx})
+        fold_indices_list.append({
+            "train_idx": train_idx,
+            "test_idx": test_idx
+        })
 
-    # Save metrics DataFrame
-    metrics_df = pd.DataFrame(fold_metrics)
+    metrics_df = pd.DataFrame(fold_metrics_list)
     metrics_df_dict[model_name] = metrics_df
+    fold_indices_dict[model_name] = fold_indices_list
 
-    # Identify best fold
+    # Select best fold based on Accuracy
     best_fold_idx = metrics_df["Accuracy"].idxmax()
-    best_test_idx = fold_indices[best_fold_idx]["test_idx"]
+    best_test_idx = fold_indices_dict[model_name][best_fold_idx]["test_idx"]
 
-    # Reorder dataset: all other rows first, best fold test rows last
+    # Reorder dataframe: Train first, then Test (Best Fold)
     remaining_idx = df.index.difference(best_test_idx)
-    df_reordered = pd.concat([df.loc[remaining_idx], df.loc[best_test_idx]], axis=0)
-    df_reordered_dict[model_name] = df_reordered
+    df_reordered_dict[model_name] = pd.concat(
+        [df.loc[remaining_idx], df.loc[best_test_idx]], axis=0
+    )
 
-    # Add summary row
+# ================== Summary ==================
+summary_df = []
+for model_name in models:
+    metrics_df = metrics_df_dict[model_name]
+    best_fold = metrics_df.loc[metrics_df["Accuracy"].idxmax()]
+
     summary_df.append({
         "Model": model_name,
-        "Best Fold": metrics_df.loc[best_fold_idx, "Fold"],
-        "Best Accuracy": metrics_df.loc[best_fold_idx, "Accuracy"],
-        "Best F1-Score": metrics_df.loc[best_fold_idx, "F1-Score"],
+        "Best Fold": best_fold["Fold"],
+        "Best Accuracy": best_fold["Accuracy"],
+        "Best F1": best_fold["F1 Score"],
         "Mean Accuracy": metrics_df["Accuracy"].mean(),
-        "Mean F1-Score": metrics_df["F1-Score"].mean(),
+        "Mean F1": metrics_df["F1 Score"].mean()
     })
 
-    # Save prediction DataFrame
-    prediction_df = pd.DataFrame({"y_real": y_real_all, "y_pred": y_pred_all})
-    df_prediction_dict[model_name] = prediction_df
+summary_df = pd.DataFrame(summary_df)
 
-    # --- Log fold results to console ---
-    print(f"\n📘 Stratified K-Fold Results for {model_name}:")
-    print(metrics_df.to_string(index=False, float_format="%.4f"))
-    best_fold = metrics_df.loc[best_fold_idx]
-    print(f"\n🏆 Best Fold for {model_name}: Fold {best_fold['Fold']}")
-    print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
-    print(f"   F1-Score: {best_fold['F1-Score']:.4f}")
-    print(f"📊 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
-    print(f"📊 Mean F1-Score: {metrics_df['F1-Score'].mean():.4f}")
+# ================== Save to Excel ==================
+close_excel_file(filepath)
 
-# --- Save results to Excel ---
-with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
             writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
@@ -130,7 +128,19 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
         df_reordered_dict[model_name].to_excel(
             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
         )
-    pd.DataFrame(summary_df).to_excel(writer, sheet_name="Model_Summary", index=False)
 
-open_excel_file(excel_path)
-print(f"✅ Stratified K-Fold results and summary added to '{excel_path}' with sheets for LR, KNNC, GPC, and Model_Summary.")
+    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
+
+open_excel_file(filepath)
+
+# ================== Print Summary ==================
+for model_name in models:
+    metrics_df = metrics_df_dict[model_name]
+    best_fold = metrics_df.loc[metrics_df["Accuracy"].idxmax()]
+
+    print(f"\n🔹 Model: {model_name}")
+    print(f"   🏆 Best Fold: Fold {best_fold['Fold']}")
+    print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
+    print(f"   F1 Score: {best_fold['F1 Score']:.4f}")
+    print(f"   📈 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
+    print(f"   📉 Mean F1 Score: {metrics_df['F1 Score'].mean():.4f}")

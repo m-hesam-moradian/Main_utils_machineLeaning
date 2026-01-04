@@ -33,7 +33,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Shuffled"
+sheet_name = "Sheet1"
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 

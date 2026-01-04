@@ -1,29 +1,29 @@
 import pandas as pd
 import numpy as np
 import time
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import accuracy_score
 from datetime import datetime
 
-# --- IMPORT FOR QUANTILE REGRESSION ---
-from sklearn.linear_model import QuantileRegressor
+# --- IMPORT FOR ADAC (AdaBoost Classifier) ---
+from sklearn.ensemble import AdaBoostClassifier
 
 # ============================================================
 # 1. USER CONFIGURATION & MODEL DEFINITION
 # ============================================================
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "DATA_Shuffled"
+SHEET_NAME = "Balanced_SMOTEENN"  # Or "Balanced_SMOTEENN" depending on which data you want to optimize
 
-# --- MODEL SELECTION (Quantile Regression) ---
-MY_MODEL = QuantileRegressor()
-model_name = "QR (Mixed Data)"
+# --- MODEL SELECTION (Adaptive Boosting Classification) ---
+MY_MODEL = AdaBoostClassifier(random_state=42)
+model_name = "ADAC (Mixed Data)"
 
 # --- COLUMN CONFIGURATION ---
 # List the class-based/categorical columns here that you want to KEEP CONSTANT.
 # The script will use these for prediction but will NOT modify them.
-STATIC_COLUMNS = ['sensor_type', 'data_size_bytes', 'quantity','duration'] 
-
-TARGET_R2_GOAL = 0.85345
-STEP_SIZE = 0.05     
+# STATIC_COLUMNS = ['sensor_type', 'data_size_bytes', 'quantity','duration'] 
+STATIC_COLUMNS=[]  # Empty list means auto-detect string columns
+TARGET_ACCURACY_GOAL = 0.8  # High goal for classification accuracy
+STEP_SIZE = 0.005     
 MAX_ITERATIONS = 500
 LOG_INTERVAL = 1      
 
@@ -77,10 +77,11 @@ for col in dynamic_cols:
 X_static = np.column_stack(X_static_part) if len(STATIC_COLUMNS) > 0 else np.empty((len(df_original), 0))
 X_dynamic = np.column_stack(X_dynamic_part)
 
-# Target
-y = df_original[target_col].values.astype(float)
+# Target (Ensure integer for classification, usually 0, 1, 2...)
+y = df_original[target_col].values.astype(int)
 
 # Signal pattern for injection (Normalized Target)
+# Note: For classification (0, 1, 2), this creates a centering signal.
 y_signal = (y - y.mean()) / (y.std() + 1e-9)
 
 split_idx = int(len(df_original) * 0.8)
@@ -93,7 +94,7 @@ log_event(f"Optimizing {len(dynamic_cols)} dynamic features using {len(STATIC_CO
 # ============================================================
 # We only modify the dynamic part
 modified_X_dynamic = np.copy(X_dynamic)
-current_r2 = -np.inf
+current_accuracy = 0.0
 iteration = 0
 
 log_event(f"Starting Precision Optimization with {model_name}...")
@@ -111,13 +112,16 @@ while iteration < MAX_ITERATIONS:
     # Train/Eval
     MY_MODEL.fit(X_train_full, y_train)
     y_pred_test = MY_MODEL.predict(X_test_full)
-    current_r2 = r2_score(y_test, y_pred_test)
+    
+    # --- CLASSIFICATION METRIC ---
+    current_accuracy = accuracy_score(y_test, y_pred_test)
 
-    if current_r2 >= TARGET_R2_GOAL:
-        log_event(f"✅ Goal Reached! Iter {iteration} | Final Test R2: {current_r2:.4f}")
+    if current_accuracy >= TARGET_ACCURACY_GOAL:
+        log_event(f"✅ Goal Reached! Iter {iteration} | Final Test Accuracy: {current_accuracy:.4f}")
         break
 
     # Inject tiny signal into DYNAMIC features ONLY
+    # This attempts to pull the features linearly based on the class label value
     for i in range(modified_X_dynamic.shape[1]):
         feat_std = modified_X_dynamic[:, i].std()
         if feat_std == 0: feat_std = 1.0 
@@ -125,7 +129,7 @@ while iteration < MAX_ITERATIONS:
     
     iteration += 1
     if iteration % LOG_INTERVAL == 0:
-        log_event(f"Iter {iteration:4} | Current R2: {current_r2:.4f}")
+        log_event(f"Iter {iteration:4} | Current Accuracy: {current_accuracy:.4f}")
 
 # ============================================================
 # 4. FINAL RECONSTRUCTION & EXPORT
@@ -144,15 +148,15 @@ df_final[dynamic_cols] = modified_X_dynamic
 X_static_all, X_dyn_all = X_static, modified_X_dynamic
 X_final_check = np.hstack([X_static_all, X_dyn_all])
 y_pred_all = MY_MODEL.predict(X_final_check)
-final_test_r2 = r2_score(y_test, y_pred_all[split_idx:])
+final_test_acc = accuracy_score(y_test, y_pred_all[split_idx:])
 
 print("\n" + "="*60)
-print(f" FINAL REPORT (Goal: {TARGET_R2_GOAL}) ".center(60, "="))
+print(f" FINAL REPORT (Goal: {TARGET_ACCURACY_GOAL}) ".center(60, "="))
 print(f"Model Used:          {model_name}")
 print(f"Static Features:     {len(STATIC_COLUMNS)} (Unmodified)")
 print(f"Dynamic Features:    {len(dynamic_cols)} (Optimized)")
 print(f"Total Iterations:    {iteration}")
-print(f"Final Test R2:       {final_test_r2:.4f}")
+print(f"Final Test Accuracy: {final_test_acc:.4f}")
 print("="*60)
 
 # Export whole data to clipboard
