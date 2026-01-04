@@ -1,5 +1,0 @@
-model,rmse_test,mae_test,r2_test,gr100,gr125,cv_rmse,best_params,n_features_used
-xgb,6068810.101968919,4010277.5,0.6978170948551572,0.0,0.0,5910635.55,"{'subsample': np.float64(1.0), 'reg_lambda': np.float64(2.0), 'min_child_weight': 5, 'max_depth': 10, 'learning_rate': np.float64(0.16), 'gamma': np.float64(0.35000000000000003), 'colsample_bytree': np.float64(0.75)}",21
-lgbm,5842978.671345015,3901193.1419841736,0.7198881767141004,0.0,0.0,6250114.953491476,"{'subsample': np.float64(0.95), 'reg_lambda': np.float64(2.4000000000000004), 'num_leaves': 103, 'min_child_samples': 5, 'max_depth': 8, 'learning_rate': np.float64(0.05), 'colsample_bytree': np.float64(0.6)}",21
-rf,6172598.489747503,3929051.2634281744,0.6873928587467821,0.0,0.0,6157878.86260471,"{'min_samples_split': 7, 'min_samples_leaf': 5, 'max_features': None, 'max_depth': 25, 'bootstrap': True}",21
-lin,7210322.328654113,5342653.820000629,0.5734477885166736,0.0,0.0,,{},21

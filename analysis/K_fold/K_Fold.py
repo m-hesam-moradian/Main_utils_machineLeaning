@@ -48,11 +48,7 @@ models = {
 
     # Stochastic Gradient Boosting
     "SGB": GradientBoostingRegressor(
-        random_state=42,
-        n_estimators=10,
-        # learning_rate=0.05,
-        max_depth=3,
-        # subsample=0.8
+
     ),
 
     # Sparse Bayesian Regression (ARD - Automatic Relevance Determination)
