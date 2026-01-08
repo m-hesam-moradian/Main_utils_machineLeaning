@@ -63,83 +63,93 @@ def load_npt_three_class(path: Union[str, Path]) -> pd.DataFrame:
 
 def load_predictions_auto(path: Union[str, Path]) -> pd.DataFrame:
     """
-    Generic loader: tries the 3-class npt format first, then tries CSV/TSV, then generic npy/npz.
+    Generic loader: 
+    1. Tries to read as standard CSV/TSV/Whitespace.
+    2. Auto-detects 'y_true', 'y_pred'.
+    3. Auto-detects ALL probability columns (prob_class_X).
     """
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"No such file: {p}")
 
-    # Try as simple text two-label + probs (3-class) format
-    try:
-        df = load_npt_three_class(p)
-        return df
-    except Exception:
-        pass
+    # Attempt to load using pandas with various separators
+    df = None
+    # Try common separators
+    for sep in [None, ",", "\t", " "]: 
+        try:
+            # sep=None causes pandas to use the python sniffer, which is good for whitespace
+            df_temp = pd.read_csv(p, sep=sep, engine='python' if sep is None else 'c')
+            if df_temp.shape[1] > 1:
+                df = df_temp
+                break
+        except:
+            continue
+            
+    # Fallback: simple numpy load if pandas failed completely
+    if df is None:
+        try:
+            arr = np.loadtxt(p)
+            if arr.ndim == 1: arr = arr.reshape(1, -1)
+            # Default headers if no header found
+            cols = ["y_true", "y_pred"] + [f"prob_class_{i}" for i in range(arr.shape[1]-2)]
+            df = pd.DataFrame(arr, columns=cols)
+        except Exception:
+            raise RuntimeError("Could not parse file. Ensure it is CSV or whitespace separated.")
 
-    # try pandas read
-    try:
-        df = pd.read_csv(p)
-        # normalize lower-case column names
-        cols_lower = {c.lower(): c for c in df.columns}
-        # try find y_true and y_pred
-        rename_map = {}
-        if "y_true" in cols_lower:
-            rename_map[cols_lower["y_true"]] = "y_true"
-        elif "y_real" in cols_lower:
-            rename_map[cols_lower["y_real"]] = "y_true"
-        elif "label" in cols_lower:
-            rename_map[cols_lower["label"]] = "y_true"
-        if "y_pred" in cols_lower:
-            rename_map[cols_lower["y_pred"]] = "y_pred"
-        elif "pred" in cols_lower:
-            rename_map[cols_lower["pred"]] = "y_pred"
+    # 1. Normalize Column Names to lower case for searching
+    original_cols = df.columns.tolist()
+    cols_map = {c.lower(): c for c in original_cols}
 
-        if rename_map:
-            df = df.rename(columns=rename_map)
+    # 2. Find y_true / y_pred
+    rename_map = {}
+    
+    # Map Truth
+    if "y_true" in cols_map: rename_map[cols_map["y_true"]] = "y_true"
+    elif "label" in cols_map: rename_map[cols_map["label"]] = "y_true"
+    elif "target" in cols_map: rename_map[cols_map["target"]] = "y_true"
+    else: 
+        # Fallback: assume 1st column is True
+        rename_map[original_cols[0]] = "y_true"
 
-        # detect probability columns like prob, prob_pos, prob_class_*
-        prob_cols = [c for c in df.columns if c.lower().startswith("prob")]
-        # If we have no explicit prob columns but numeric columns in [0,1], take them (except y_true/y_pred)
-        if not prob_cols:
-            for c in df.columns:
-                if c in ("y_true", "y_pred"):
-                    continue
-                if pd.api.types.is_numeric_dtype(df[c]):
-                    s = df[c].dropna()
-                    if len(s) > 0 and s.between(0, 1).all():
-                        prob_cols.append(c)
-        # if we found probability columns, keep them
-        if "y_true" in df.columns and "y_pred" in df.columns and prob_cols:
-            return df[["y_true", "y_pred"] + prob_cols]
+    # Map Pred
+    if "y_pred" in cols_map: rename_map[cols_map["y_pred"]] = "y_pred"
+    elif "pred" in cols_map: rename_map[cols_map["pred"]] = "y_pred"
+    elif "predicted" in cols_map: rename_map[cols_map["predicted"]] = "y_pred"
+    else:
+        # Fallback: assume 2nd column is Pred
+        if len(original_cols) > 1:
+            rename_map[original_cols[1]] = "y_pred"
 
-        # fallback: if there are at least 5 columns, assume format y_true, y_pred, p0,p1,p2
-        if df.shape[1] >= 5:
-            cols = df.columns.tolist()
-            return df.rename(columns={cols[0]: "y_true", cols[1]: "y_pred"})[["y_true", "y_pred", cols[2], cols[3], cols[4]]]
-    except Exception:
-        pass
+    df = df.rename(columns=rename_map)
 
-    # try numpy load (npy or npz)
-    try:
-        import numpy as _np
-        if p.suffix.lower() == ".npy":
-            arr = _np.load(p, allow_pickle=True)
-            arr = _np.asarray(arr)
-            if arr.ndim == 1 and arr.size >= 5:
-                arr = arr.reshape(1, -1)
-            if arr.ndim == 2 and arr.shape[1] >= 5:
-                # assume first two are labels, next three probs
-                y_true = arr[:, 0].astype(int)
-                y_pred = arr[:, 1].astype(int)
-                probs = arr[:, 2:5].astype(float)
-                df = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
-                for i in range(3):
-                    df[f"prob_class_{i}"] = probs[:, i]
-                return df
-    except Exception:
-        pass
+    # 3. Dynamic Probability Column Detection
+    # We look for columns that started with 'prob' (case insensitive) 
+    # OR columns that look like prob_class_X
+    current_cols = df.columns
+    prob_cols = []
+    
+    for c in current_cols:
+        c_lower = c.lower()
+        if c in ["y_true", "y_pred"]: continue
+        
+        # Criteria: name contains 'prob' or is purely numeric 0-1 (optional heuristic)
+        if "prob" in c_lower:
+            prob_cols.append(c)
+    
+    # If no named prob cols found, look for remaining numeric columns
+    if not prob_cols and len(current_cols) > 2:
+        potential_probs = [c for c in current_cols if c not in ["y_true", "y_pred"]]
+        # Simple check: take them if they are numeric
+        if all(pd.api.types.is_numeric_dtype(df[c]) for c in potential_probs):
+            prob_cols = potential_probs
 
-    raise RuntimeError("Failed to auto-load the predictions file. Please ensure it matches the expected format.")
+    # Return only relevant columns
+    final_cols = ["y_true"]
+    if "y_pred" in df.columns:
+        final_cols.append("y_pred")
+    final_cols.extend(prob_cols)
+    
+    return df[final_cols]
 
 # -------------------------
 # Brier score & decomposition
@@ -238,33 +248,73 @@ def compute_markedness(y_true, y_pred) -> Optional[float]:
 # Report builder
 # -------------------------
 def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build a column-oriented report DataFrame with Metric / Value pairs.
-
-    df must contain:
-      - y_true
-      - optionally y_pred
-      - probability columns named 'prob_class_0', 'prob_class_1', 'prob_class_2' for 3 classes
-    """
     if "y_true" not in df.columns:
         raise ValueError("df must contain 'y_true' column")
+    
     y_true = df["y_true"].values
+    # Ensure y_true are standard integers if they look like numbers
+    try:
+        y_true = y_true.astype(int)
+    except:
+        pass # keep as strings if they are strings
+
     has_pred = "y_pred" in df.columns
     y_pred = df["y_pred"].values if has_pred else None
+    if has_pred:
+        try: y_pred = y_pred.astype(int)
+        except: pass
 
-    # detect prob columns for 3-class
-    prob_cols = [f"prob_class_{i}" for i in range(3) if f"prob_class_{i}" in df.columns]
-    if len(prob_cols) != 3:
-        # try alternative names or numeric columns
-        numeric_cols = [c for c in df.columns if c not in ("y_true", "y_pred") and pd.api.types.is_numeric_dtype(df[c])]
-        if len(numeric_cols) >= 3:
-            prob_cols = numeric_cols[:3]
-        else:
-            prob_cols = []
+    # --- DYNAMIC PROBABILITY DETECTION ---
+    # Identify probability columns
+    prob_cols = [c for c in df.columns if c not in ["y_true", "y_pred"]]
+    
+    # Sort them to ensure logical order. 
+    # If they are named "prob_class_0", "prob_class_1", sorting works naturally.
+    # We try to extract the integer suffix to sort correctly (10 comes after 2)
+    def natural_keys(text):
+        import re
+        return [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text)]
+    
+    prob_cols.sort(key=natural_keys)
 
     prob_matrix = None
-    if len(prob_cols) == 3:
+    prob_labels = []
+
+    if len(prob_cols) > 0:
         prob_matrix = df[prob_cols].values.astype(float)
+        
+        # --- DYNAMIC LABEL EXTRACTION ---
+        # Try to infer label from column name (e.g., "prob_class_5" -> 5)
+        # If columns are just "prob0", "prob1", we assume labels are 0, 1...
+        # If columns are generic "col3", "col4", we assume they map to sorted(unique(y_true))
+        
+        inferred_labels = []
+        is_generic_names = True
+        
+        for col in prob_cols:
+            # Look for number at the end of the string
+            import re
+            match = re.search(r'(\d+)$', col)
+            if match and "prob" in col.lower():
+                inferred_labels.append(int(match.group(1)))
+                is_generic_names = False
+            else:
+                inferred_labels.append(col)
+
+        if not is_generic_names and len(set(inferred_labels)) == len(prob_cols):
+            # We successfully extracted IDs like 0, 1, 2 from names
+            prob_labels = inferred_labels
+        else:
+            # Fallback: Assume the probability columns correspond to the sorted unique classes in data
+            unique_classes = sorted(np.unique(y_true))
+            # If we have more probability columns than classes in y_true (e.g. class 2 never appears),
+            # we assume the range 0..N-1
+            if len(prob_cols) == len(unique_classes):
+                prob_labels = unique_classes
+            else:
+                prob_labels = list(range(len(prob_cols)))
+
+    # -------------------------------------
 
     metrics = []
     add = metrics.append
@@ -281,85 +331,32 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
         add(("Precision_macro", round(float(precision_score(y_true, y_pred, average="macro", zero_division=0)), 6)))
         add(("Recall_macro", round(float(recall_score(y_true, y_pred, average="macro", zero_division=0)), 6)))
         add(("F1_macro", round(float(f1_score(y_true, y_pred, average="macro", zero_division=0)), 6)))
-        add(("Precision_micro", round(float(precision_score(y_true, y_pred, average="micro", zero_division=0)), 6)))
-        add(("Recall_micro", round(float(recall_score(y_true, y_pred, average="micro", zero_division=0)), 6)))
-        add(("F1_micro", round(float(f1_score(y_true, y_pred, average="micro", zero_division=0)), 6)))
-        try:
-            mcc = matthews_corrcoef(y_true, y_pred)
-            add(("MCC", round(float(mcc), 6)))
-        except Exception:
-            add(("MCC", None))
-
-        # per-class metrics using union of seen labels in y_true and y_pred
-        labels_for_metrics = np.unique(np.concatenate([unique_labels, np.unique(y_pred)]))
-        precs = precision_score(y_true, y_pred, average=None, labels=labels_for_metrics, zero_division=0)
-        recs = recall_score(y_true, y_pred, average=None, labels=labels_for_metrics, zero_division=0)
-        f1s = f1_score(y_true, y_pred, average=None, labels=labels_for_metrics, zero_division=0)
-        for lab, p, r, f in zip(labels_for_metrics, precs, recs, f1s):
-            add((f"Class_{lab}_Precision", round(float(p), 6)))
-            add((f"Class_{lab}_Recall", round(float(r), 6)))
-            add((f"Class_{lab}_F1", round(float(f), 6)))
-        # confusion matrix
-        cm = confusion_matrix(y_true, y_pred, labels=labels_for_metrics)
-        add(("ConfusionMatrix_shape", f"{cm.shape[0]}x{cm.shape[1]}"))
-        for i in range(cm.shape[0]):
-            for j in range(cm.shape[1]):
-                add((f"CM[{i},{j}]", int(cm[i, j])))
     else:
         add(("Accuracy", None))
-        add(("Precision_macro", None))
-        add(("Recall_macro", None))
-        add(("F1_macro", None))
 
-
-    # AUC (multiclass OVR) if probabilities available
+    # Multiclass Brier and AUC
     if prob_matrix is not None:
-        # --- DYNAMIC LABELS WITH SAFETY CHECK ---
-        num_classes = prob_matrix.shape[1] # e.g., 3
-        
-        # Get unique labels from data
-        detected_labels = sorted(np.unique(np.concatenate([y_true, y_pred])))
-        
-        # Filter labels to ensure they fit in the probability matrix
-        # e.g., if matrix has 3 cols (0,1,2), remove label 3
-        valid_labels = [l for l in detected_labels if l < num_classes]
-        
-        if len(valid_labels) != len(detected_labels):
-            invalid = set(detected_labels) - set(valid_labels)
-            print(f"⚠️ Warning: y_true contains labels {invalid} which exceed the prob matrix size ({num_classes}). Excluding them from Brier calculation.")
-        
-        prob_labels = valid_labels
-        # ----------------------------------------
-
         try:
-            # Map y_true to int indices if needed
-            y_true_int = np.array([int(x) for x in y_true])
-            
-            # Only compute for valid labels
-            # We need to filter y_true and prob_matrix to match, or just rely on sklearn's internal checks
-            # Passing the explicit labels list handles the filtering usually
-            auc_ovr = roc_auc_score(y_true_int, prob_matrix, multi_class="ovr", labels=prob_labels)
+            # AUC
+            # We need to map y_true to indices matching prob_matrix columns for AUC
+            # Simple heuristic: if classes are 0..K-1, works out of box.
+            auc_ovr = roc_auc_score(y_true, prob_matrix, multi_class="ovr", average="macro", labels=prob_labels)
             add(("AUC_ovr_multiclass", round(float(auc_ovr), 6)))
         except Exception:
             add(("AUC_ovr_multiclass", None))
 
-        # Multiclass Brier
+        # Brier
         try:
+            # Pass the dynamically detected prob_labels
             bs = brier_score_multiclass(y_true, prob_matrix, labels=prob_labels)
             add(("Brier_multiclass", round(float(bs), 8)))
-            # Brier Skill Score (ref: class prevalences)
-            prevalences = np.array([(np.array(y_true) == lab).mean() for lab in prob_labels], dtype=float)
-            prob_ref_mat = np.tile(prevalences, (len(y_true), 1))
-            # compute reference BS
-            bs_ref = brier_score_multiclass(y_true, prob_ref_mat, labels=prob_labels)
-            bss = None if bs_ref == 0 else 1.0 - (bs / bs_ref)
-            add(("BrierSkillScore_multiclass", round(float(bss), 6) if bss is not None else None))
         except Exception as e:
             add(("Brier_multiclass_error", str(e)))
 
-        # Per-class decomposition
+        # Decomposition
         try:
-            decomp = brier_decomposition_multiclass(y_true, prob_matrix, labels=prob_labels, n_bins=10, strategy="quantile")
+            # Pass the dynamically detected prob_labels
+            decomp = brier_decomposition_multiclass(y_true, prob_matrix, labels=prob_labels, n_bins=10)
             for lab, comp in decomp.items():
                 add((f"Brier_decomp_{lab}_brier", round(float(comp["brier"]), 8)))
                 add((f"Brier_decomp_{lab}_reliability", round(float(comp["reliability"]), 8)))
@@ -367,10 +364,11 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
                 add((f"Brier_decomp_{lab}_uncertainty", round(float(comp["uncertainty"]), 8)))
         except Exception as e:
             add(("Brier_decomp_error", str(e)))
-    else:
-        add(("AUC_ovr_multiclass", None))
-        add(("Brier_multiclass", None))
-        add(("BrierSkillScore_multiclass", None))
+
+    # Create DataFrame
+    df_rows = pd.DataFrame(metrics, columns=["Metric", "Value"])
+    df_rows.insert(0, "No.", range(1, len(df_rows) + 1))
+    return df_rows
 # -------------------------
 # Save/export
 # -------------------------
@@ -380,7 +378,7 @@ def save_and_copy(df_rows: pd.DataFrame, out_path: Union[str, Path] = "metrics_c
         df_rows.to_excel(p, index=False)
         saved = p
     except Exception:
-        csvp = p.with_suffix(".npt")
+        csvp = p.with_suffix(".csv")
         df_rows.to_csv(csvp, index=False)
         saved = csvp
     # clipboard best-effort
