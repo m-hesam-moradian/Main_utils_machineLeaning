@@ -5,7 +5,7 @@ from xgboost import XGBClassifier   # <-- changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_GPC"  # renamed to reflect XGBC
+sheet_name = "Encoded_Data"  # renamed to reflect XGBC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -23,10 +23,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 model = XGBClassifier(
     # use_label_encoder=False,   # suppress label encoder warning
     # eval_metric="logloss",     # evaluation metric
-    n_estimators=2000,          # number of boosting rounds
-    # max_depth=1000,               # tree depth
-    # learning_rate=0.01,         # step size shrinkage
-    subsample=0.0018,             # subsample ratio
+    # n_estimators=2000,          # number of boosting rounds
+    # # max_depth=1000,               # tree depth
+    # # learning_rate=0.01,         # step size shrinkage
+    # subsample=0.0018,             # subsample ratio
     # colsample_bytree=0.8,      # feature subsample ratio
     # random_state=42
 )

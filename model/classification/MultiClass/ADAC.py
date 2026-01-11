@@ -19,7 +19,7 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize ADAC model ---
-model = AdaBoostClassifier(n_estimators=800, learning_rate=0.5)
+model = AdaBoostClassifier(n_estimators=10, learning_rate=0.1)
 
 # Train the model
 model.fit(X_train, y_train)

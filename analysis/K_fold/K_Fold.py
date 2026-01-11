@@ -3,9 +3,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
 
-# --- UPDATED IMPORTS ---
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.linear_model import QuantileRegressor, ARDRegression
+
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -42,9 +40,16 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models ==================
+# --- UPDATED IMPORTS ---
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import HuberRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+from xgboost import XGBRegressor
 models = {
     # Quantile Regression (Median)
-    "QR": QuantileRegressor(),
+    "XGBRegressor":XGBRegressor(),
+    "HR": HuberRegressor(),
 
     # Stochastic Gradient Boosting
     "SGB": GradientBoostingRegressor(
@@ -53,12 +58,12 @@ models = {
 
     # Sparse Bayesian Regression (ARD - Automatic Relevance Determination)
     # ARDRegression is the sklearn implementation of Sparse Bayesian Linear Regression
-    "SBR": ARDRegression()
+    "NGBR": HistGradientBoostingRegressor()
 }
 
 # ================== K-Fold ==================
 n_splits = 5
-kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+kf = KFold(n_splits=n_splits, shuffle=False)
 
 metrics_df_dict = {}
 df_reordered_dict = {}
@@ -119,20 +124,20 @@ for model_name in models:
 summary_df = pd.DataFrame(summary_df)
 
 # ================== Save to Excel ==================
-close_excel_file(filepath)
+# close_excel_file(filepath)
 
-with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-    for model_name in models:
-        metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
-        )
-        df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
-        )
+# with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+#     for model_name in models:
+#         metrics_df_dict[model_name].to_excel(
+#             writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+#         )
+#         df_reordered_dict[model_name].to_excel(
+#             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+#         )
 
-    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
+#     summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
 
-open_excel_file(filepath)
+# open_excel_file(filepath)
 
 # ================== Print Summary ==================
 for model_name in models:

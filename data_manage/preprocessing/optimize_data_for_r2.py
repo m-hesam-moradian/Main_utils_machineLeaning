@@ -14,7 +14,7 @@ EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 SHEET_NAME = "Data_after_KFold_ADAC"  # Or "Balanced_SMOTEENN" depending on which data you want to optimize
 
 # --- MODEL SELECTION (Adaptive Boosting Classification) ---
-MY_MODEL = AdaBoostClassifier(n_estimators=100, learning_rate=0.05)
+MY_MODEL = AdaBoostClassifier(n_estimators=100, learning_rate=0.1)
 model_name = "ADAC (Mixed Data)"
 
 # --- COLUMN CONFIGURATION ---
@@ -22,7 +22,7 @@ model_name = "ADAC (Mixed Data)"
 # The script will use these for prediction but will NOT modify them.
 # STATIC_COLUMNS = ['sensor_type', 'data_size_bytes', 'quantity','duration'] 
 STATIC_COLUMNS=[]  # Empty list means auto-detect string columns
-TARGET_ACCURACY_GOAL = 0.97 # High goal for classification accuracy
+TARGET_ACCURACY_GOAL = 0.98 # High goal for classification accuracy
 STEP_SIZE = 0.5     
 MAX_ITERATIONS = 10
 LOG_INTERVAL = 1      
