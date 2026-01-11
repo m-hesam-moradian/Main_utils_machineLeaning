@@ -33,7 +33,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Sheet1"  # Loading the balanced data
+sheet_name = "Balanced_SMOTEENN"  # Loading the balanced data
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 
@@ -42,13 +42,30 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models ==================
-models = {
-    # K-Nearest Neighbors Classification
-    "KNNC": KNeighborsClassifier( n_neighbors=17),
-                        
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
 
-    # Adaptive Gradient Boosting Classification (AdaBoost)
-    "ADAC": AdaBoostClassifier(n_estimators=800, learning_rate=0.5,)
+models = {
+    # Decision Tree Classifier
+    "DTC": DecisionTreeClassifier(
+        # criterion="gini",
+        # max_depth=None,
+        # random_state=42
+    ),
+
+    # Categorical Gradient Boosting Classifier (CatBoost)
+    "CATC": XGBClassifier(
+        # n_estimators=500,
+        # learning_rate=0.1,
+        # max_depth=6,
+        # random_state=42
+    ),
+    # Least Squares Support Vector Classification (LS-SVC approximation)
+    "LSSVC": SVC(
+        # kernel="linear",
+        # C=1.0
+    )
 }
 
 # ================== K-Fold ==================

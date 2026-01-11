@@ -5,7 +5,7 @@ from imblearn.combine import SMOTEENN
 
 # -------------------- 1. Load the data --------------------
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name="Timestamp Removed")
+df = pd.read_excel(file_path, sheet_name="Encoded_Data")
 
 # Prepare Features (X) and Target (y)
 target_column = df.columns[-1]

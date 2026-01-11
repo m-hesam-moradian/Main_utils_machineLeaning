@@ -1,11 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from xgboost import XGBClassifier   # <-- changed import
+from sklearn.tree import DecisionTreeClassifier   # <-- changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data"  # renamed to reflect XGBC
+sheet_name = "Data_after_KFold_DTC"  # renamed to reflect DTC (optional)
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,15 +19,10 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Extreme Gradient Boosting Classifier ---
-model = XGBClassifier(
-    # use_label_encoder=False,   # suppress label encoder warning
-    # eval_metric="logloss",     # evaluation metric
-    # n_estimators=2000,          # number of boosting rounds
-    # # max_depth=1000,               # tree depth
-    # # learning_rate=0.01,         # step size shrinkage
-    # subsample=0.0018,             # subsample ratio
-    # colsample_bytree=0.8,      # feature subsample ratio
+# --- Train Decision Tree Classifier ---
+model = DecisionTreeClassifier(
+    # criterion="gini",      # or "entropy"
+    max_depth=5,        # set value if you want to control overfitting
     # random_state=42
 )
 
@@ -44,7 +39,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results (XGBoost Classifier)")
+print("✅ Accuracy Results (Decision Tree Classifier)")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
@@ -64,6 +59,7 @@ df_all = pd.concat([
     pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
     proba_df
 ], axis=1)
+
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
