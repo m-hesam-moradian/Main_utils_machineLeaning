@@ -8,15 +8,16 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters GPC
+#  best numeric parameters DTC
 
 params = {
-    "max_iter_predict": 1,
-    "random_state": 42
+    "max_depth": 1,
+    "min_samples_split": 2,
+     "min_samples_leaf":1
 }
-ShowProbs = True   # False → hide probability columns & ROC table
 
-model_name = "GPC"
+ShowProbs = True   # False → hide probability columns & ROC table
+model_name = "DTC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
 # optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
@@ -24,7 +25,7 @@ Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "GPC+NOA"  # name of the sheet to create in Excel
+sheet_name = "DTC"  # name of the sheet to create in Excel
 Convergence_metric = "Precision"
 convegence_direction = "up"
 
@@ -319,6 +320,15 @@ if not os.path.exists(outputPath):
 book = load_workbook(outputPath)
 
 with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+    total_len = len(data)
+    idx_1 = int(total_len * 0.80)
+    idx_2 = idx_1 + int(total_len * 0.10)
+
+    # Create DataFrames for the Excel writer
+    df_train_data = pd.DataFrame(data[:idx_1, :2], columns=["Train_Real", "Train_Pred"])
+    df_test_data  = pd.DataFrame(data[idx_1:idx_2, :2], columns=["Test_Real", "Test_Pred"])
+    df_val_data   = pd.DataFrame(data[idx_2:, :2], columns=["Val_Real", "Val_Pred"])
+
     # Create new sheet and attach to writer
     worksheet = writer.book.create_sheet(sheet_name)
     writer.sheets[sheet_name] = worksheet
@@ -326,11 +336,11 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     # Header/title (preserve original logic)
     if optimizer_name.strip():
         title = f"{model_name} + {optimizer_name.strip()}"
-        merge_end_col = 14
+        merge_end_col = 16
         include_convergence = True
     else:
         title = model_name
-        merge_end_col = 13
+        merge_end_col = 15
         include_convergence = False
 
     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
@@ -352,14 +362,76 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
     # CM_col = len(df_value_pred.columns) + 1
     CM_start_row = len(df_params) + 6
-    write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    cm_df_out = cm_df.reset_index()
+    cm_df_out.rename(columns={"index": "Actual"}, inplace=True)
+    write_table(
+        cm_df_out,
+        startrow=CM_start_row,
+        startcol=params_col,
+        style_key="rec_curve",
+        worksheet=worksheet,
+        writer=writer,
+        header_styles=None,
+        sheet_name=sheet_name
+)
 
     # Write ROC table just under df_combined (preserve spacing)
-    write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    roc_start_col = params_col + len(cm_df_out.columns) + 1
+
+    write_table(
+        roc_df,
+        startrow=CM_start_row,
+        startcol=roc_start_col,
+        style_key="roc",
+        worksheet=worksheet,
+        writer=writer,
+        header_styles=None,
+        sheet_name=sheet_name
+    )
 
     if include_convergence:
         convergence_col = metrics_col + len(df_combined.columns) + 1
         write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    # === Write Split Data Tables (Side by Side) ===
+    if include_convergence:
+        current_col = convergence_col + len(df_convergence.columns)
+    else:
+        current_col = metrics_col + len(df_combined.columns)
+    train_col = current_col + 1
+    write_table(
+            df_train_data,
+            startrow=1,
+            startcol=train_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
 
+    test_col = train_col + len(df_train_data.columns) + 1
+    write_table(
+            df_test_data,
+            startrow=1,
+            startcol=test_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+    )
+
+    val_col = test_col + len(df_test_data.columns) + 1
+    write_table(
+            df_val_data,
+            startrow=1,
+            startcol=val_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+    )
+    
 open_excel_file(outputPath)
 print("✅ Structured Excel file saved successfully.")
