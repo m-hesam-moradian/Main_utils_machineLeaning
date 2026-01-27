@@ -1,11 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier   # <-- changed import
+from xgboost import XGBClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_DTC"  # renamed to reflect DTC (optional)
+sheet_name = "Data_after_KFold_CATC"  # you can rename this if needed
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,19 +19,21 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Decision Tree Classifier ---
-model = DecisionTreeClassifier(
-    # criterion="gini",      # or "entropy"
-    max_depth=5,        # set value if you want to control overfitting
-    # random_state=42
+# --- Train XGBoost Classifier ---
+model = XGBClassifier(
+        n_estimators=203,
+        learning_rate=0.18801057126866177,
+        max_depth=5,
+        random_state=42
 )
+
 
 model.fit(X_train, y_train)
 
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X)  # full data
+y_pred_all = model.predict(X)  # full dataset
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)
@@ -39,7 +41,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results (Decision Tree Classifier)")
+print("✅ Accuracy Results")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")

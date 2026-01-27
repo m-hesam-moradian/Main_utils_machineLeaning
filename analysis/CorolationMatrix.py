@@ -2,8 +2,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Sheet2"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.67-Data.xlsx"
+sheet_name = "EV_Grid_Aggregation_Dataset"
 
 # خواندن داده‌ها از اکسل
 df = pd.read_excel(excel_path, sheet_name=sheet_name)

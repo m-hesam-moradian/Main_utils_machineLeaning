@@ -11,21 +11,22 @@ from openpyxl.styles import Font, Alignment, PatternFill
 #  best numeric parameters DTC
 
 params = {
-    "max_depth": 1,
-    "min_samples_split": 2,
-     "min_samples_leaf":1
+"C":0.4,
+"gamma":0.1
 }
 
+
 ShowProbs = True   # False → hide probability columns & ROC table
-model_name = "DTC"
-optimizer_name = ""  # no optimizer
-# optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
+model_name = "LSSVC"
+# optimizer_name = " "  # no optimizer
+# optimizer_name = "BOA"  #  optimizer
+optimizer_name = "KOA"  #  optimizer
+
 # optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "DTC"  # name of the sheet to create in Excel
 Convergence_metric = "Precision"
 convegence_direction = "up"
 
@@ -232,7 +233,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
             })
 
     roc_df = pd.DataFrame(roc_rows)
-
+    print(df_combined)
     return df_combined, roc_df, cm_df
 
 def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="down" ,Convergence_metric=Convergence_metric):
@@ -328,20 +329,22 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     df_train_data = pd.DataFrame(data[:idx_1, :2], columns=["Train_Real", "Train_Pred"])
     df_test_data  = pd.DataFrame(data[idx_1:idx_2, :2], columns=["Test_Real", "Test_Pred"])
     df_val_data   = pd.DataFrame(data[idx_2:, :2], columns=["Val_Real", "Val_Pred"])
-
-    # Create new sheet and attach to writer
-    worksheet = writer.book.create_sheet(sheet_name)
-    writer.sheets[sheet_name] = worksheet
-
-    # Header/title (preserve original logic)
     if optimizer_name.strip():
         title = f"{model_name} + {optimizer_name.strip()}"
+       
         merge_end_col = 16
         include_convergence = True
     else:
         title = model_name
+        
         merge_end_col = 15
         include_convergence = False
+
+    # Create new sheet and attach to writer
+    worksheet = writer.book.create_sheet(title)
+    writer.sheets[title] = worksheet
+    
+    # Header/title (preserve original logic)
 
     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
     cell = worksheet.cell(row=1, column=1)
@@ -351,13 +354,13 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
 
     # Write tables similar to original layout
-    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=title)
 
     params_col = len(df_value_pred.columns) + 1
-    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=title)
 
     metrics_col = params_col + len(df_params.columns) + 1
-    write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+    write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=title)
 
     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
     # CM_col = len(df_value_pred.columns) + 1
@@ -372,7 +375,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
         worksheet=worksheet,
         writer=writer,
         header_styles=None,
-        sheet_name=sheet_name
+        sheet_name=title
 )
 
     # Write ROC table just under df_combined (preserve spacing)
@@ -386,12 +389,12 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
         worksheet=worksheet,
         writer=writer,
         header_styles=None,
-        sheet_name=sheet_name
+        sheet_name=title
     )
 
     if include_convergence:
         convergence_col = metrics_col + len(df_combined.columns) + 1
-        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=title)
     # === Write Split Data Tables (Side by Side) ===
     if include_convergence:
         current_col = convergence_col + len(df_convergence.columns)
@@ -406,7 +409,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
             worksheet=worksheet,
             writer=writer,
             header_styles=None,
-            sheet_name=sheet_name,
+            sheet_name=title,
         )
 
     test_col = train_col + len(df_train_data.columns) + 1
@@ -418,7 +421,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
             worksheet=worksheet,
             writer=writer,
             header_styles=None,
-            sheet_name=sheet_name,
+            sheet_name=title,
     )
 
     val_col = test_col + len(df_test_data.columns) + 1
@@ -430,7 +433,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
             worksheet=worksheet,
             writer=writer,
             header_styles=None,
-            sheet_name=sheet_name,
+            sheet_name=title,
     )
     
 open_excel_file(outputPath)

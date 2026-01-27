@@ -4,14 +4,13 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for XGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "EV_Capacity_Reliability_Dataset"  # keep same sheet
+sheet_name = "EV_Grid_Aggregation_Dataset"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column1 = df.columns[-1]
-target_column2 = df.columns[-2]
+target_column = df.columns[-1]
 
-X = df.drop(columns=[target_column1, target_column2])
-y = df[target_column2]
+X = df.drop(columns=target_column)
+y = df[target_column]
 
 # --- Use last 20% as test set to match K-Fold logic ---
 split_idx = int(len(df) * 0.8)
@@ -20,10 +19,13 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train XGBR model ---
 model = XGBRegressor(
-    # n_estimators=100,
-    # max_depth=20,  # Keep depth low to avoid instant 0.99 R2
-    # learning_rate=0.1,
-    # random_state=42,
+    n_estimators=200,       # keep moderate
+    max_depth=4,            # smaller depth
+    learning_rate=0.05,     # slower learning
+    subsample=0.8,          # randomness to reduce overfit
+    colsample_bytree=0.8,
+    reg_alpha=0.1,
+    reg_lambda=1
 )
 
 model.fit(X_train, y_train)

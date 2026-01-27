@@ -1,11 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_DTC"  # You may want to rename this to reflect DTC
+sheet_name = "Data_after_KFold_LSSVC"  # you may rename later
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -16,27 +16,28 @@ y = df[target_column]
 
 # --- Split into train/test (80/20) ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# --- Train Decision Tree Classifier ---
-model = DecisionTreeClassifier(
-    max_features=3,
-    criterion="gini",
-    min_impurity_decrease=0.001029271
+# --- Train SVC ---
+model = SVC(
+    C=4.290335398
+
 ,
-    ccp_alpha=0.001293113,
+    gamma=0.478151472
+
+,
+    # kernel="rbf",
+    probability=True,   # REQUIRED for predict_proba
     random_state=42
 )
-
-
 
 model.fit(X_train, y_train)
 
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X)  # full data
+y_pred_all = model.predict(X)
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)
@@ -53,7 +54,7 @@ print(f"Testing Accuracy  : {acc_test:.4f}")
 # --- Get predicted probabilities ---
 y_pred_proba = model.predict_proba(X)
 
-# Convert predicted probabilities to a DataFrame with one column per class
+# Convert predicted probabilities to a DataFrame
 proba_df = pd.DataFrame(
     y_pred_proba,
     columns=[f"Prob_Class_{cls}" for cls in model.classes_]
@@ -64,6 +65,7 @@ df_all = pd.concat([
     pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
     proba_df
 ], axis=1)
+
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
@@ -71,5 +73,5 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 print("\n📊 Sample of overall predictions:")
 print(df_all.head())
 
-# --- Optional: export to clipboard or Excel ---
+# --- Optional: export to clipboard ---
 df_all.to_clipboard(index=False, header=False)
