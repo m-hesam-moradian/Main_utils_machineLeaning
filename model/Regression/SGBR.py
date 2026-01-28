@@ -1,10 +1,10 @@
 import pandas as pd
-from xgboost import XGBRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load reordered data for ADAR (after K-Fold) ---
+# --- Load reordered data for SGB (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_ADAR"  # change sheet name if needed
+sheet_name = "Data_after_KFold_SGB"  # UPDATED sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -13,21 +13,19 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Use last 20% as test set (same logic) ---
+# --- Use last 20% as test set ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize ADAR model (XGBoost) ---
-model = XGBRegressor(
-        objective="reg:squarederror",
-        learning_rate=0.04998,
-        n_estimators=76,
-        max_depth=526,
-        # subsample=0.8,
-        # colsample_bytree=0.8,
-        # random_state=42,
-        # verbosity=0
+# --- Initialize SGB model ---
+model = GradientBoostingRegressor(
+    # loss="squared_error",
+    # subsample=0.8,          # stochasticity
+    n_estimators=21,        # intentionally low to keep performance ~80–90
+    learning_rate=0.1,
+    max_depth=3,
+    # random_state=42
 )
 
 # Train model

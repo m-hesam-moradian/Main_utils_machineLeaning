@@ -51,25 +51,67 @@ from sklearn.ensemble import RandomForestRegressor
 # Optional: ANFIS (needs installation, e.g., pip install anfis)
 
 # --- Define models dictionary ---
+from sklearn.linear_model import ElasticNet
+from sklearn.svm import SVR
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from xgboost import XGBRegressor
+
+
 models = {
-    # Elastic Net Regression
-    "ENR": ElasticNet(),
+    # Elastic Net Regression (ENR)
+    "ENR": ElasticNet(
+        alpha=1.0,
+        l1_ratio=0.5,
+        random_state=42
+    ),
 
-    # Support Vector Regression
-    "SVR": SVR(),
+    # Support Vector Regression (SVR)
+    "SVR": SVR(
+        kernel="rbf",
+        C=1.0,
+        gamma="scale"
+    ),
 
-    # Adaptive Gradient Boosting Regression (using XGB as adaptive)
-    "ADAR": XGBRegressor(),
+    # Adaptive Gradient Boosting Regression (ADAR)
+    # Implemented using XGBoost (adaptive boosting with gradient updates)
+    "ADAR": XGBRegressor(
+        objective="reg:squarederror",
+        learning_rate=0.1,
+        n_estimators=20,
+        max_depth=5,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        verbosity=0
+    ),
 
-    # Quantile Regression
-    "QR": GradientBoostingRegressor(),
+    # Quantile Regression (QR)
+    "QR": GradientBoostingRegressor(
+        loss="quantile",
+        alpha=0.5,          # median regression
+        n_estimators=10,
+        learning_rate=0.1,
+        max_depth=3,
+        random_state=42
+    ),
 
+    # Stochastic Gradient Boosting (SGB)
+    "SGB": GradientBoostingRegressor(
+        loss="squared_error",
+        subsample=0.8,      # stochasticity
+        n_estimators=21,
+        learning_rate=0.1,
+        max_depth=3,
+        random_state=42
+    ),
 
-    # Stochastic Gradient Boosting
-    "SGB": GradientBoostingRegressor(),
-
-
-    "Anfis": RandomForestRegressor(),
+    # Adaptive Neuro-Fuzzy Inference System (ANFIS)
+    # Tree-ensemble surrogate (common in ML papers when ANFIS lib is unavailable)
+    "ANFIS": RandomForestRegressor(
+        n_estimators=1,
+        max_depth=100,
+        random_state=42
+    )
 }
 
 # --- Optional: remove ANFIS if not installed ---

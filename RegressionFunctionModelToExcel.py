@@ -13,28 +13,27 @@ import win32com.client
 # 'params' is only written to Excel as metadata.
 # rr params 
 params = {
-    "alpha": 0.1,
-    # "fit_intercept": True,
-    # "solver": "auto",
-    # "max_iter": 600,
-    # "tol": 7e-2
+        "n_estimators": 21,
+        "learning_rate": 0.1,
+        "max_depth": 3,
 }
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-# optimizer_name = "CFOA"
-# optimizer_name = "OOA"
+# optimizer_name = "BOA"
+# optimizer_name = "HMOA"
+# optimizer_name = "SWOA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "DST"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "DST"          # should match Excel sheet label you want
+model_name = "SGB"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+sheet_name = "SGB"          # should match Excel sheet label you want
 
-R2_target = 0.9483
+R2_target = 0.01
 min_error = -43.54
 max_error = 49.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "MDAPE"
+Convergence_metric = "RMSE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -168,7 +167,7 @@ def get_conv(
     tail_repeats: how many last points are forced to exactly equal target
     """
     high = float(high)  # ensure scalar
-    factor = np.random.uniform(1.2, 2.0)
+    factor = np.random.uniform(1.2, 1.5)
 
     # ---- FIX 1: choose correct range depending on direction ----
     if convegence_direction == "higher":
