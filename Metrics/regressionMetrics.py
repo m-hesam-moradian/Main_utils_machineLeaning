@@ -16,28 +16,36 @@ y_pred_test = y_pred[split_idx:]
 # -------------------- 3. Define regression metrics --------------------
 def get_regression_metrics(y_true, y_pred):
     abs_error = np.abs(y_true - y_pred)
-   
-    # Avoid division by zero in relative error
+
+    # Avoid division by zero
     nonzero_mask = np.abs(y_true) > 1e-8
     rel_error = np.zeros_like(y_true)
     rel_error[nonzero_mask] = abs_error[nonzero_mask] / np.abs(y_true[nonzero_mask])
 
-    # Relative Absolute Error (RAE)
-    rae = np.sum(abs_error) / np.sum(np.abs(y_true - np.mean(y_true)))
+    # Mean Absolute Relative Error (MARE)
+    mare = np.mean(rel_error) * 100
+
+    # RMSE
+    rmse = mean_squared_error(y_true, y_pred) ** 0.5
+
+    # R2
+    r2 = r2_score(y_true, y_pred)
 
     # 95th percentile of absolute error (U95)
     u95 = np.percentile(abs_error, 95)
 
-    # Mean Absolute Relative Deviation (MARD)
-    mard = np.mean(rel_error) * 100
+    # Minimum Sum of Absolute Error (MSAE)
+    # (Used as an optimization-oriented metric)
+    msae = np.min(np.cumsum(abs_error))
 
     return {
-        "R2": r2_score(y_true, y_pred),
-        "RMSE": mean_squared_error(y_true, y_pred) ** 0.5,
-        "RAE": rae,
+        "R2": r2,
+        "RMSE": rmse,
+        "MARE": mare,
         "U95": u95,
-        "MARD": mard
+        "MSAE": msae
     }
+
 # -------------------- 4. Compute metrics --------------------
 metrics_all = get_regression_metrics(y_real, y_pred)
 metrics_train = get_regression_metrics(y_real_train, y_pred_train)
@@ -60,11 +68,9 @@ df_main = pd.DataFrame(
         ["Value", *metrics_value.values()],
         ["Value-test", *metrics_value_test.values()],
     ],
-    columns=["Set", "R2", "RMSE", "RAE", "U95", "MARD"],
+    columns=["Set", "R2", "RMSE", "MARE", "U95", "MSAE"],
 )
 
-# -------------------- 6. Save to clipboard --------------------
+# -------------------- 6. Output --------------------
 print(df_main)
-
-# df_main.to_csv(r"C:\Users\Sam\Desktop\ML\data\Data_Metrics.csv",index=False)
 df_main.to_clipboard(index=False)

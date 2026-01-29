@@ -22,10 +22,10 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 model = GradientBoostingRegressor(
     # loss="squared_error",
     # subsample=0.8,          # stochasticity
-    n_estimators=21,        # intentionally low to keep performance ~80–90
-    learning_rate=0.1,
-    max_depth=3,
-    # random_state=42
+    n_estimators=951,        # intentionally low to keep performance ~80–90
+    learning_rate=0.025488,
+    # max_depth=,
+    random_state=42
 )
 
 # Train model

@@ -1,31 +1,31 @@
-from scipy.stats import f_oneway
-import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 
+# -------------------- 1. Load data --------------------
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-
-# Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Selected_Data")
+df = pd.read_excel(DATA_PATH, sheet_name="data_after_vif")
 target_column = df.columns[-1]
 
-# Separate features and target
+# -------------------- 2. Separate features and target --------------------
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-def anova_features_dataset(x, y, feature_names):
-    results = []
-    x = np.array(x)
-    for i in range(x.shape[1]):
-        f, p = f_oneway(x[:, i], y)   # use i, not i-1
-        results.append({"Feature": feature_names[i], "F-statistic": f, "p-value": p})
-    return pd.DataFrame(results)
+# -------------------- 3. Calculate F-statistic and p-value for each feature --------------------
+results = []
+for feature in X.columns:
+    X_feature = sm.add_constant(X[feature])  # add intercept
+    model = sm.OLS(y, X_feature).fit()
+    f_stat = model.fvalue           # F-statistic
+    p_value = model.f_pvalue        # p-value
+    results.append({
+        "Feature": feature,
+        "F-statistic": f_stat,
+        "p-value": p_value
+    })
 
-# Run ANOVA
-ANOVA = anova_features_dataset(X, y, X.columns)
+anova_like_df = pd.DataFrame(results)
 
-# Copy to clipboard
-ANOVA.to_clipboard(index=False)
-
-# Optional: preview in console
-print("✅ ANOVA results copied to clipboard")
-print(ANOVA.head())
+# -------------------- 4. Display and copy --------------------
+print(anova_like_df)
+anova_like_df.to_clipboard(index=False)
+print("✅ F-statistic and p-values copied to clipboard")

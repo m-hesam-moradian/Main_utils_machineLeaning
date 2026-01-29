@@ -13,22 +13,22 @@ import win32com.client
 # 'params' is only written to Excel as metadata.
 # rr params 
 params = {
-        "n_estimators": 21,
-        "learning_rate": 0.1,
-        "max_depth": 3,
+        "n_estimators": 951,
+        "learning_rate": 0.025488,
+        # "max_depth": 5,
 }
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
 # optimizer_name = "BOA"
 # optimizer_name = "HMOA"
-# optimizer_name = "SWOA"
+optimizer_name = "SWOA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
 model_name = "SGB"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "SGB"          # should match Excel sheet label you want
+sheet_name = "SGB+SWOA"          # should match Excel sheet label you want
 
-R2_target = 0.01
+R2_target = 0.1
 min_error = -43.54
 max_error = 49.43
 

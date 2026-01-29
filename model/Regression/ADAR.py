@@ -21,13 +21,13 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # --- Initialize ADAR model (XGBoost) ---
 model = XGBRegressor(
         objective="reg:squarederror",
-        learning_rate=0.04998,
-        n_estimators=76,
-        max_depth=526,
-        # subsample=0.8,
-        # colsample_bytree=0.8,
-        # random_state=42,
-        # verbosity=0
+        learning_rate=0.1,
+        n_estimators=20,
+        max_depth=5,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        verbosity=0
 )
 
 # Train model
