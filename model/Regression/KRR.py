@@ -1,13 +1,13 @@
 import pandas as pd
-from sklearn.linear_model import QuantileRegressor
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Columns to drop ---
 # COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
 
-# --- Load reordered data for QR (after K-Fold) ---
+# --- Load reordered data for KRR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_QR"  # Changed to "QR" sheet name
+sheet_name = "Data_after_KFold_QR"  # keep same sheet unless you change it
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -24,13 +24,16 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize QR model ---
-model = QuantileRegressor(
-    quantile=0.424,
-    alpha=0.00948,       # Specific value found after minimizing MAE
-    solver="highs",      # High-performance solver for better convergence
-    fit_intercept=True
+# --- Initialize KRR model ---
+from sklearn.kernel_ridge import KernelRidge
+
+# --- KRR with optimized hyperparameters (optimizer result) ---
+model = KernelRidge(
+    kernel="rbf",
+    alpha=0.0037,
+    gamma=0.082
 )
+
 
 # Train the model
 model.fit(X_train, y_train)

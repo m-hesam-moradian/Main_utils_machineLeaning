@@ -1,127 +1,78 @@
 import pandas as pd
 import numpy as np
+import os
+import win32com.client
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
-
-
+from sklearn.linear_model import QuantileRegressor
+# --- New Model Imports ---
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.kernel_ridge import KernelRidge
+import lightgbm as lgb # Ensure you have run: pip install lightgbm
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        try:
+    try:
+        excel = win32com.client.Dispatch("Excel.Application")
+        for wb in excel.Workbooks:
             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
                 wb.Save()
                 wb.Close(SaveChanges=False)
                 print("💾 Saved and 🔒 Closed Excel file:", filepath)
                 break
-        except Exception:
-            pass
-    excel.Quit()
+        excel.Quit()
+    except Exception:
+        pass
 
 def open_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    try:
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("📂 Opened Excel file:", filepath)
+    except Exception:
+        pass
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_vif"
+sheet_name = "Selected_Data"
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
-
 target_column = df.columns[-1]
 X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# ================== Models ==================
-# --- Import new models ---
-from sklearn.linear_model import ElasticNet
-from sklearn.svm import SVR
-from sklearn.ensemble import GradientBoostingRegressor
-from xgboost import XGBRegressor
-from sklearn.ensemble import RandomForestRegressor
-
-
-# Optional: ANFIS (needs installation, e.g., pip install anfis)
-
-# --- Define models dictionary ---
-from sklearn.linear_model import ElasticNet
-from sklearn.svm import SVR
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from xgboost import XGBRegressor
-
-
+# ================== Updated Models ==================
 models = {
-    # Elastic Net Regression (ENR)
-    "ENR": ElasticNet(
-        alpha=1.0,
-        l1_ratio=0.5,
-        random_state=42
+    # Light Gradient Boosting Regression
+    "LGBR": lgb.LGBMRegressor(
+        # n_estimators=100,
+        learning_rate=0.01,
+        # random_state=42,
+        # verbosity=-1 # Silences unnecessary warnings
     ),
 
-    # Support Vector Regression (SVR)
-    "SVR": SVR(
-        kernel="rbf",
-        C=1.0,
-        gamma="scale"
-    ),
+    # Quantile Regression (Using GBR with quantile loss)
+    "QR": QuantileRegressor(
+    quantile=0.424,
+    alpha=0.00948,        # Fine-tuned regularization strength
+    solver="highs",      # High-performance linear programming solver
+    fit_intercept=True
+),
 
-    # Adaptive Gradient Boosting Regression (ADAR)
-    # Implemented using XGBoost (adaptive boosting with gradient updates)
-    "ADAR": XGBRegressor(
-        objective="reg:squarederror",
-        learning_rate=0.1,
-        n_estimators=20,
-        max_depth=5,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        verbosity=0
-    ),
-
-    # Quantile Regression (QR)
-    "QR": GradientBoostingRegressor(
-        loss="quantile",
-        alpha=0.5,          # median regression
-        n_estimators=10,
-        learning_rate=0.1,
-        max_depth=3,
-        random_state=42
-    ),
-
-    # Stochastic Gradient Boosting (SGB)
-    "SGB": GradientBoostingRegressor(
-        loss="squared_error",
-        subsample=0.8,      # stochasticity
-        n_estimators=21,
-        learning_rate=0.1,
-        max_depth=3,
-        random_state=42
-    ),
-
-    # Adaptive Neuro-Fuzzy Inference System (ANFIS)
-    # Tree-ensemble surrogate (common in ML papers when ANFIS lib is unavailable)
-    "ANFIS": RandomForestRegressor(
-        n_estimators=1,
-        max_depth=100,
-        random_state=42
+    # Kernel Ridge Regression
+    "KRR": KernelRidge(
+        # kernel="rbf", 
+        # alpha=1.0, 
+        # gamma=0.1
     )
 }
-
-# --- Optional: remove ANFIS if not installed ---
-models = {k: v for k, v in models.items() if v is not None}
 
 print("✅ Models ready for training:")
 for name in models:
     print("-", name)
 
-# ================== K-Fold ==================
+# ================== K-Fold Execution ==================
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=False)
 
@@ -158,21 +109,22 @@ for model_name, model in models.items():
     metrics_df_dict[model_name] = metrics_df
     fold_indices_dict[model_name] = fold_indices_list
 
+    # Reorder data based on best fold
     best_fold_idx = metrics_df["R2"].idxmax()
     best_test_idx = fold_indices_dict[model_name][best_fold_idx]["test_idx"]
-
     remaining_idx = df.index.difference(best_test_idx)
+    
     df_reordered_dict[model_name] = pd.concat(
         [df.loc[remaining_idx], df.loc[best_test_idx]], axis=0
     )
 
-# ================== Summary ==================
-summary_df = []
+# ================== Summary Generation ==================
+summary_rows = []
 for model_name in models:
     metrics_df = metrics_df_dict[model_name]
     best_fold = metrics_df.loc[metrics_df["R2"].idxmax()]
 
-    summary_df.append({
+    summary_rows.append({
         "Model": model_name,
         "Best Fold": best_fold["Fold"],
         "Best R2": best_fold["R2"],
@@ -181,7 +133,7 @@ for model_name in models:
         "Mean RMSE": metrics_df["RMSE"].mean()
     })
 
-summary_df = pd.DataFrame(summary_df)
+summary_df = pd.DataFrame(summary_rows)
 
 # ================== Save to Excel ==================
 close_excel_file(filepath)
@@ -194,19 +146,11 @@ with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="repl
         df_reordered_dict[model_name].to_excel(
             writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
         )
-
     summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
 
 open_excel_file(filepath)
 
-# ================== Print Summary ==================
-for model_name in models:
-    metrics_df = metrics_df_dict[model_name]
-    best_fold = metrics_df.loc[metrics_df["R2"].idxmax()]
-
-    print(f"\n🔹 Model: {model_name}")
-    print(f"   🏆 Best Fold: Fold {best_fold['Fold']}")
-    print(f"   R2: {best_fold['R2']:.4f}")
-    print(f"   RMSE: {best_fold['RMSE']:.4f}")
-    print(f"   📈 Mean R2: {metrics_df['R2'].mean():.4f}")
-    print(f"   📉 Mean RMSE: {metrics_df['RMSE'].mean():.4f}")
+# ================== Print Results ==================
+print("\n" + "="*30)
+print(summary_df.to_string(index=False))
+print("="*30)

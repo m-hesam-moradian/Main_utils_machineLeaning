@@ -36,7 +36,7 @@ def open_excel_file(filepath):
 # --- Load data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="DATA_Shuffled")
+df = pd.read_excel(excel_path, sheet_name="Data")
 
 # --- Separate features and target ---
 target_column = df.columns[-1]
@@ -74,9 +74,9 @@ feature_ranking = selector.ranking_
 ranking_df = pd.DataFrame({"Feature": col, "Rank": feature_ranking})
 
 # --- Select features based on rank threshold ---
-selected_features = ranking_df[ranking_df["Rank"] <= 11]["Feature"].tolist()
+selected_features = ranking_df[ranking_df["Rank"] <= 9]["Feature"].tolist()
 
-print("Selected features (Rank <= 12):", selected_features)
+print("Selected features (Rank <= 9):", selected_features)
 print("Feature ranking:\n", ranking_df)
 
 # --- Evaluate subsets ---
