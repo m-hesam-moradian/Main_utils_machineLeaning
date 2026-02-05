@@ -13,20 +13,21 @@ import win32com.client
 # 'params' is only written to Excel as metadata.
 # rr params 
 params = {
-        "kernel": "linear",
-        "alpha": 1.0,
-        "gamma": None
+    "epsilon": 2.78677,
+    "max_iter": 30,
+    "alpha": 0.0760023933,
 }
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-optimizer_name = "COA"
-# optimizer_name = "SDOA"
+# optimizer_name = "RPOA"
+# optimizer_name = "MAOA"
+optimizer_name = "HMOA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "KRR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "KRR+COA"          # should match Excel sheet label you want
-R2_target = 0.1
+model_name = "HR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+sheet_name = "HR+HMOA"          # should match Excel sheet label you want
+R2_target = 0.0
 min_error = -56.54
 max_error = 55.43
 
@@ -45,42 +46,38 @@ from sklearn.metrics import r2_score, mean_squared_error
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 def build_metrics_table(y_real, y_pred):
 
     def compute_metrics(y_true, y_hat):
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
-        epsilon = 1e-12  # avoid division by zero
-
+        
         # --- R2 ---
         r2 = r2_score(y_true, y_hat)
 
         # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
 
+        # --- MAE ---
+        mae = mean_absolute_error(y_true, y_hat)
+
+        # --- COV (Coefficient of Variation) ---
+        # Formula: (RMSE / Mean of True Values) * 100
+        mean_actual = np.mean(y_true)
+        cov = (rmse / mean_actual * 100) if mean_actual != 0 else 0.0
+
         # --- U95 (95% expanded uncertainty) ---
         residuals = y_true - y_hat
         u95 = 1.96 * np.std(residuals)
 
-        # --- COM (Coefficient of Multiple Correlation) ---
-        if np.std(y_true) == 0 or np.std(y_hat) == 0:
-            com = 0.0
-        else:
-            com = np.corrcoef(y_true, y_hat)[0, 1]
-
-        # --- AARD (Average Absolute Relative Deviation) ---
-        # Note: Changed from Median (MDAPE) to Mean (AARD)
-        relative_deviation = np.abs((y_true - y_hat) / (y_true + epsilon))
-        aard = np.mean(relative_deviation) * 100
-
         return {
             "R2": r2,
             "RMSE": rmse,
+            "MAE": mae,
+            "COV": cov,
             "U95": u95,
-            "COM": com,
-            "AARD": aard,
         }
 
     # --- Split data into Train/Test/Value sets ---
@@ -102,11 +99,11 @@ def build_metrics_table(y_real, y_pred):
     }
 
     # --- Build DataFrame ---
-    cols = ["Set", "R2", "RMSE", "U95", "COM", "AARD"]
+    cols = ["Set", "R2", "RMSE", "MAE", "COV", "U95"]
     
     rows = []
     for set_name, m in sets.items():
-        rows.append([set_name, m["R2"], m["RMSE"], m["U95"], m["COM"], m["AARD"]])
+        rows.append([set_name, m["R2"], m["RMSE"], m["MAE"], m["COV"], m["U95"]])
 
     df_metrics = pd.DataFrame(rows, columns=cols)
 
@@ -295,6 +292,7 @@ print("Relative error table created.")
 
 # Styling helper (unchanged)
 from openpyxl.styles import Font, Alignment, PatternFill
+
 
 def make_style(color):
     return {

@@ -29,9 +29,9 @@ from sklearn.kernel_ridge import KernelRidge
 
 # --- KRR with optimized hyperparameters (optimizer result) ---
 model = KernelRidge(
-    kernel="rbf",
-    alpha=0.0037,
-    gamma=0.082
+        alpha=1.7868,       # regularization
+    kernel='linear',     # best general kernel
+    gamma=5.154        # controls smoothness
 )
 
 

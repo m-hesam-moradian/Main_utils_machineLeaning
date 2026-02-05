@@ -35,7 +35,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Selected_Data"
+sheet_name = "data_after_vif"
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -43,28 +43,25 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import HuberRegressor
+
 models = {
-    # Light Gradient Boosting Regression
-    "LGBR": lgb.LGBMRegressor(
-        # n_estimators=100,
-        learning_rate=0.01,
-        # random_state=42,
-        # verbosity=-1 # Silences unnecessary warnings
+    # Gradient Boosting Regression (GBR)
+    "GBR": GradientBoostingRegressor(
+        n_estimators=30,
+        # learning_rate=0.1,
+        # max_depth=3,
+        # random_state=42
     ),
 
-    # Quantile Regression (Using GBR with quantile loss)
-    "QR": QuantileRegressor(
-    quantile=0.424,
-    alpha=0.00948,        # Fine-tuned regularization strength
-    solver="highs",      # High-performance linear programming solver
-    fit_intercept=True
-),
-
-    # Kernel Ridge Regression
-    "KRR": KernelRidge(
-        # kernel="rbf", 
-        # alpha=1.0, 
-        # gamma=0.1
+    # Huber Regression (HR)
+    # Robust to outliers; balances Mean Absolute Error and Mean Squared Error
+    "HR": HuberRegressor(
+        # epsilon=1.35, 
+        max_iter=22, 
+        # alpha=0.0001, 
+        # fit_intercept=True
     )
 }
 
