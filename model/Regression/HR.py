@@ -7,32 +7,32 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_HR" 
+sheet_name = "HR" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
-X = df.drop(columns=target_column)
-y = df[target_column]
+# 1. Identify Categorical Columns (Must match optimization script)
+STATIC_COLUMNS = ['security_level', 'energy_source', 'workload_type']
+
+# 2. ENCODE CATEGORIES (This is the missing step!)
+df_encoded = pd.get_dummies(df, columns=STATIC_COLUMNS)
+
+# 3. Define X and y from the encoded dataframe
+X = df_encoded.drop(columns=target_column)
+y = df_encoded[target_column]
 
 # --- Use last 20% as test set ---
-split_idx = int(len(df) * 0.8)
+split_idx = int(len(df_encoded) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train Huber Regression model ---
-    # "epsilon": 2.78677,
-    # "max_iter": 30,
-    # "alpha": 0.0760023933,
-# We use a pipeline to scale data before feeding it into the Huber model
-model = HuberRegressor(
-        epsilon=2.78677,
-        max_iter=27,
-        alpha=0.0760023933,
-        # fit_intercept=True
-    )
-
+# Increase max_iter to handle the unscaled encoded data
+# HuberRegressor(max_iter=1000, tol=1e-4)
+model = HuberRegressor(max_iter=312, tol=1e-4)
 model.fit(X_train, y_train)
+
 
 # --- Predictions ---
 y_pred_all = model.predict(X)

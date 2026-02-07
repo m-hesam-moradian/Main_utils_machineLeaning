@@ -85,7 +85,7 @@ df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])
 
-selected_X, final_vif_horizontal = calculate_vif_horizontal(X_input, threshold=3)
+selected_X, final_vif_horizontal = calculate_vif_horizontal(X_input, threshold=5)
 
 # Reattach target
 data_after_vif = selected_X.copy()
