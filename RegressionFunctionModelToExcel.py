@@ -11,41 +11,34 @@ import win32com.client
 
 # NOTE: This script does not train models; it formats prediction results + metrics into Excel.
 # 'params' is only written to Excel as metadata.
-# rr params 
+# NGMB params 
 params = {
-    "epsilon": 2.78677,
-    "max_iter": 30,
-    "alpha": 0.0760023933,
+    "n_estimators":312, 
+    "learning_rate":0.00947,
 }
+
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-# optimizer_name = "RPOA"
-# optimizer_name = "MAOA"
-optimizer_name = "HMOA"
+# optimizer_name = "Cyclone Optimization Algorithm (COA)"
+optimizer_name = "Makeup Artist Optimization Algorithm (MAOA)"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "HR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "HR+HMOA"          # should match Excel sheet label you want
+model_name = "NGBM"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+sheet_name = "NGBM+MAOA"          # should match Excel sheet label you want
 R2_target = 0.0
 min_error = -56.54
 max_error = 55.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAEM"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 
-# === FUNCTIONS ===
-
 import pandas as pd
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error
-
-import numpy as np
-import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 def build_metrics_table(y_real, y_pred):
@@ -64,20 +57,21 @@ def build_metrics_table(y_real, y_pred):
         mae = mean_absolute_error(y_true, y_hat)
 
         # --- COV (Coefficient of Variation) ---
-        # Formula: (RMSE / Mean of True Values) * 100
         mean_actual = np.mean(y_true)
         cov = (rmse / mean_actual * 100) if mean_actual != 0 else 0.0
 
-        # --- U95 (95% expanded uncertainty) ---
-        residuals = y_true - y_hat
-        u95 = 1.96 * np.std(residuals)
+        # --- RMSLE (Root Mean Squared Logarithmic Error) ---
+        # Clipping to 0 to avoid NaNs if there are negative values
+        y_true_log = np.log1p(np.clip(y_true, 0, None))
+        y_hat_log = np.log1p(np.clip(y_hat, 0, None))
+        rmsle = np.sqrt(mean_squared_error(y_true_log, y_hat_log))
 
         return {
             "R2": r2,
             "RMSE": rmse,
-            "MAE": mae,
+            "MAEM": mae,
             "COV": cov,
-            "U95": u95,
+            "RMSLE": rmsle,
         }
 
     # --- Split data into Train/Test/Value sets ---
@@ -99,11 +93,12 @@ def build_metrics_table(y_real, y_pred):
     }
 
     # --- Build DataFrame ---
-    cols = ["Set", "R2", "RMSE", "MAE", "COV", "U95"]
+    # Updated columns to reflect RMSLE
+    cols = ["Set", "R2", "RMSE", "MAEM", "COV", "RMSLE"]
     
     rows = []
     for set_name, m in sets.items():
-        rows.append([set_name, m["R2"], m["RMSE"], m["MAE"], m["COV"], m["U95"]])
+        rows.append([set_name, m["R2"], m["RMSE"], m["MAEM"], m["COV"], m["RMSLE"]])
 
     df_metrics = pd.DataFrame(rows, columns=cols)
 

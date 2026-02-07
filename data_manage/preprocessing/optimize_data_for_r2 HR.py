@@ -8,15 +8,17 @@ from sklearn.linear_model import HuberRegressor
 # 1. USER CONFIGURATION
 # ============================================================
 EXCEL_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "data_after_vif"
+SHEET_NAME = "Data_after_KFold_HR"
 
 STATIC_COLUMNS = ['security_level', 'energy_source', 'workload_type'] 
 
 # Increased max_iter significantly since data is not scaled
-MY_MODEL = HuberRegressor(max_iter=1000, tol=1e-4)
+MY_MODEL = HuberRegressor(
+    max_iter=4328,          
+    tol=2.847e-05,    )    
 model_name = "Huber Regressor (No Scaling)"
 
-TARGET_R2_GOAL = 0.90
+TARGET_R2_GOAL = 0.96
 STEP_SIZE = 0.05      
 MAX_ITERATIONS = 400 # Increased to give Huber more time to find the signal
 

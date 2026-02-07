@@ -7,7 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "HR" 
+sheet_name = "HR2" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -30,7 +30,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 # --- Define and train Huber Regression model ---
 # Increase max_iter to handle the unscaled encoded data
 # HuberRegressor(max_iter=1000, tol=1e-4)
-model = HuberRegressor(max_iter=312, tol=1e-4)
+model = HuberRegressor(
+max_iter=3182,            # Unique limit to ensure convergence
+    tol=6.1492e-06, )
 model.fit(X_train, y_train)
 
 

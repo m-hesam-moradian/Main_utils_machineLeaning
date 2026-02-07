@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
 # --- Load reordered data for LGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LGBR"  # keep same sheet
+sheet_name = "Data_after_KFold_NGBM"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -27,9 +27,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Define and train LGBR model ---
 model = LGBMRegressor(
-        n_estimators=927,
-        learning_rate=0.06172,
-        random_state=42,
+        n_estimators=30,
+        subsample=0.8, 
+        random_state=42
        
 )
 
