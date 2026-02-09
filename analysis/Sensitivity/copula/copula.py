@@ -5,7 +5,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 # Load the dataset
 dt = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Data",
+    sheet_name="Encoded_Data",
 )
 from lightgbm import LGBMRegressor
 target_column = dt.columns[-1]
@@ -16,8 +16,8 @@ features = X.columns
 
 # Train the HGBR model
 model = LGBMRegressor(
-learning_rate=0.1,
-n_estimators=100,
+# learning_rate=0.1,
+# n_estimators=100,
        
 )
 model.fit(X, y)
