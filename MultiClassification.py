@@ -8,26 +8,25 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters DTC
-
+#  best numeric parameters Logistic regression
 params = {
-"C":0.4,
-"gamma":0.1
+    "C": 0.8294,
+    "max_iter": 2651,
+
 }
 
-
 ShowProbs = True   # False → hide probability columns & ROC table
-model_name = "LSSVC"
-# optimizer_name = " "  # no optimizer
-# optimizer_name = "BOA"  #  optimizer
-optimizer_name = "KOA"  #  optimizer
+model_name = "LR"
+optimizer_name = ""  # no optimizer
+# optimizer_name = "LOA"  #  optimizer
+optimizer_name = "DOA"  #  optimizer
 
-# optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
+
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Precision"
+Convergence_metric = "F1"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -162,13 +161,38 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
 
     classes = np.unique(y_real)
 
+    def calculate_markedness(y_true, y_pred):
+        """Calculates macro-averaged Markedness."""
+        cm = confusion_matrix(y_true, y_pred, labels=classes)
+        # Handle cases where the sum might be zero to avoid division errors
+        with np.errstate(divide='ignore', invalid='ignore'):
+            # Precision (PPV) per class: TP / (TP + FP)
+            ppv = np.diag(cm) / cm.sum(axis=0)
+            # NPV per class: TN / (TN + FN)
+            # For multi-class, TN is the sum of all elements not in the class row/col
+            npvs = []
+            for i in range(len(classes)):
+                tp = cm[i, i]
+                fp = cm[:, i].sum() - tp
+                fn = cm[i, :].sum() - tp
+                tn = cm.sum() - (tp + fp + fn)
+                npvs.append(tn / (tn + fn) if (tn + fn) > 0 else 0)
+            
+            # Markedness = Precision + NPV - 1
+            markedness_per_class = np.nan_to_num(ppv) + np.array(npvs) - 1
+            return np.mean(markedness_per_class)
+
     def get_metrics(y_true, y_pred):
+        # Class-wise error for the set is essentially 1 - Accuracy
+        acc = accuracy_score(y_true, y_pred)
         return {
-            "Recall": recall_score(y_true, y_pred, average="macro", zero_division=0),
-            "Accuracy": accuracy_score(y_true, y_pred),
-            "F1": f1_score(y_true, y_pred, average="macro", zero_division=0),
+            "Accuracy": acc,
             "Precision": precision_score(y_true, y_pred, average="macro", zero_division=0),
-            "MCC": matthews_corrcoef(y_true, y_pred)
+            "Recall": recall_score(y_true, y_pred, average="macro", zero_division=0),
+            "F1": f1_score(y_true, y_pred, average="macro", zero_division=0),
+            "MCC": matthews_corrcoef(y_true, y_pred),
+            "Class-Wise Error": 1 - acc,
+            "Markedness": calculate_markedness(y_true, y_pred)
         }
 
     # --- Train/Test split
@@ -176,16 +200,31 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     y_real_train, y_real_test = y_real[:split], y_real[split:]
     y_pred_train, y_pred_test = y_pred[:split], y_pred[split:]
 
+    # Define columns explicitly for consistency
+    cols = ["Set", "Accuracy", "Precision", "Recall", "F1", "MCC", "Class-Wise Error", "Markedness"]
+
     df_main = pd.DataFrame([
         ["All", *get_metrics(y_real, y_pred).values()],
         ["Train", *get_metrics(y_real_train, y_pred_train).values()],
         ["Test", *get_metrics(y_real_test, y_pred_test).values()],
-    ], columns=["Set", "Recall", "Accuracy", "F1", "Precision", "MCC"])
+    ], columns=cols)
 
     # --- Per-class metrics
     precision_pc = precision_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
     recall_pc = recall_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
     f1_pc = f1_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
+    
+    # Per-class calculation for Markedness
+    cm_all = confusion_matrix(y_real, y_pred, labels=classes)
+    markedness_pc = []
+    for i in range(len(classes)):
+        tp = cm_all[i, i]
+        fp = cm_all[:, i].sum() - tp
+        fn = cm_all[i, :].sum() - tp
+        tn = cm_all.sum() - (tp + fp + fn)
+        ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
+        npv = tn / (tn + fn) if (tn + fn) > 0 else 0
+        markedness_pc.append(ppv + npv - 1)
 
     acc_pc, err_pc = [], []
     for cls in classes:
@@ -196,12 +235,13 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
 
     df_class = pd.DataFrame({
         "Set": [f"Class {c}" for c in classes],
-        "Recall": recall_pc,
         "Accuracy": acc_pc,
-        "Class-Wise Error": err_pc,
-        "F1": f1_pc,
         "Precision": precision_pc,
-        "MCC": ["" for _ in classes]
+        "Recall": recall_pc,
+        "F1": f1_pc,
+        "MCC": ["" for _ in classes],
+        "Class-Wise Error": err_pc,
+        "Markedness": markedness_pc
     })
 
     df_combined = pd.concat([df_main, df_class], ignore_index=True)
@@ -219,7 +259,6 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     for i, cls in enumerate(classes):
         y_true_bin = (y_real == cls).astype(int)
         y_score = y_pred_prob[:, i]
-
         fpr, tpr, thr = roc_curve(y_true_bin, y_score)
         roc_auc = auc(fpr, tpr)
 
@@ -364,7 +403,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
 
     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
     # CM_col = len(df_value_pred.columns) + 1
-    CM_start_row = len(df_params) + 6
+    CM_start_row = len(df_params) + 8
     cm_df_out = cm_df.reset_index()
     cm_df_out.rename(columns={"index": "Actual"}, inplace=True)
     write_table(

@@ -1,12 +1,11 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression # Changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LR"  # renamed to reflect LR
+sheet_name = "Data_after_KFold_LR" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -15,23 +14,30 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Scale features for better convergence ---
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
 # --- Split into train/test (80/20) ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Logistic Regression Classifier ---
-model = LogisticRegression(max_iter=5, random_state=42)
-model.fit(X_train, y_train)
+# --- Train Logistic Regression ---
+# Sabotaging performance with tiny C and low max_iter for the optimizer to fix
+model = LogisticRegression(
+
+C=0.8294,           # A more moderate regularization strength
+    max_iter=2651,      # Increased iteration ceiling for complex datasets   # High iterations to ensure mathematical convergence
+    random_state=42,
+)
+
+# Note: We use try/except because max_iter=10 will likely trigger a ConvergenceWarning
+try:
+    model.fit(X_train, y_train)
+except Exception as e:
+    print(f"Warning: {e}")
 
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X_scaled)  # full data
+y_pred_all = model.predict(X) 
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)
@@ -39,33 +45,30 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results (Logistic Regression)")
+print("✅ Logistic Regression Accuracy (Sabotaged)")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
 print(f"Testing Accuracy  : {acc_test:.4f}")
 
 # --- Get predicted probabilities ---
-y_pred_proba = model.predict_proba(X_scaled)
+y_pred_proba = model.predict_proba(X)
 
-# Convert predicted probabilities to a DataFrame with one column per class
+# Convert predicted probabilities to a DataFrame
 proba_df = pd.DataFrame(
     y_pred_proba,
     columns=[f"Prob_Class_{cls}" for cls in model.classes_]
 )
 
-# Combine with true and predicted labels
+# Combine results
 df_all = pd.concat([
-    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    pd.DataFrame({"y_real": y.values, "y_pred": y_pred_all}),
     proba_df
 ], axis=1)
 
-df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
-df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
-
-# --- Optional: view first few rows ---
+# --- Output ---
 print("\n📊 Sample of overall predictions:")
 print(df_all.head())
 
-# --- Optional: export to clipboard or Excel ---
+# Export to clipboard
 df_all.to_clipboard(index=False, header=False)

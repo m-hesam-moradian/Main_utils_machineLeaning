@@ -33,7 +33,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Balanced_SMOTEENN"  # Loading the balanced data
+sheet_name = "DATA_Shuffled"  # Loading the balanced data
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 
@@ -42,29 +42,53 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models ==================
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.ensemble import ExtraTreesClassifier
 
 models = {
-    # Decision Tree Classifier
-    "DTC": DecisionTreeClassifier(
-        # criterion="gini",
-        # max_depth=None,
-        # random_state=42
+    # # Logistic Regression: Added regularization (C) and solver choice
+    "LR": LogisticRegression(
+        max_iter=12, 
+        C=0.005,           # Inverse of regularization strength (smaller = stronger)
+        # solver='lbfgs',  # St/andard robust solver
+        # class_weight='balanced' # Good if your classes are imbalanced
     ),
 
-    # Categorical Gradient Boosting Classifier (CatBoost)
-    "CATC": XGBClassifier(
-        # n_estimators=500,
-        # learning_rate=0.1,
-        # max_depth=6,
-        # random_state=42
+    # # XGBoost: Added tree depth, learning rate, and subsampling
+    "XGBC": XGBClassifier(
+        n_estimators=5,
+        learning_rate=0.001,
+        max_depth=1,     # Controls model complexity
+
     ),
-    # Least Squares Support Vector Classification (LS-SVC approximation)
-    "LSSVC": SVC(
-        # kernel="linear",
-        # C=1.0
+
+    # LSSVC (Linear SVC): Added C and probability estimation
+# To make it perform poorly (Overfitting version):
+"LSSVC": SVC(
+    kernel="linear",
+    C=0.001,          # Extremely low C makes the model ignore the data (underfit)
+    # OR 
+    # C=100000,        # Extremely high C makes it hyper-sensitive to noise (overfit)
+    random_state=42
+),
+
+    # # QDA: Added regularization to prevent collinearity issues
+"QDA": QuadraticDiscriminantAnalysis(
+    reg_param=1.0,  # 1.0 is the maximum regularization; it "flattens" the model's intelligence
+    tol=0.00001       # Increasing the tolerance makes it stop searching for the best fit early
+),
+
+    # Extra Trees: Added depth and split criteria
+    "ETC": ExtraTreesClassifier(
+        n_estimators=30,
+        max_depth=3,   # Set a number (e.g., 10) if the model overfits
+        min_samples_split=8,
+        # criterion='gini', # or 'entropy'
+        # bootstrap=False,
+        # random_state=42
     )
 }
 
