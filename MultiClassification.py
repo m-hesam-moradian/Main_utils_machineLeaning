@@ -8,23 +8,23 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# model = XGBClassifier(
-# n_estimators=332,           # Just under 700 for precise convergence
-#     learning_rate=0.00892,      # High-precision sub-0.01 rate
-#     max_depth=9,
+# model = ExtraTreesClassifier(
+# n_estimators=912,           # Pushing toward 1000 for maximum ensemble strength
+#     max_depth=11,               # Specific depth found to hit the "elbow" of the curve
+#     min_samples_split=6,
 # )
 params={
-    "n_estimators": 332,
-    "learning_rate": 0.00892,
-    "max_depth": 9
+    "n_estimators": 912,
+    "max_depth": 11,
+    "min_samples_split": 6,
 }
 
 
 ShowProbs = True   # False → hide probability columns & ROC table
-model_name = "XGBC"
+model_name = "ETC"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
 # optimizer_name = "LOA"  #  optimizer
-optimizer_name = "DOA"  #  optimizer
+# optimizer_name = "DOA"  #  optimizer
 
 
 Accuracy_target = 0.0

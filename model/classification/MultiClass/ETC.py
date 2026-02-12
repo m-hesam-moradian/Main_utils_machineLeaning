@@ -21,10 +21,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train Extra Trees Classifier ---
 model = ExtraTreesClassifier(
-    n_estimators=100,       # number of trees
-    max_depth=9,         # let trees grow fully
-    min_samples_split=4,
-    min_samples_leaf=4,
+n_estimators=912,           # Pushing toward 1000 for maximum ensemble strength
+    max_depth=11,               # Specific depth found to hit the "elbow" of the curve
+    min_samples_split=6,
     # random_state=42
 )
 
