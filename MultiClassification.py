@@ -8,15 +8,20 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters Logistic regression
-params = {
-    "C": 0.8294,
-    "max_iter": 2651,
-
+# model = XGBClassifier(
+# n_estimators=332,           # Just under 700 for precise convergence
+#     learning_rate=0.00892,      # High-precision sub-0.01 rate
+#     max_depth=9,
+# )
+params={
+    "n_estimators": 332,
+    "learning_rate": 0.00892,
+    "max_depth": 9
 }
 
+
 ShowProbs = True   # False → hide probability columns & ROC table
-model_name = "LR"
+model_name = "XGBC"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "LOA"  #  optimizer
 optimizer_name = "DOA"  #  optimizer
