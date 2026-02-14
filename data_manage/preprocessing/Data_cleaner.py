@@ -28,6 +28,7 @@ def open_excel_file(filepath):
 
 
 def clean_missing_samples(excel_path, source_sheet="DATA", target_sheet="CLEANED_DATA"):
+
     close_excel_file(excel_path)
     # Load the data from the source sheet
     df = pd.read_excel(excel_path, sheet_name=source_sheet)
@@ -54,6 +55,6 @@ def clean_missing_samples(excel_path, source_sheet="DATA", target_sheet="CLEANED
 # Example usage
 clean_missing_samples(
     excel_path=r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    source_sheet="Urban_Public_Environment_Facili",
-    target_sheet="CLEANED_DATA",
+    source_sheet="Data",
+    target_sheet="Delete_missing_samples",
 )

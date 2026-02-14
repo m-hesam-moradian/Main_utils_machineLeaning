@@ -42,56 +42,55 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models ==================
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from sklearn.svm import SVC
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.ensemble import ExtraTreesClassifier
+from catboost import CatBoostClassifier
 
 models = {
-    # # Logistic Regression: Added regularization (C) and solver choice
-    "LR": LogisticRegression(
-        max_iter=12, 
-        C=0.005,           # Inverse of regularization strength (smaller = stronger)
-        # solver='lbfgs',  # St/andard robust solver
-        # class_weight='balanced' # Good if your classes are imbalanced
+    # Random Forest: Great for capturing non-linear patterns
+    "RFC": RandomForestClassifier(
+        n_estimators=100,
+        max_depth=None,  # Set a limit if it overfits
+        min_samples_split=2,
+        random_state=42
     ),
 
-    # # XGBoost: Added tree depth, learning rate, and subsampling
+    # Decision Tree: The foundation, prone to overfitting if not pruned
+    "DTC": DecisionTreeClassifier(
+        max_depth=5,     # Pruning helps prevent overfitting
+        criterion='gini',
+        random_state=42
+    ),
+
+    # XGBoost: High-performance gradient boosting
     "XGBC": XGBClassifier(
-        n_estimators=5,
-        learning_rate=0.001,
-        max_depth=1,     # Controls model complexity
-
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=3,
+        use_label_encoder=False,
+        eval_metric='logloss',
+        random_state=42
     ),
 
-    # LSSVC (Linear SVC): Added C and probability estimation
-# To make it perform poorly (Overfitting version):
-"LSSVC": SVC(
-    kernel="linear",
-    C=0.001,          # Extremely low C makes the model ignore the data (underfit)
-    # OR 
-    # C=100000,        # Extremely high C makes it hyper-sensitive to noise (overfit)
-    random_state=42
-),
+    # Support Vector Classifier: Effective in high-dimensional spaces
+    "SVC": SVC(
+        kernel="rbf",    # Radial Basis Function is usually the best starting point
+        C=1.0,           # Regularization parameter
+        probability=True, # Set to True if you need predict_proba
+        random_state=42
+    ),
 
-    # # QDA: Added regularization to prevent collinearity issues
-"QDA": QuadraticDiscriminantAnalysis(
-    reg_param=1.0,  # 1.0 is the maximum regularization; it "flattens" the model's intelligence
-    tol=0.00001       # Increasing the tolerance makes it stop searching for the best fit early
-),
-
-    # Extra Trees: Added depth and split criteria
-    "ETC": ExtraTreesClassifier(
-        n_estimators=30,
-        max_depth=3,   # Set a number (e.g., 10) if the model overfits
-        min_samples_split=8,
-        # criterion='gini', # or 'entropy'
-        # bootstrap=False,
-        # random_state=42
+    # CatBoost: Excellent for handling categorical features automatically
+    "CATBOOST": CatBoostClassifier(
+        iterations=100,
+        learning_rate=0.1,
+        depth=6,
+        verbose=0,       # Set to 0 to keep the output clean
+        random_state=42
     )
 }
-
 # ================== K-Fold ==================
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
