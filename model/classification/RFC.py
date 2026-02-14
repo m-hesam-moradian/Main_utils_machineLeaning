@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold"
+sheet_name = "Data_after_KFold_RFC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -21,10 +21,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train Random Forest Classifier ---
 model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=6,
-    class_weight="balanced",
-    random_state=42
+        n_estimators=5,      # No "Forest", just one weak tree
+        max_depth=2,         # Only one split allowed
+        random_state=42
 )
 model.fit(X_train, y_train)
 

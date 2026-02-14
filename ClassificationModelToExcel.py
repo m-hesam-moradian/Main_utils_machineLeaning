@@ -8,23 +8,22 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters GPC
+#  best numeric parameters DTC
 
-params = {
-    "max_iter_predict": 1,
+params={
+    "max_depth": 7,         # Only one split allowed
     "random_state": 42
 }
-
-model_name = "GPC"
-optimizer_name = ""  # no optimizer
-# optimizer_name = "Highland Ecosystem Optimization Algorithm (HEOA)"  # no optimizer
-optimizer_name = "Nurse Optimization Algorithm (NOA)"  # no optimizer
-Accuracy_target = 0.9357023
+model_name = "RFC"
+# optimizer_name = "OOA"  # no optimizer
+# optimizer_name = "ZOA"  # no optimizer
+# optimizer_name = "GWOA"  # no optimizer
+Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "GPC+NOA"  # name of the sheet to create in Excel
-Convergence_metric = "Precision"
+sheet_name = "DTC"  # name of the sheet to create in Excel
+Convergence_metric = ""
 convegence_direction = "up"
 
 # === FUNCTIONS ===
