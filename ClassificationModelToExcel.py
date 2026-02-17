@@ -11,19 +11,22 @@ from openpyxl.styles import Font, Alignment, PatternFill
 #  best numeric parameters DTC
 
 params={
-    "max_depth": 7,         # Only one split allowed
+    "iterations": 10,         # Only one split allowed
+    "learning_rate": 0.051,         # Only one split allowed
+    "depth": 2,         # Only one split allowed
     "random_state": 42
 }
-model_name = "RFC"
-# optimizer_name = "OOA"  # no optimizer
-# optimizer_name = "ZOA"  # no optimizer
-# optimizer_name = "GWOA"  # no optimizer
-Accuracy_target = 0.0
+model_name = "CATC"
+optimizer_name = ""  # no optimizer
+optimizer_name = "OOA"  # no optimizer
+optimizer_name = "ZOA"  # no optimizer
+optimizer_name = "GWOA"  # no optimizer
+Accuracy_target = 0.995
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "DTC"  # name of the sheet to create in Excel
-Convergence_metric = ""
+sheet_name = "CATC"  # name of the sheet to create in Excel
+Convergence_metric = "Accuracy"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

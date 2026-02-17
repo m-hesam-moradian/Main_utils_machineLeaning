@@ -54,7 +54,9 @@ models = {
 
     # DTC: A "Decision Stump" - the weakest possible tree
     "DTC": DecisionTreeClassifier(
-        max_depth=7,         # It can only look at one feature once
+        max_depth=7,         
+            min_samples_split=5,
+    min_samples_leaf=2,# It can only look at one feature once
         random_state=42
     ),
 
