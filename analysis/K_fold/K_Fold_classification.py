@@ -29,7 +29,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Noisy_Fixed"  # Loading the balanced data
+sheet_name = "Encoded_Data"  # Loading the balanced data
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 
@@ -39,48 +39,41 @@ y = df[target_column]
 
 # ================== Models ==================
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
-from sklearn.svm import SVC
-from catboost import CatBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
 
 models = {
-    # RFC: Only 1 tree, and it can only ask 1 question (max_depth=1)
-    "RFC": RandomForestClassifier(
-        n_estimators=5,      # No "Forest", just one weak tree
-        max_depth=2,         # Only one split allowed
-        random_state=42
-    ),
-
-    # DTC: A "Decision Stump" - the weakest possible tree
-    "DTC": DecisionTreeClassifier(
-        max_depth=7,         
-            min_samples_split=5,
-    min_samples_leaf=2,# It can only look at one feature once
-        random_state=42
-    ),
-
-    # XGBC: Effectively stops it from learning anything
+    # XGBC: Efficient Gradient Boosting
     "XGBC": XGBClassifier(
-        n_estimators=43,      # Only one boosting round
-        learning_rate=0.0051, # Learning is so slow it stays at the start
+        n_estimators=50,
+        learning_rate=0.01,
         max_depth=3,
+        random_state=42,
+        tree_method='hist' # Uses histogram binning to save memory
+    ),
+
+    # RFC: Random Forest (Reduced n_estimators to save RAM)
+    "RFC": RandomForestClassifier(
+        n_estimators=20, 
+        max_depth=5,
+        n_jobs=-1,        # Uses all CPU cores to speed up training
         random_state=42
     ),
 
-    # SVC: Massive regularization (Tiny C)
-    # This forces the model to ignore data points and stay "flat"
-    "SVC": SVC(
-        kernel="linear",     # Linear is much weaker than RBF
-        C=0.001,           # Forces it to ignore the patterns
+    # LOG_REG: Replaces SVC (Linear, extremely fast, low RAM)
+    "SVC": LogisticRegression(
+        C=1.0, 
+        max_iter=1000, 
+        solver='lbfgs',   # Memory-efficient solver
         random_state=42
     ),
 
-    # CATBOOST: One iteration with almost zero depth
-    "CATBOOST": CatBoostClassifier(
-        iterations=145,
-        learning_rate=0.051,
-        depth=12,
+    # GPC: Note - if your PC still struggles, swap this for Naive Bayes
+    "GPC": GaussianProcessClassifier(
+        kernel=1.0 * RBF(1.0),
+        copy_X_train=False, # Saves memory by not duplicating data
         random_state=42
     )
 }

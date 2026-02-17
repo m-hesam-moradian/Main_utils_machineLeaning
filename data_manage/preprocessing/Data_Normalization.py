@@ -26,7 +26,6 @@ def open_excel_file(filepath):
     print("📂 Opened Excel file:", filepath)
 
 
-
 # --- Load dataset ---
 sheet_name = "Encoded_Data"
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
