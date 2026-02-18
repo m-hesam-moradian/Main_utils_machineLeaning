@@ -18,15 +18,18 @@ y = df[target_column]
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
+from sklearn.ensemble import RandomForestClassifier
 
 # --- Train XGBoost Classifier ---
-model = XGBClassifier(
-        n_estimators=39,
-        learning_rate=0.005,
-        max_depth=7,
-        random_state=42,
-        # tree_method='hist' # Uses histogram binning to save memory
-) # <--- REMOVE THE COMMA THAT WAS HERE
+model =RandomForestClassifier(
+    n_estimators=2,       # Increased from 2 to 50 for better voting accuracy
+    max_depth=4,           # Keeps the model lightweight but capable
+    # criterion='gini',      # Standard for multi-class classification
+    # bootstrap=True,        # Use random subsets of data for each tree
+    n_jobs=-1,             # Uses all CPU cores
+    random_state=42,
+    # class_weight='balanced' # Helpful if your classes have different sample sizes
+)
 
 
 model.fit(X_train, y_train)

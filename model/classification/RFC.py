@@ -22,7 +22,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- Train Random Forest Classifier ---
 model = RandomForestClassifier(
         n_estimators=5,      # No "Forest", just one weak tree
-        max_depth=2,         # Only one split allowed
+        max_depth=5,         # Only one split allowed
         random_state=42
 )
 model.fit(X_train, y_train)

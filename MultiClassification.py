@@ -2,36 +2,44 @@
 import numpy as np
 import pandas as pd
 import os
+from sklearn.ensemble import RandomForestClassifier
 import win32com.client
 from sklearn.metrics import accuracy_score
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-# model = ExtraTreesClassifier(
-# n_estimators=912,           # Pushing toward 1000 for maximum ensemble strength
-#     max_depth=11,               # Specific depth found to hit the "elbow" of the curve
-#     min_samples_split=6,
+
+# model =RandomForestClassifier(
+#     n_estimators=5,       # Increased from 2 to 50 for better voting accuracy
+#     max_depth=3,           # Keeps the model lightweight but capable
+#     # criterion='gini',      # Standard for multi-class classification
+#     # bootstrap=True,        # Use random subsets of data for each tree
+#     n_jobs=-1,             # Uses all CPU cores
+#     random_state=42,
+#     # class_weight='balanced' # Helpful if your classes have different sample sizes
 # )
-params={
-    "n_estimators": 912,
-    "max_depth": 11,
-    "min_samples_split": 6,
+
+params = {
+    "n_estimators": 5,
+    "max_depth": 3,
+    "n_jobs": -1,
 }
 
 
-ShowProbs = True   # False → hide probability columns & ROC table
-model_name = "ETC"  # model name for title (e.g., "Extra Trees Classifier")
+ShowProbs = False  # False → hide probability columns & ROC table
+model_name = "RFC"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
 # optimizer_name = "LOA"  #  optimizer
-# optimizer_name = "DOA"  #  optimizer
+# optimizer_name = "SBTO"  #  optimizer
+optimizer_name = "RPO"  #  optimizer
 
 
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "F1"
+Convergence_metric = "Accuracy"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
