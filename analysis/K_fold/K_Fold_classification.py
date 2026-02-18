@@ -1,173 +1,150 @@
 import pandas as pd
-from sklearn.model_selection import KFold
-
-# --- UPDATED IMPORTS ---
+import numpy as np
+import time
+import os
+import win32com.client
+from sklearn.model_selection import KFold, train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score
+
+# --- MODELS ---
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from xgboost import XGBClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        try:
+    try:
+        excel = win32com.client.Dispatch("Excel.Application")
+        for wb in excel.Workbooks:
             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
                 wb.Save()
                 wb.Close(SaveChanges=False)
                 print("💾 Saved and 🔒 Closed Excel file:", filepath)
                 break
-        except Exception:
-            pass
-    excel.Quit()
+    except Exception as e:
+        print(f"Note: Could not close Excel via COM (maybe not open): {e}")
 
 def open_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    try:
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("📂 Opened Excel file:", filepath)
+    except Exception as e:
+        print(f"Could not open Excel automatically: {e}")
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data"  # Loading the balanced data
+sheet_name = "Encoded_Data" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
-
 target_column = df.columns[-1]
 X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# ================== Models ==================
-from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
-from sklearn.naive_bayes import GaussianNB
-
+# ================== Corrected Models ==================
+# I have matched the keys to the actual algorithms
 models = {
-    # XGBC: Efficient Gradient Boosting
     "XGBC": XGBClassifier(
-        n_estimators=18,
-        learning_rate=0.01,
-        max_depth=10,
+        n_estimators=50,
+        learning_rate=0.05,
+        max_depth=6,
         random_state=42,
-        # tree_method='hist' # Uses histogram binning to save memory
+        use_label_encoder=False,
+        eval_metric='logloss'
     ),
-
-    # RFC: Random Forest (Reduced n_estimators to save RAM)
     "RFC": RandomForestClassifier(
-        n_estimators=5, 
-        max_depth=2,
-        n_jobs=-1,        # Uses all CPU cores to speed up training
+        n_estimators=100, 
+        max_depth=10,
+        n_jobs=-1,
         random_state=42
     ),
-
-    # LOG_REG: Replaces SVC (Linear, extremely fast, low RAM)
-    "SVC": XGBClassifier(
-        n_estimators=40,
-        learning_rate=0.005,
-        max_depth=1,
-        random_state=42,
-        # tree_method='hist' # Uses histogram binning to save memory
+    "SVC": SVC(
+        kernel='rbf',
+        probability=True,
+        random_state=42
     ),
+    "GNB": GaussianNB(),
 
-    # GPC: Note - if your PC still struggles, swap this for Naive Bayes
-"GPC": GaussianNB(
-        var_smoothing=1e-8  # The "knob" for stability; default is usually best
-    )
 }
-# ================== K-Fold ==================
+
+# ================== K-Fold Execution ==================
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
 metrics_df_dict = {}
 df_reordered_dict = {}
-fold_indices_dict = {}
 
 for model_name, model in models.items():
     fold_metrics_list = []
-    fold_indices_list = []
+    print(f"🚀 Training {model_name}...")
 
-    print(f"Processing {model_name}...")
+    best_acc = -1
+    best_test_idx = None
 
     for fold_index, (train_idx, test_idx) in enumerate(kf.split(X_full), 1):
-        X_train = X_full.iloc[train_idx]
-        X_test  = X_full.iloc[test_idx]
+        X_train, X_test = X_full.iloc[train_idx], X_full.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        # Standardize features (important for SVC and LR)
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-        # --- Classification Metrics ---
-        # Using 'weighted' average for F1 to handle class imbalances if any remain
+        model.fit(X_train_scaled, y_train)
+        y_pred = model.predict(X_test_scaled)
+
+        acc = accuracy_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred, average='weighted')
+
         fold_metrics_list.append({
             "Fold": fold_index,
-            "Accuracy": accuracy_score(y_test, y_pred),
-            "F1 Score": f1_score(y_test, y_pred, average='weighted')
+            "Accuracy": acc,
+            "F1 Score": f1
         })
 
-        fold_indices_list.append({
-            "train_idx": train_idx,
-            "test_idx": test_idx
-        })
+        # Track the best fold to reorder data
+        if acc > best_acc:
+            best_acc = acc
+            best_test_idx = test_idx
 
+    # Save metrics
     metrics_df = pd.DataFrame(fold_metrics_list)
     metrics_df_dict[model_name] = metrics_df
-    fold_indices_dict[model_name] = fold_indices_list
 
-    # Select best fold based on Accuracy
-    best_fold_idx = metrics_df["Accuracy"].idxmax()
-    best_test_idx = fold_indices_dict[model_name][best_fold_idx]["test_idx"]
-
-    # Reorder dataframe: Train first, then Test (Best Fold)
+    # Reorder dataframe: Remaining data first, then the Best Fold's Test data
     remaining_idx = df.index.difference(best_test_idx)
     df_reordered_dict[model_name] = pd.concat(
         [df.loc[remaining_idx], df.loc[best_test_idx]], axis=0
     )
 
-# ================== Summary ==================
-summary_df = []
-for model_name in models:
-    metrics_df = metrics_df_dict[model_name]
-    best_fold = metrics_df.loc[metrics_df["Accuracy"].idxmax()]
-
-    summary_df.append({
+# ================== Create Summary ==================
+summary_list = []
+for model_name, m_df in metrics_df_dict.items():
+    best_row = m_df.loc[m_df["Accuracy"].idxmax()]
+    summary_list.append({
         "Model": model_name,
-        "Best Fold": best_fold["Fold"],
-        "Best Accuracy": best_fold["Accuracy"],
-        "Best F1": best_fold["F1 Score"],
-        "Mean Accuracy": metrics_df["Accuracy"].mean(),
-        "Mean F1": metrics_df["F1 Score"].mean()
+        "Best Fold": best_row["Fold"],
+        "Best Accuracy": best_row["Accuracy"],
+        "Best F1": best_row["F1 Score"],
+        "Mean Accuracy": m_df["Accuracy"].mean(),
+        "Mean F1": m_df["F1 Score"].mean()
     })
+summary_df = pd.DataFrame(summary_list)
 
-summary_df = pd.DataFrame(summary_df)
-
-# ================== Save to Excel ==================
+# ================== Save & Open ==================
 close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
-        )
-        df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
-        )
-
-    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_KFold_{model_name}", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
 open_excel_file(filepath)
 
-# ================== Print Summary ==================
-for model_name in models:
-    metrics_df = metrics_df_dict[model_name]
-    best_fold = metrics_df.loc[metrics_df["Accuracy"].idxmax()]
-
-    print(f"\n🔹 Model: {model_name}")
-    print(f"   🏆 Best Fold: Fold {best_fold['Fold']}")
-    print(f"   Accuracy: {best_fold['Accuracy']:.4f}")
-    print(f"   F1 Score: {best_fold['F1 Score']:.4f}")
-    print(f"   📈 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
-    print(f"   📉 Mean F1 Score: {metrics_df['F1 Score'].mean():.4f}")
-
+print("\n✅ All models processed and saved to Excel.")
+print(summary_df[['Model', 'Mean Accuracy', 'Mean F1']])
