@@ -43,38 +43,38 @@ from xgboost import XGBClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
+from sklearn.naive_bayes import GaussianNB
 
 models = {
     # XGBC: Efficient Gradient Boosting
     "XGBC": XGBClassifier(
-        n_estimators=50,
+        n_estimators=18,
         learning_rate=0.01,
-        max_depth=3,
+        max_depth=10,
         random_state=42,
-        tree_method='hist' # Uses histogram binning to save memory
+        # tree_method='hist' # Uses histogram binning to save memory
     ),
 
     # RFC: Random Forest (Reduced n_estimators to save RAM)
     "RFC": RandomForestClassifier(
-        n_estimators=20, 
-        max_depth=5,
+        n_estimators=5, 
+        max_depth=2,
         n_jobs=-1,        # Uses all CPU cores to speed up training
         random_state=42
     ),
 
     # LOG_REG: Replaces SVC (Linear, extremely fast, low RAM)
-    "SVC": LogisticRegression(
-        C=1.0, 
-        max_iter=1000, 
-        solver='lbfgs',   # Memory-efficient solver
-        random_state=42
+    "SVC": XGBClassifier(
+        n_estimators=40,
+        learning_rate=0.005,
+        max_depth=1,
+        random_state=42,
+        # tree_method='hist' # Uses histogram binning to save memory
     ),
 
     # GPC: Note - if your PC still struggles, swap this for Naive Bayes
-    "GPC": GaussianProcessClassifier(
-        kernel=1.0 * RBF(1.0),
-        copy_X_train=False, # Saves memory by not duplicating data
-        random_state=42
+"GPC": GaussianNB(
+        var_smoothing=1e-8  # The "knob" for stability; default is usually best
     )
 }
 # ================== K-Fold ==================
@@ -170,3 +170,4 @@ for model_name in models:
     print(f"   F1 Score: {best_fold['F1 Score']:.4f}")
     print(f"   📈 Mean Accuracy: {metrics_df['Accuracy'].mean():.4f}")
     print(f"   📉 Mean F1 Score: {metrics_df['F1 Score'].mean():.4f}")
+
