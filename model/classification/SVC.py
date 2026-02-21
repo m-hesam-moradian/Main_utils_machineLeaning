@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_SVC"   # keep sheet name unless you change it
+sheet_name = "Data_KFold_SVC"   # keep sheet name unless you change it
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -23,7 +23,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 from sklearn.svm import SVC
 
 model = SVC(
-    C=4,
+    C=1,
     max_iter=1,
     # kernel="sigmoid",
     # class_weight="",

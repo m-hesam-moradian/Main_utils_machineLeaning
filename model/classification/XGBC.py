@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBoost"
+sheet_name = "Data_KFold_XGBC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -21,16 +21,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train model ---
 model = XGBClassifier(
-    n_estimators=200,       # number of trees
-    max_depth=4,            # smaller depth prevents overfitting
-    learning_rate=0.05,     # slower learning for smoother fit
-    subsample=0.8,          # use 80% of data for each tree
-    colsample_bytree=0.8,   # use 80% of features per tree
-    reg_lambda=2,           # L2 regularization
-    reg_alpha=0.5,          # L1 regularization
-    random_state=42,
-    use_label_encoder=False,
-    eval_metric="logloss"
+        n_estimators=20,
+        learning_rate=0.01,
+        max_depth=3,
+        random_state=42,
+        use_label_encoder=False,
+        eval_metric='logloss'        
 )
 model.fit(X_train, y_train)
 

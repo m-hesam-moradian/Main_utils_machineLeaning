@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFC"
+sheet_name = "Data_KFold_RFC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 

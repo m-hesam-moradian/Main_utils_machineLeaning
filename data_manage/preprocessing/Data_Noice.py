@@ -28,7 +28,7 @@ def open_excel_file(filepath):
 
 # --- 2. Configuration ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-source_sheet = "Encoded_Data"
+source_sheet = "DATA_Normalized"
 output_sheet = "DATA_Noisy_Light"
 
 close_excel_file(excel_path)

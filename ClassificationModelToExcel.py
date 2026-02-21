@@ -8,25 +8,28 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-#  best numeric parameters DTC
+#  best numeric parameters SVC
 
-params={
-    "iterations": 10,         # Only one split allowed
-    "learning_rate": 0.051,         # Only one split allowed
-    "depth": 2,         # Only one split allowed
-    "random_state": 42
+params = {
+    "C": 1.414,
+    "max_iter": 186,
 }
-model_name = "CATC"
+
+model_name = "SVC"
 optimizer_name = ""  # no optimizer
-optimizer_name = "OOA"  # no optimizer
-optimizer_name = "ZOA"  # no optimizer
-optimizer_name = "GWOA"  # no optimizer
-Accuracy_target = 0.995
+# optimizer_name = "COA"  # no opt/imizer
+# optimizer_name = "WOA"  # no optimizer
+if optimizer_name:
+    sheet_name = f"{model_name} + {optimizer_name}"
+else:
+    sheet_name = model_name
+Accuracy_target = 0.98
+
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-sheet_name = "CATC"  # name of the sheet to create in Excel
-Convergence_metric = "Accuracy"
+# Convergence_metric = "Precision"
+Convergence_metric = "F1"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -170,7 +173,7 @@ def build_classification_reports(y_real, y_pred):
             "Recall": recall_score(y_true, y_pred, zero_division=0),
             "F1": f1_score(y_true, y_pred, zero_division=0),
             "Precision": precision_score(y_true, y_pred, zero_division=0),
-            "MCC": matthews_corrcoef(y_true, y_pred)
+            # "MCC": matthews_corrcoef(y_true, y_pred)
         }
 
     # Split for Train/Test
@@ -187,7 +190,7 @@ def build_classification_reports(y_real, y_pred):
         ["All", *metrics_all.values()],
         ["Train", *metrics_train.values()],
         ["Test", *metrics_test.values()],
-    ], columns=["Set",  "Accuracy","Recall", "F1", "Precision", "MCC"])
+    ], columns=["Set",  "Accuracy","Recall", "F1", "Precision"])
 
     # --- Per-class metrics
     classes = np.unique(y_real).astype(int)

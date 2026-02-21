@@ -47,7 +47,23 @@ y = df[target_column]
 
 # ================== Corrected Models ==================
 # I have matched the keys to the actual algorithms
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
+from sklearn.svm import SVC
+from catboost import CatBoostClassifier
+
 models = {
+    "RFC": RandomForestClassifier(
+        n_estimators=100, 
+        max_depth=10,
+        n_jobs=-1,
+        random_state=42
+    ),
+    "DTC": DecisionTreeClassifier(
+        max_depth=10,
+        random_state=42
+    ),
     "XGBC": XGBClassifier(
         n_estimators=50,
         learning_rate=0.05,
@@ -56,19 +72,18 @@ models = {
         use_label_encoder=False,
         eval_metric='logloss'
     ),
-    "RFC": RandomForestClassifier(
-        n_estimators=100, 
-        max_depth=10,
-        n_jobs=-1,
-        random_state=42
-    ),
     "SVC": SVC(
         kernel='rbf',
         probability=True,
         random_state=42
     ),
-    "GNB": GaussianNB(),
-
+    "CATBOOST": CatBoostClassifier(
+        iterations=100,
+        learning_rate=0.05,
+        depth=6,
+        verbose=False,
+        random_state=42
+    )
 }
 
 # ================== K-Fold Execution ==================
