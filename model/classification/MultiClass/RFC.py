@@ -5,7 +5,7 @@ from xgboost import XGBClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBC"  # you can rename this if needed
+sheet_name = "Data_after_KFold_RFC"  # you can rename this if needed
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -22,13 +22,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Train XGBoost Classifier ---
 model =RandomForestClassifier(
-    n_estimators=2,       # Increased from 2 to 50 for better voting accuracy
-    max_depth=4,           # Keeps the model lightweight but capable
-    # criterion='gini',      # Standard for multi-class classification
-    # bootstrap=True,        # Use random subsets of data for each tree
-    n_jobs=-1,             # Uses all CPU cores
-    random_state=42,
-    # class_weight='balanced' # Helpful if your classes have different sample sizes
+        n_estimators=84, 
+        max_depth=2,
+        n_jobs=-1,
+        random_state=42
 )
 
 

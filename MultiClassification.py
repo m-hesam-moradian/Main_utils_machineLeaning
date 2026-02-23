@@ -10,29 +10,26 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 
+# --- Train XGBoost Classifier ---
 # model =RandomForestClassifier(
-#     n_estimators=5,       # Increased from 2 to 50 for better voting accuracy
-#     max_depth=3,           # Keeps the model lightweight but capable
-#     # criterion='gini',      # Standard for multi-class classification
-#     # bootstrap=True,        # Use random subsets of data for each tree
-#     n_jobs=-1,             # Uses all CPU cores
-#     random_state=42,
-#     # class_weight='balanced' # Helpful if your classes have different sample sizes
+#         n_estimators=10, 
+#         max_depth=1,
+#         n_jobs=-1,
+#         random_state=42
 # )
 
 params = {
-    "n_estimators": 5,
-    "max_depth": 3,
-    "n_jobs": -1,
+    "n_estimators": 10,
+    "max_depth": 1,
 }
 
 
 ShowProbs = False  # False → hide probability columns & ROC table
 model_name = "RFC"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-# optimizer_name = "LOA"  #  optimizer
-# optimizer_name = "SBTO"  #  optimizer
-optimizer_name = "RPO"  #  optimizer
+optimizer_name = "PSOA"  #  optimizer
+# optimizer_name = "COA"  #  optimizer
+# optimizer_name = "RPO"  #  optimizer
 
 
 Accuracy_target = 0.0
@@ -416,7 +413,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
 
     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
     # CM_col = len(df_value_pred.columns) + 1
-    CM_start_row = len(df_params) + 8
+    CM_start_row = len(df_params) + 10
     cm_df_out = cm_df.reset_index()
     cm_df_out.rename(columns={"index": "Actual"}, inplace=True)
     write_table(
@@ -452,7 +449,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
         current_col = convergence_col + len(df_convergence.columns)
     else:
         current_col = metrics_col + len(df_combined.columns)
-    train_col = current_col + 1
+    train_col = current_col + 3
     write_table(
             df_train_data,
             startrow=1,

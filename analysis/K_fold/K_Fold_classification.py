@@ -38,7 +38,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data" 
+sheet_name = "data_after_vif" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -47,41 +47,35 @@ y = df[target_column]
 
 # ================== Corrected Models ==================
 # I have matched the keys to the actual algorithms
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
-from sklearn.svm import SVC
-from catboost import CatBoostClassifier
+from sklearn.neighbors import KNeighborsClassifier  # Added KNN import
 
 models = {
     "RFC": RandomForestClassifier(
-        n_estimators=100, 
-        max_depth=10,
+        n_estimators=10, 
+        max_depth=1,
         n_jobs=-1,
         random_state=42
     ),
     "DTC": DecisionTreeClassifier(
-        max_depth=10,
+        max_depth=3,
         random_state=42
     ),
-    "XGBC": XGBClassifier(
-        n_estimators=50,
-        learning_rate=0.05,
-        max_depth=6,
+    "XGB": XGBClassifier(
+        n_estimators=10,
+        learning_rate=0.005,
+        max_depth=1,
         random_state=42,
         use_label_encoder=False,
         eval_metric='logloss'
     ),
-    "SVC": SVC(
-        kernel='rbf',
-        probability=True,
-        random_state=42
-    ),
-    "CATBOOST": CatBoostClassifier(
-        iterations=100,
-        learning_rate=0.05,
-        depth=6,
-        verbose=False,
+    "KNNC": RandomForestClassifier(
+        n_estimators=5, 
+        max_depth=1,
+        n_jobs=-1,
         random_state=42
     )
 }
@@ -156,10 +150,15 @@ close_excel_file(filepath)
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_KFold_{model_name}", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
     summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
 open_excel_file(filepath)
 
 print("\n✅ All models processed and saved to Excel.")
 print(summary_df[['Model', 'Mean Accuracy', 'Mean F1']])
+
+
+
+
+
