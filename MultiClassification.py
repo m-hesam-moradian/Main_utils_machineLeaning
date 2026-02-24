@@ -10,29 +10,26 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 
-# --- Train XGBoost Classifier ---
-# model =RandomForestClassifier(
-#         n_estimators=10, 
-#         max_depth=1,
-#         n_jobs=-1,
-#         random_state=42
+
+# model = DecisionTreeClassifier(
+#     max_depth=4, 
+#     random_state=42
 # )
 
 params = {
-    "n_estimators": 10,
-    "max_depth": 1,
+    "max_depth": 2,
+    "min_samples_split": 2,
+    "min_samples_leaf": 1,
+    "random_state": 42
 }
 
-
 ShowProbs = False  # False → hide probability columns & ROC table
-model_name = "RFC"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "DTC"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-optimizer_name = "PSOA"  #  optimizer
-# optimizer_name = "COA"  #  optimizer
-# optimizer_name = "RPO"  #  optimizer
+# optimizer_name = "PSOA"  #  optimizer
+optimizer_name = "COA"  #  optimizer
 
-
-Accuracy_target = 0.0
+Accuracy_target = 0.9895415
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
@@ -442,7 +439,7 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     )
 
     if include_convergence:
-        convergence_col = metrics_col + len(df_combined.columns) + 1
+        convergence_col = metrics_col + len(df_combined.columns) + 3
         write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=title)
     # === Write Split Data Tables (Side by Side) ===
     if include_convergence:

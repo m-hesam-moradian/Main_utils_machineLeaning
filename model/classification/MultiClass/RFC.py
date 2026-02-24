@@ -22,12 +22,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Train XGBoost Classifier ---
 model =RandomForestClassifier(
-        n_estimators=84, 
+        n_estimators=16, 
         max_depth=2,
-        n_jobs=-1,
         random_state=42
 )
-
 
 model.fit(X_train, y_train)
 
