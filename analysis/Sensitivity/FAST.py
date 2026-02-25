@@ -64,7 +64,7 @@ def Fast_function(X, predictions):
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Data_KFold_XGBC").dropna()
+df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_XGB").dropna()
 target_column = df.columns[-1]
 
 # Separate features and target
@@ -80,4 +80,3 @@ print(df)
 
 Fast_df = pd.DataFrame(Fast_function(X=X, predictions=y))
 Fast_df.to_clipboard(index=False)
-
