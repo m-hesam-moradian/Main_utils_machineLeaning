@@ -1,32 +1,39 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, f1_score, precision_score
 
-# --- Load reordered data for RF (after K-Fold) ---
+# --- Columns to drop ---
+# COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
+
+# --- Load reordered data (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFR_Zscore"   # update if needed
+sheet_name = "Data_after_KFold_DTC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
+
+# Drop the specified columns from the dataset
+# df = df.drop(columns=COLUMNS_TO_DROP)
+
+# Prepare the features and target
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Use last 20% as test set to match K-Fold logic ---
+# --- Use last 20% as test set ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Train and predict with Random Forest ---
-model = RandomForestRegressor(
-    n_estimators=542,
-    max_depth=74,
-    min_samples_leaf=10,
-    max_features=0.7,
-    random_state=42,
-    # n_jobs=-1
+# --- Initialize DTC model ---
+model = DecisionTreeClassifier(
+        max_depth=10,
+        random_state=42
 )
+
+# Train the model
 model.fit(X_train, y_train)
 
+# Predictions
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
@@ -43,9 +50,9 @@ sets = [
 
 df_metrics = pd.DataFrame([{
     "Set": s,
-    "MAE": mean_absolute_error(y_t, y_p),
-    "RMSE": mean_squared_error(y_t, y_p) ** 0.5,
-    "R2": r2_score(y_t, y_p)
+    "Accuracy": accuracy_score(y_t, y_p),
+    "F1 Score": f1_score(y_t, y_p, average='weighted'),
+    "Precision": precision_score(y_t, y_p, average='weighted', zero_division=0)
 } for s, y_t, y_p in sets])
 
 print(df_metrics)

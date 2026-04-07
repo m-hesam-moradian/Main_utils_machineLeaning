@@ -38,7 +38,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_vif" 
+sheet_name = "DATA_Normalized" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -51,38 +51,49 @@ y = df[target_column]
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
-from sklearn.neighbors import KNeighborsClassifier  # Added KNN import
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 
 models = {
     "RFC": RandomForestClassifier(
-        n_estimators=10, 
-        max_depth=1,
-        n_jobs=-1,
-        random_state=42
+        # n_estimators=500,
+        # max_depth=100,
+        # random_state=42,
+        # n_jobs=-1
     ),
+
     "DTC": DecisionTreeClassifier(
-        max_depth=3,
-        random_state=42
+        # max_depth=1000,
+        # random_state=42
     ),
+
     "XGB": XGBClassifier(
-        n_estimators=10,
-        learning_rate=0.005,
-        max_depth=1,
-        random_state=42,
-        use_label_encoder=False,
-        eval_metric='logloss'
+        # n_estimators=500,
+        # max_depth=50,
+        # learning_rate=0.1,
+        # subsample=1.0,
+        # colsample_bytree=1.0,
+        # random_state=42,
+        # n_jobs=-1,
+        # eval_metric='logloss'
     ),
-    "KNNC": RandomForestClassifier(
-        n_estimators=5, 
-        max_depth=1,
-        n_jobs=-1,
-        random_state=42
+
+    "KNNC": KNeighborsClassifier(
+        # n_neighbors=1000,
+        # n_jobs=40
+    ),
+
+    "SVC": SVC(
+        # kernel='rbf',      # can also try 'linear'
+        # C=1.1,
+        # gamma='scale',
+        # probability=True   # useful if you need probabilities
     )
 }
 
 # ================== K-Fold Execution ==================
 n_splits = 5
-kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+kf = KFold(n_splits=n_splits, shuffle=False)
 
 metrics_df_dict = {}
 df_reordered_dict = {}
@@ -158,7 +169,7 @@ open_excel_file(filepath)
 print("\n✅ All models processed and saved to Excel.")
 print(summary_df[['Model', 'Mean Accuracy', 'Mean F1']])
 
-
+  
 
 
 

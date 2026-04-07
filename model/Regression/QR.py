@@ -8,6 +8,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # --- Load reordered data for QR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 sheet_name = "Data_after_KFold_QR"  # Changed to "QR" sheet name
+# sheet_name = "Data_after_KFold_QR(ANOVA_FS)"  # Changed to "QR" sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -26,10 +27,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize QR model ---
 model = QuantileRegressor(
-    quantile=0.424,
-    alpha=0.00948,       # Specific value found after minimizing MAE
-    solver="highs",      # High-performance solver for better convergence
-    fit_intercept=True
+alpha=0.340000, 
 )
 
 # Train the model

@@ -7,7 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for SGB (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_SGB"  # Changed to "SGB" sheet name
+sheet_name = "Data_after_KFold_SGB(ANOVA_FS)"  # Changed to "SGB" sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -26,9 +26,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize SGB model ---
 model = GradientBoostingRegressor(
-        n_estimators=763, 
-        subsample=0.9183,
-        random_state=42
+        n_estimators=150, 
+        # subsample=0.9183,
+        # random_state=42
 )
 
 # Train the model

@@ -12,69 +12,88 @@ import win32com.client
 # NOTE: This script does not train models; it formats prediction results + metrics into Excel.
 # 'params' is only written to Excel as metadata.
 # NGMB params 
+        # n_estimators=763, 
+        # subsample=0.9183,
+
+
 params = {
-    "n_estimators":312, 
-    "learning_rate":0.00947,
+    "n_estimators": 100,
+    "subsample": 0.1,
 }
+
 
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-# optimizer_name = "Cyclone Optimization Algorithm (COA)"
-optimizer_name = "Makeup Artist Optimization Algorithm (MAOA)"
+optimizer_name = "POA"
+
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "NGBM"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
-sheet_name = "NGBM+MAOA"          # should match Excel sheet label you want
+model_name = "SGB"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+
+
+sheet_name = "SGB(ANOVA)+POA"          # should match Excel sheet label you want
+
 R2_target = 0.0
-min_error = -56.54
-max_error = 55.43
+min_error = -5600.54
+max_error = 5500.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "MAEM"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 
+
 import pandas as pd
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
+
+    def log_cosh_loss(y_true, y_hat):
+        return np.mean(np.log(np.cosh(y_hat - y_true)))
+
+
+    def mape(y_true, y_hat):
+        y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
+        # avoid division by zero
+        non_zero = y_true != 0
+        return np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
+    
+    def com_metric(y_true, y_hat):
+        # CV(RMSE) = RMSE / mean(y_true)
+        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
+        mean_y = np.mean(y_true)
+        return rmse / mean_y if mean_y != 0 else np.nan
+    
+    def U95_metric(y_true, y_hat):
+        return np.percentile(np.abs(y_true - y_hat), 95)
 
     def compute_metrics(y_true, y_hat):
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
-        
-        # --- R2 ---
+
         r2 = r2_score(y_true, y_hat)
-
-        # --- RMSE ---
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
+        logcosh = log_cosh_loss(y_true, y_hat)
+        mape_val = mape(y_true, y_hat)
+        com_val = com_metric(y_true, y_hat)
+        U95 = U95_metric(y_true, y_hat)
+    
 
-        # --- MAE ---
-        mae = mean_absolute_error(y_true, y_hat)
-
-        # --- COV (Coefficient of Variation) ---
-        mean_actual = np.mean(y_true)
-        cov = (rmse / mean_actual * 100) if mean_actual != 0 else 0.0
-
-        # --- RMSLE (Root Mean Squared Logarithmic Error) ---
-        # Clipping to 0 to avoid NaNs if there are negative values
-        y_true_log = np.log1p(np.clip(y_true, 0, None))
-        y_hat_log = np.log1p(np.clip(y_hat, 0, None))
-        rmsle = np.sqrt(mean_squared_error(y_true_log, y_hat_log))
 
         return {
             "R2": r2,
             "RMSE": rmse,
-            "MAEM": mae,
-            "COV": cov,
-            "RMSLE": rmsle,
+            "LogCosh": logcosh,
+            "MAPE": mape_val,
+            "U95": U95,
+            "COM": com_val
         }
 
-    # --- Split data into Train/Test/Value sets ---
+    # --- Split ---
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
@@ -83,7 +102,6 @@ def build_metrics_table(y_real, y_pred):
     y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
     y_real_valte, y_pred_valte = y_real_test[mid:], y_pred_test[mid:]
 
-    # --- Compute metrics ---
     sets = {
         "All": compute_metrics(y_real, y_pred),
         "Train": compute_metrics(y_real_train, y_pred_train),
@@ -92,17 +110,22 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-    # --- Build DataFrame ---
-    # Updated columns to reflect RMSLE
-    cols = ["Set", "R2", "RMSE", "MAEM", "COV", "RMSLE"]
-    
+    cols = ["Set", "R2", "RMSE", "LogCosh","MAPE", "U95", "COM"]
+
     rows = []
     for set_name, m in sets.items():
-        rows.append([set_name, m["R2"], m["RMSE"], m["MAEM"], m["COV"], m["RMSLE"]])
+        rows.append([
+            set_name,
+            m["R2"],
+            m["RMSE"],
+            m["LogCosh"],
+            m["MAPE"],
+            m["U95"],
+            m["COM"]
+        ])
 
-    df_metrics = pd.DataFrame(rows, columns=cols)
+    return pd.DataFrame(rows, columns=cols)
 
-    return df_metrics
 def fake_r2_prediction(y_real, y_pred, R2_target):
     current_r2 = r2_score(y_real, y_pred)
     if current_r2 >= R2_target:

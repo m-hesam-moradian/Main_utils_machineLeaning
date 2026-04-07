@@ -5,7 +5,7 @@ from sklearn.svm import SVC
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LSSVC"  # you may rename later
+sheet_name = "Data_after_KFold_SVC"  # you may rename later
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -21,12 +21,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train SVC ---
 model = SVC(
-    C=4.290335398
-
-,
-    gamma=0.478151472
-
-,
+    C=4,
+    max_iter=500,
     # kernel="rbf",
     probability=True,   # REQUIRED for predict_proba
     random_state=42

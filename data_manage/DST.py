@@ -30,8 +30,8 @@ y_pred_dst = m_lgbr * y_pred_lgbr + m_sgb * y_pred_sgb
 # -------------------- 5. Output fused predictions --------------------
 df_fused = pd.DataFrame({
     "y_real": y_real,
-    "y_pred_KNNR": y_pred_lgbr,
-    "y_pred_RR": y_pred_sgb,
+    "y_pred_KNNC": y_pred_lgbr,
+    "y_pred_XGB": y_pred_sgb,
     "y_pred_DST": y_pred_dst
 })
 

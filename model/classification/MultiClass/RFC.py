@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from xgboost import XGBClassifier
+
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
@@ -22,9 +22,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Train XGBoost Classifier ---
 model =RandomForestClassifier(
-        n_estimators=16, 
-        max_depth=2,
-        random_state=42
+        n_estimators=841, 
+        # max_depth=2,
+        # n_jobs=-1,
+        # random_state=42
 )
 
 model.fit(X_train, y_train)

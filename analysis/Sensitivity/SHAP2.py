@@ -16,9 +16,9 @@ import os
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Data_after_KFold_SBR"
+sheet_name = "Data_after_KFold_SVC"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
+df = pd.read_excel(file_path, sheet_name=sheet_name)
 
 # Automatically detect target column (last column)
 target_column = df.columns[-1]

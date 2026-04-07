@@ -1,11 +1,11 @@
 from couples_sensitivity_analysis import couples_sensitivity_analysis
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestRegressor
 
 # Load the dataset
 dt = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Data_after_KFold_DTC",
+    sheet_name="Data_after_KFold_RFR_Zscore",
 )
 
 target_column = dt.columns[-1]
@@ -14,10 +14,14 @@ y = dt[target_column]
 
 features = X.columns
 
-# Train the Decision Tree Classifier
-model = DecisionTreeClassifier(
-        max_depth=7,  # If accuracy is still 1.0, lower this to 2 or 3
-        random_state=42
+# 🌲 Random Forest Classifier (anti-overfitting setup)
+model = RandomForestRegressor(
+    n_estimators=200,        # more trees = stability
+    max_depth=10,            # prevent deep overfit trees
+    min_samples_split=10,    # avoid weak splits
+    min_samples_leaf=4,      # smoother leaves
+    max_features=0.7,        # feature randomness
+
 )
 
 model.fit(X, y)
@@ -35,7 +39,7 @@ copula = couples_sensitivity_analysis(
     X,
     y,
     feature_pairs,
-    "accuracy",   # changed from "mse"
+    "mse",  # Mean Squared Error for regression
     40
 )
 

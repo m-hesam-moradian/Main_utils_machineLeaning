@@ -10,28 +10,18 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 
-
-# model = XGBClassifier(
-#         n_estimators=10,
-#         learning_rate=0.005,
-#         max_depth=1,
-#         random_state=42,
-#         # tree_method='hist' # Uses histogram binning to save memory
-# )
-
 params = {
-    "n_estimators": 10,
-    "learning_rate": 0.005,
-    "max_depth": 1,
+    "max_iter":100,
+    "C":1.0
 }
 
 ShowProbs = False  # False → hide probability columns & ROC table
-model_name = "XGBC"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "MLR(ENN)"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-# optimizer_name = "PSOA"  #  optimizer
-# optimizer_name = "COA"  #  optimizer
-
-Accuracy_target = 0.9940245
+# optimizer_name = "GOA"  #  optimizer
+optimizer_name = ""  #  optimizer
+ 
+Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"

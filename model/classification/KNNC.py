@@ -26,7 +26,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize KNNC model ---
 # n_neighbors=5 is the standard default for KNN
-model = KNeighborsClassifier(n_neighbors=17)
+model = KNeighborsClassifier(n_neighbors=10)
 
 # Train the model
 model.fit(X_train, y_train)

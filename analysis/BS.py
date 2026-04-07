@@ -10,57 +10,19 @@ Example (3-class):
 """
 
 from pathlib import Path
-import argparse
-import json
+
 from typing import List, Dict, Optional, Union
 import numpy as np
 import pandas as pd
 
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    matthews_corrcoef, confusion_matrix, roc_auc_score,
-    brier_score_loss
+    accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score,
+   
 )
 
 # -------------------------
 # Loading utilities
 # -------------------------
-def load_npt_three_class(path: Union[str, Path]) -> pd.DataFrame:
-    """
-    Loads a whitespace/tab/comma separated file where each row is:
-      y_true  y_pred  p_class0  p_class1  p_class2
-
-    Returns DataFrame with columns:
-      'y_true', 'y_pred', 'prob_class_0', 'prob_class_1', 'prob_class_2'
-    """
-    p = Path(path)
-    if not p.exists():
-        raise FileNotFoundError(f"No such file: {p}")
-
-    arr = np.loadtxt(p)
-    arr = np.asarray(arr)
-    if arr.ndim == 1:
-        # single row
-        if arr.size < 5:
-            raise ValueError("Expected at least 5 columns for 3-class format (y_true, y_pred, 3 probs).")
-        arr = arr.reshape(1, -1)
-
-    if arr.ndim != 2 or arr.shape[1] < 5:
-        raise ValueError("Expected format: y_true, y_pred, prob_c0, prob_c1, prob_c2 (>=5 columns)")
-
-    y_true = arr[:, 0].astype(int)
-    y_pred = arr[:, 1].astype(int)
-    probs = arr[:, 2:5].astype(float)  # exactly 3 class probs
-
-    df = pd.DataFrame({
-        "y_true": y_true,
-        "y_pred": y_pred
-    })
-    for i in range(3):
-        df[f"prob_class_{i}"] = probs[:, i]
-
-    return df
-
 def load_predictions_auto(path: Union[str, Path]) -> pd.DataFrame:
     """
     Generic loader: 
@@ -369,40 +331,17 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
     df_rows = pd.DataFrame(metrics, columns=["Metric", "Value"])
     df_rows.insert(0, "No.", range(1, len(df_rows) + 1))
     return df_rows
-# -------------------------
-# Save/export
-# -------------------------
-def save_and_copy(df_rows: pd.DataFrame, out_path: Union[str, Path] = "metrics_column_report.xlsx") -> Path:
-    p = Path(out_path)
-    try:
-        df_rows.to_excel(p, index=False)
-        saved = p
-    except Exception:
-        csvp = p.with_suffix(".csv")
-        df_rows.to_csv(csvp, index=False)
-        saved = csvp
-    # clipboard best-effort
-    try:
-        df_rows.to_clipboard(index=False)
-    except Exception:
-        pass
-    return saved
 
 # -------------------------
 # CLI / Example run
 # -------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Generate a column-oriented metrics report from predictions.")
-    parser.add_argument("preds", help="Path to predictions file (your .npt with 3-class probabilities works).")
-    parser.add_argument("--out", "-o", default="metrics_column_report.xlsx", help="Output Excel/CSV path")
-    args = parser.parse_args()
 
-    df_in = load_predictions_auto(args.preds)
+    df_in = load_predictions_auto(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
     report = build_column_report(df_in)
-    saved = save_and_copy(report, args.out)
+    report.to_clipboard(index=False)
+
     print("✅ Column-oriented report created.")
-    print("Saved to:", saved)
-    print("\nPreview:")
     print(report.to_string(index=False))
 
 if __name__ == "__main__":

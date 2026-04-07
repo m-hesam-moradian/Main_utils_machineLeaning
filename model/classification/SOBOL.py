@@ -6,7 +6,7 @@ from SALib.sample import saltelli
 from SALib.analyze import sobol
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_DT"
+sheet_name = "Data_after_KFold_RFC"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 

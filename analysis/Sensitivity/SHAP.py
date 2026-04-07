@@ -3,6 +3,7 @@ import numpy as np
 import shap
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -62,32 +63,37 @@ def shap_analysis_rfc(
 # LOAD DATA
 # ---------------------------------------------------------
 
-sheet_name = "Data_after_KFold_RFC"
+sheet_name = "Data1"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
-df = pd.read_excel(file_path, sheet_name=sheet_name).dropna()
 
+df = pd.read_excel(file_path, sheet_name=sheet_name)
+
+print("Before dropna:", df.shape)
+
+df = df.dropna()
+
+print("After dropna:", df.shape)
 target_column = df.columns[-1]
 
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
+print(df.head())
+print(df.isna().sum())
+print(pd.ExcelFile(file_path).sheet_names)
 # ---------------------------------------------------------
 # TRAIN-TEST SPLIT
 # ---------------------------------------------------------
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    shuffle=False
-)
+if df.shape[0] == 0:
+    raise ValueError("Dataset is empty after preprocessing. Check your data.")
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
 
 # ---------------------------------------------------------
 # TRAIN RANDOM FOREST CLASSIFIER
 # ---------------------------------------------------------
 
-rfc_model = RandomForestClassifier(
+rfc_model = RandomForestRegressor(
     n_estimators=100,
     max_depth=None,
     random_state=42,

@@ -73,7 +73,7 @@ feature_ranking = selector.ranking_
 ranking_df = pd.DataFrame({"Feature": col, "Rank": feature_ranking})
 
 # --- Select features based on rank threshold ---
-selected_features = ranking_df[ranking_df["Rank"] <= 9]["Feature"].tolist()
+selected_features = ranking_df[ranking_df["Rank"] <= 7]["Feature"].tolist()
 
 # --- Evaluate subsets ---
 report_rows = []
@@ -114,7 +114,7 @@ with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists='re
     report_df.to_excel(writer, sheet_name="RFE_Report", index=False)
     ranking_df.to_excel(writer, sheet_name="Feature_Ranking", index=False)
     df[selected_features + [target_column]].to_excel(
-        writer, sheet_name="Selected_Data", index=False
+        writer, sheet_name="Selected_Data_RFE", index=False
     )
 
 open_excel_file(excel_path)

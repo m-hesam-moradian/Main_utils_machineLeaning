@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 import os
-import win32com.client
 from sklearn.metrics import accuracy_score
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -11,25 +10,27 @@ from openpyxl.styles import Font, Alignment, PatternFill
 #  best numeric parameters SVC
 
 params = {
-    "C": 1.414,
-    "max_iter": 186,
+    "max_depth": 1,
+    "max_depth": 1,
+    "max_depth": 1,
 }
 
-model_name = "SVC"
+model_name = "DST"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "COA"  # no opt/imizer
-# optimizer_name = "WOA"  # no optimizer
+# optimizer_name = "PDOA"  # no opt/imizer
+# optimizer_name = "OOA"  # no optimizer
+# optimizer_name = "SOA"  # no optimizer
 if optimizer_name:
     sheet_name = f"{model_name} + {optimizer_name}"
 else:
     sheet_name = model_name
-Accuracy_target = 0.98
+Accuracy_target = 0.0
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 # Convergence_metric = "Precision"
-Convergence_metric = "F1"
+Convergence_metric = "MCC"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -157,75 +158,106 @@ def build_classification_reports(y_real, y_pred):
     """
     Builds classification evaluation DataFrames:
     1️⃣ df_combined – global + per-class metrics
-    2️⃣ roc_df – ROC curve points and AUC
+    2️⃣ roc_df – ROC curve points and AUC (only for binary)
     3️⃣ cm_df – confusion matrix table
     """
+
     from sklearn.metrics import (
         accuracy_score, recall_score, f1_score,
-        precision_score, matthews_corrcoef, confusion_matrix, roc_curve, auc
+        precision_score, matthews_corrcoef,
+        confusion_matrix, roc_curve, auc
     )
     import pandas as pd
     import numpy as np
 
+    # --- Metric helper (weighted = works for binary & multiclass)
     def get_metrics(y_true, y_pred):
         return {
             "Accuracy": accuracy_score(y_true, y_pred),
-            "Recall": recall_score(y_true, y_pred, zero_division=0),
-            "F1": f1_score(y_true, y_pred, zero_division=0),
-            "Precision": precision_score(y_true, y_pred, zero_division=0),
-            # "MCC": matthews_corrcoef(y_true, y_pred)
+            "Recall": recall_score(y_true, y_pred, average='weighted', zero_division=0),
+            "F1": f1_score(y_true, y_pred, average='weighted', zero_division=0),
+            "Precision": precision_score(y_true, y_pred, average='weighted', zero_division=0),
+            "MCC": matthews_corrcoef(y_true, y_pred)
         }
 
-    # Split for Train/Test
+    # --- Split Train/Test (same logic as yours)
     split_idx = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
     y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
 
-    # --- Global metrics (All, Train, Test)
+    # --- Global metrics
     metrics_all = get_metrics(y_real, y_pred)
     metrics_train = get_metrics(y_real_train, y_pred_train)
     metrics_test = get_metrics(y_real_test, y_pred_test)
 
-    df_main = pd.DataFrame([
-        ["All", *metrics_all.values()],
-        ["Train", *metrics_train.values()],
-        ["Test", *metrics_test.values()],
-    ], columns=["Set",  "Accuracy","Recall", "F1", "Precision"])
+    df_main = pd.DataFrame({
+        "Set": ["All", "Train", "Test"],
+        "Accuracy": [metrics_all["Accuracy"], metrics_train["Accuracy"], metrics_test["Accuracy"]],
+        "Recall": [metrics_all["Recall"], metrics_train["Recall"], metrics_test["Recall"]],
+        # "Class-Wise Error": ["", "", ""],
+        "F1": [metrics_all["F1"], metrics_train["F1"], metrics_test["F1"]],
+        "Precision": [metrics_all["Precision"], metrics_train["Precision"], metrics_test["Precision"]],
+        "MCC": [metrics_all["MCC"], metrics_train["MCC"], metrics_test["MCC"]],
+    })
 
     # --- Per-class metrics
-    classes = np.unique(y_real).astype(int)
+    classes = np.unique(y_real)
+
     precision_per_class = precision_score(y_real, y_pred, average=None, zero_division=0)
     recall_per_class = recall_score(y_real, y_pred, average=None, zero_division=0)
     f1_per_class = f1_score(y_real, y_pred, average=None, zero_division=0)
 
     accuracy_per_class = []
     class_error_per_class = []
-    for cls in classes:
+    mcc_per_class = []
+
+    for i, cls in enumerate(classes):
         idx = y_real == cls
         acc = accuracy_score(y_real[idx], y_pred[idx])
         accuracy_per_class.append(acc)
         class_error_per_class.append(1 - acc)
 
+        # MCC per class (binary view: this class vs rest)
+        y_true_bin = (y_real == cls).astype(int)
+        y_pred_bin = (y_pred == cls).astype(int)
+        mcc_per_class.append(matthews_corrcoef(y_true_bin, y_pred_bin))
+
     df_class = pd.DataFrame({
         "Set": [f"Class {cls}" for cls in classes],
         "Accuracy": accuracy_per_class,
         "Recall": recall_per_class,
-        "Class-Wise Error": class_error_per_class,
+        # "Class-Wise Error": class_error_per_class,
         "F1": f1_per_class,
         "Precision": precision_per_class,
-        "MCC": ["" for _ in classes]
+        "MCC": mcc_per_class
     })
 
+    # --- Combine
     df_combined = pd.concat([df_main, df_class], ignore_index=True)
 
-    # --- ROC & Confusion Matrix
-    fpr, tpr, thresholds = roc_curve(y_real, y_pred)
-    roc_auc = auc(fpr, tpr)
-    auc_column = [""] * (len(fpr) - 1) + [round(roc_auc, 3)]
-    roc_df = pd.DataFrame({"FPR": fpr, "TPR": tpr, "AUC": auc_column})
+    # --- ROC (ONLY for binary classification)
+    if len(classes) == 2:
+        fpr, tpr, thresholds = roc_curve(y_real, y_pred)
+        roc_auc = auc(fpr, tpr)
+        auc_column = [""] * (len(fpr) - 1) + [round(roc_auc, 3)]
 
+        roc_df = pd.DataFrame({
+            "FPR": fpr,
+            "TPR": tpr,
+            "AUC": auc_column
+        })
+    else:
+        roc_df = pd.DataFrame({
+            "Info": ["ROC not available for multi-class without probabilities"]
+        })
+
+    # --- Confusion Matrix
     cm = confusion_matrix(y_real, y_pred)
-    cm_df = pd.DataFrame(cm, index=[f"Actual {i}" for i in classes], columns=[f"Predicted {i}" for i in classes])
+    cm_df = pd.DataFrame(
+        cm,
+        index=[f"Actual {i}" for i in classes],
+        columns=[f"Predicted {i}" for i in classes]
+    )
 
     return df_combined, roc_df, cm_df
 
@@ -289,7 +321,7 @@ print("Convergence data created successfully.")
 # -------------------------------------------------------------------------
 
 # Step I: Export to Excel (close file first if open)
-close_excel_file(outputPath)
+# close_excel_file(outputPath)
 
 # Ensure workbook exists; load/create using openpyxl
 if not os.path.exists(outputPath):
@@ -299,48 +331,118 @@ if not os.path.exists(outputPath):
 
 book = load_workbook(outputPath)
 
-with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
-    # Create new sheet and attach to writer
-    worksheet = writer.book.create_sheet(sheet_name)
-    writer.sheets[sheet_name] = worksheet
+# with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+#     # Create new sheet and attach to writer
+#     worksheet = writer.book.create_sheet(sheet_name)
+#     writer.sheets[sheet_name] = worksheet
 
-    # Header/title (preserve original logic)
-    if optimizer_name.strip():
-        title = f"{model_name} + {optimizer_name.strip()}"
-        merge_end_col = 14
-        include_convergence = True
-    else:
-        title = model_name
-        merge_end_col = 13
-        include_convergence = False
+#     # Header/title (preserve original logic)
+#     if optimizer_name.strip():
+#         title = f"{model_name} + {optimizer_name.strip()}"
+#         merge_end_col = 14
+#         include_convergence = True
+#     else:
+#         title = model_name
+#         merge_end_col = 13
+#         include_convergence = False
 
-    worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
-    cell = worksheet.cell(row=1, column=1)
-    cell.value = title
-    cell.font = Font(bold=True)
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+#     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
+#     cell = worksheet.cell(row=1, column=1)
+#     cell.value = title
+#     cell.font = Font(bold=True)
+#     cell.alignment = Alignment(horizontal="center", vertical="center")
+#     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
 
-    # Write tables similar to original layout
-    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # Write tables similar to original layout
+#     write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    params_col = len(df_value_pred.columns) + 1
-    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     params_col = len(df_value_pred.columns) + 1
+#     write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    metrics_col = params_col + len(df_params.columns) + 1
-    write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     metrics_col = params_col + len(df_params.columns) + 1
+#     write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
-    # CM_col = len(df_value_pred.columns) + 1
-    CM_start_row = len(df_params) + 6
-    write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
+#     # CM_col = len(df_value_pred.columns) + 1
+#     CM_start_row = len(df_params) + 6
+#     write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    # Write ROC table just under df_combined (preserve spacing)
-    write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # Write ROC table just under df_combined (preserve spacing)
+#     write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    if include_convergence:
-        convergence_col = metrics_col + len(df_combined.columns) + 1
-        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     if include_convergence:
+#         convergence_col = metrics_col + len(df_combined.columns) + 1
+#         write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-open_excel_file(outputPath)
-print("✅ Structured Excel file saved successfully.")
+
+import pandas as pd
+import numpy as np
+import os
+
+# ==== Title logic ====
+if optimizer_name.strip():
+    title = f"{model_name} + {optimizer_name.strip()}"
+    include_convergence = True
+else:
+    title = model_name
+    include_convergence = False
+
+# ==== Helper: place df in canvas ====
+def place_df(canvas, df, start_row, start_col):
+    for i in range(df.shape[0]):
+        for j in range(df.shape[1]):
+            canvas[start_row + i][start_col + j] = df.iat[i, j]
+
+    # write headers
+    for j, col in enumerate(df.columns):
+        canvas[start_row - 1][start_col + j] = col
+
+# ==== Calculate layout ====
+params_col = len(df_value_pred.columns) + 1
+metrics_col = params_col + len(df_params.columns) + 1
+
+CM_start_row = len(df_params) + 6
+
+if include_convergence:
+    convergence_col = metrics_col + len(df_combined.columns) + 1
+    total_cols = convergence_col + len(df_convergence.columns)
+else:
+    total_cols = metrics_col + len(df_combined.columns)
+
+total_rows = max(
+    len(df_value_pred),
+    len(df_params),
+    len(df_combined),
+    CM_start_row + len(cm_df),
+    CM_start_row + len(roc_df)
+) + 5
+
+# ==== Create empty canvas ====
+canvas = [["" for _ in range(total_cols + 5)] for _ in range(total_rows + 5)]
+
+# ==== Title ====
+canvas[0][0] = title
+
+# ==== Place tables ====
+place_df(canvas, df_value_pred, start_row=2, start_col=0)
+place_df(canvas, df_params, start_row=2, start_col=params_col)
+place_df(canvas, df_combined, start_row=2, start_col=metrics_col)
+
+place_df(canvas, cm_df, start_row=CM_start_row+1, start_col=params_col)
+place_df(canvas, roc_df, start_row=CM_start_row+1, start_col=metrics_col)
+
+if include_convergence:
+    place_df(canvas, df_convergence, start_row=2, start_col=convergence_col)
+
+# ==== Convert to DataFrame ====
+final_df = pd.DataFrame(canvas)
+
+# ==== Save CSV ====
+csv_path = outputPath.replace(".xlsx", ".csv")
+final_df.to_csv(csv_path, index=False, header=False)
+
+print(f"✅ CSV saved: {csv_path}")
+
+
+# open_excel_file(outputPath)
+# print("✅ Structured Excel file saved successfully.")
