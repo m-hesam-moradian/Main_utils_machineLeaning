@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFC"  # you can rename this if needed
+sheet_name = "Data_after_KFold_RFC(VIF)"  # you can rename this if needed
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -22,10 +22,9 @@ from sklearn.ensemble import RandomForestClassifier
 
 # --- Train XGBoost Classifier ---
 model =RandomForestClassifier(
-        n_estimators=841, 
-        # max_depth=2,
-        # n_jobs=-1,
-        # random_state=42
+        n_estimators=100,      # No "Forest", just one weak tree
+        max_depth=1,         # Only one split allowed
+        random_state=42
 )
 
 model.fit(X_train, y_train)

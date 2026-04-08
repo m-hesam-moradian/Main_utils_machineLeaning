@@ -63,7 +63,7 @@ def shap_analysis_rfc(
 # LOAD DATA
 # ---------------------------------------------------------
 
-sheet_name = "Data1"
+sheet_name = "Data_after_KFold_SVC"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 
@@ -93,12 +93,12 @@ X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_s
 # TRAIN RANDOM FOREST CLASSIFIER
 # ---------------------------------------------------------
 
-rfc_model = RandomForestRegressor(
-    n_estimators=100,
-    max_depth=None,
-    random_state=42,
-    n_jobs=-1
-)
+rfc_model = RandomForestClassifier(
+        n_estimators=5,
+        max_depth=2,
+        random_state=42,
+        # n_jobs=-1
+    )
 
 rfc_model.fit(X_train, y_train)
 

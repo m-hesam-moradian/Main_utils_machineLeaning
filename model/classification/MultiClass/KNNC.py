@@ -1,10 +1,6 @@
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
 from sklearn.metrics import accuracy_score, f1_score, precision_score
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 # --- Configuration ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
@@ -78,4 +74,3 @@ print(df_all.head())
 # Export to clipboard (No header, no index)
 df_all.to_clipboard(index=False, header=False)
 print("✅ KNN Results copied to clipboard.")
-

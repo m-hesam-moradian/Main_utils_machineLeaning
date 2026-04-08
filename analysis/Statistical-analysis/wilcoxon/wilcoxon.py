@@ -7,7 +7,7 @@ from itertools import combinations
 df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     header=0,
-    sheet_name="predicts",
+    sheet_name="predicts(CHI2)",
 )
 
 # Dynamically extract model names and predictions
@@ -22,6 +22,7 @@ for i in range(0, len(columns), 2):
 
 # Build prediction dictionary for Wilcoxon
 predictions = {entry["name"]: np.array(entry["y_predict"]) for entry in structured_data}
+
 
 # Initialize results dictionary
 results = {

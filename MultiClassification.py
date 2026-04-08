@@ -9,17 +9,20 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
-
+        # n_estimators=1,
+        # learning_rate=0.2,
+        # max_depth=15,
 params = {
-    "max_iter":100,
-    "C":1.0
+"n_estimators":100,
+"learning_rate":0.2
 }
 
 ShowProbs = False  # False → hide probability columns & ROC table
-model_name = "MLR(ENN)"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "SVC"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-# optimizer_name = "GOA"  #  optimizer
-optimizer_name = ""  #  optimizer
+# optimizer_name = "LO"  # optimizer
+# optimizer_name = "SBTO"  #  optimizer
+# optimizer_name = "RPO"  #  optimizer
  
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy

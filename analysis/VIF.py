@@ -80,7 +80,7 @@ def calculate_vif_horizontal(X, threshold=5.0):
 # --- Main Logic ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
+df = pd.read_excel(excel_path, sheet_name="DATA_Shuffled")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])
@@ -93,7 +93,7 @@ data_after_vif[target_column] = df[target_column]
 
 # Save & Open
 with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-    selected_X.to_excel(writer, sheet_name="selected_X", index=False)
+    # selected_X.to_excel(writer, sheet_name="selected_X", index=False)
     final_vif_horizontal.to_excel(writer, sheet_name="vif_horizontal", index=False)
     data_after_vif.to_excel(writer, sheet_name="data_after_vif", index=False)
 

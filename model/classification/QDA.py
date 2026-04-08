@@ -1,11 +1,13 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFC(VIF)"
+sheet_name = "Data_after_KFold_QDA(VIF)"
+# sheet_name = "Data_after_KFold_QDA(CHI2)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -20,11 +22,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # --- Train Random Forest Classifier ---
-model = RandomForestClassifier(
-        n_estimators=100,      # No "Forest", just one weak tree
-        max_depth=1,         # Only one split allowed
-        random_state=42
-)
+model = QuadraticDiscriminantAnalysis(
+        # reg_param=0.0000001  # you can tune this if needed (helps with stability)
+        reg_param=0.002, # you can tune this if needed (helps with stability)
+        tol=0.5
+    )
 model.fit(X_train, y_train)
 
 # --- Predictions ---

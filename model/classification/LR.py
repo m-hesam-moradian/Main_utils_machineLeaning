@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 # --- Load reordered data for LR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LR"
+sheet_name = "Data_after_KFold_LR(VIF)"  # or "Data_after_KFold_LR(VIF)" depending on which you want to analyze
 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -19,7 +19,10 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict ---
-model = LogisticRegression()
+model = LogisticRegression(  
+    tol=0.0001
+    
+    )
 model.fit(X_train, y_train)
 
 y_pred_all = model.predict(X)
