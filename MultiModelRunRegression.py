@@ -11,36 +11,17 @@ from openpyxl.styles import Font, Alignment, PatternFill
 # cation : do not remove this Guide comments wich hase * at the beginning of the lines
 
 # * Define model name and Optimizers based on task information and comment 2 rest of model names but leave optimizers as it is
+# model_name="Lasso"
 # model_name="QR"
-# model_name="SGB"
-model_name="SBR"
+# model_name="HGBR"
 
 # Optimizers to consider
-optimizers = ["", "NOA", "OOA"]
+optimizers = ["", "FFOA", "GGO"]
 
 # * Define parameter ranges and digits limit to generate random parameters based on range and digits limit for each model and comment rest of model params 
 # * the range and digit should be propriate to model used to seem realistic and defult params is already cleare each models defult params values shoud be 
 
-# QR params (Quantile Regression)
-# params = {
-#     "alpha": {"range": [0.0001, 10.0], "digit": 4, "default": 1.0},
-#     "quantile": {"range": [0.1, 0.9], "digit": 1, "default": 0.5}
-# }
 
-# SGB params (Stochastic Gradient Boosting)
-# params = {
-#     "learning_rate": {"range": [0.01, 0.3], "digit": 3, "default": 0.1},
-#     "n_estimators": {"range": [50, 400], "digit": 0, "default": 100},
-#     "max_depth": {"range": [2, 8], "digit": 0, "default": 3},
-#     "subsample": {"range": [0.5, 1.0], "digit": 1, "default": 1.0}
-# }
-
-# SBR params (Sparse Bayesian Regression / ARDRegression)
-params = {
-    "tol": {"range": [1e-6, 1e-2], "digit": 6, "default": 1e-3},
-    "max_iter": {"range": [100, 1000], "digit": 0, "default": 300},
-    "alpha_1": {"range": [1e-6, 1e-2], "digit": 6, "default": 1e-6}
-}
 
 # * Define target R² values based on model used and comment rest of target R² values
 # *based on kfold results:

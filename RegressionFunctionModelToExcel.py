@@ -5,6 +5,7 @@ from sklearn.metrics import r2_score, mean_squared_error, auc
 import os
 import win32com.client
 
+
 # === CONFIGURATION ===
 # Models: Ridge Regression (RR), Extra Trees Regression (ETR), Histogram-Based Gradient Boosting Regression (HGBR)
 # Optimizers: Catch Fish Optimization Algorithm (CFOA) and Orangutan Optimization Algorithm (OOA)
@@ -18,25 +19,31 @@ import win32com.client
 
 params = {
     "n_estimators": 100,
-    "subsample": 0.1,
 }
 
 
 
 # optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-optimizer_name = "POA"
+# optimizer_name = "FFOA"  # no optimizer
+optimizer_name = "GGO"
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "SGB"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+model_name = "HGBR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
 
 
-sheet_name = "SGB(ANOVA)+POA"          # should match Excel sheet label you want
+sheet_name = "HGBR+GGO"          # should match Excel sheet label you want
 
-R2_target = 0.0
+R2_target = 0.912452546
 min_error = -5600.54
 max_error = 5500.43
+
+# Model	Best Fold	Best R2
+# Lasso	1	0.528421584
+# QR	1	0.523217958
+# HGBR	1	0.479066773
+
 
 # Convergence: Based on MDAPE (lower is better)
 Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"

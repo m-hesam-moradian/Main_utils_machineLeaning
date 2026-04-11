@@ -64,7 +64,7 @@ def Fast_function(X, predictions):
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_SGB").dropna()
+df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_Lasso(VIF)").dropna()
 target_column = df.columns[-1]
 
 # Separate features and target
