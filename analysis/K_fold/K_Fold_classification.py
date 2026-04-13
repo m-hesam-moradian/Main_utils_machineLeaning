@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_vif" 
+sheet_name = "DATA_Normalized" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -38,11 +38,35 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Corrected Models ==================
-
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.gaussian_process import GaussianProcessClassifier
+from xgboost import XGBClassifier
 
 models = {
-"LR": LogisticRegression(tol=0.001)  # you can tune this if needed (helps with stability)
+    "SVC": SVC(
+    #     # kernel='rbf',
+             C=0.01,
+    #     # gamma='scale',
+    #     # probability=True,
+    #     # random_state=42
+    ),
+
+    "GPC": XGBClassifier(
+        n_estimators=100,
+        learning_rate=0.0018,
+        max_depth=100,
+        # random_state=42,
+        # eval_metric='logloss'
+    )
+,
+
+    "XGB": XGBClassifier(
+        n_estimators=100,
+        learning_rate=0.002,
+        max_depth=100,
+        # random_state=42,
+        # eval_metric='logloss'
+    )
 }
 # =============== K-Fold Execution ==================
 n_splits = 5
@@ -109,9 +133,9 @@ close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(VIF)", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(VIF)", index=False)
-    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(VIF)", index=False)
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
 open_excel_file(filepath)
 

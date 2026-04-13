@@ -25,8 +25,9 @@ m_lgbr = belief_lgbr / total_belief
 m_sgb = belief_sgb / total_belief
 
 # -------------------- 4. DST Fusion --------------------
-y_pred_dst = m_lgbr * y_pred_lgbr + m_sgb * y_pred_sgb
 
+y_pred_dst = m_lgbr * y_pred_lgbr + m_sgb * y_pred_sgb
+y_pred_dst = np.round(y_pred_dst).astype(int)
 # -------------------- 5. Output fused predictions --------------------
 df_fused = pd.DataFrame({
     "y_real": y_real,

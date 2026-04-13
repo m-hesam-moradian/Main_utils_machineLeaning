@@ -9,7 +9,7 @@ df = pd.read_excel(
     header=0,
     sheet_name="predicts",
 )
-
+  
 # Dynamically extract model names and predictions
 columns = df.columns.tolist()
 structured_data = []

@@ -11,20 +11,19 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 params = {
     "max_depth": 1,
-    "max_depth": 1,
-    "max_depth": 1,
+
 }
 
 # model_name = "LR(VIF)"
-model_name = "LR(CHI2)"
+model_name = "DST"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "DOA"  # no optimizer
-optimizer_name = "COA"  # no optimizer
+# optimizer_name = "COA"  # no optimizer
 if optimizer_name:
     sheet_name = f"{model_name} + {optimizer_name}"
 else:
     sheet_name = model_name
-Accuracy_target = 0.9725852
+Accuracy_target = 0.0
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"

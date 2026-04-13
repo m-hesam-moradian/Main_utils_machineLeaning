@@ -14,21 +14,20 @@ from openpyxl.styles import Font, Alignment, PatternFill
         # max_depth=15,
 params = {
 "n_estimators":100,
-"learning_rate":0.2
+
 }
 
 ShowProbs = False  # False → hide probability columns & ROC table
-model_name = "SVC"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "DST"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-# optimizer_name = "LO"  # optimizer
-# optimizer_name = "SBTO"  #  optimizer
-# optimizer_name = "RPO"  #  optimizer
+# optimizer_name = "ROA"  # optimizer
+# optimizer_name = "HOA"  #  optimizer
  
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Accuracy"
+Convergence_metric = "Recall"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
