@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 # Load the dataset
 dt = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Data_after_KFold_RFR_Zscore",
+    sheet_name="Data_after_KFold_LGBC(CHI2)"  # Adjust sheet name as needed,
 )
 
 target_column = dt.columns[-1]

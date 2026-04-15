@@ -1,11 +1,12 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression # Changed import
+from lightgbm import LGBMClassifier  # NEW
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LR(CHI2)" 
+# sheet_name = "Data_after_KFold_LGBC(VIF)" 
+sheet_name = "Data_after_KFold_LGBC(CHI2)" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -19,15 +20,15 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- Train Logistic Regression ---
-# Sabotaging performance with tiny C and low max_iter for the optimizer to fix
-model = LogisticRegression(
-#  tol=0.000001, 
-# C=0.004
-# , max_iter=1
-)
+# --- Train LGBC Model ---
+model = LGBMClassifier(
+        n_estimators=50,
+        learning_rate=0.005,
+        max_depth=5,
+        random_state=42
+    )
 
-# Note: We use try/except because max_iter=10 will likely trigger a ConvergenceWarning
+# LGBC usually doesn't need try/except, but we keep structure
 try:
     model.fit(X_train, y_train)
 except Exception as e:
@@ -44,7 +45,7 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Logistic Regression Accuracy (Sabotaged)")
+print("✅ LGBC Accuracy")
 print("----------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")

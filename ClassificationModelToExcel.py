@@ -11,14 +11,14 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 params = {
     "max_depth": 1,
-
 }
 
-# model_name = "LR(VIF)"
-model_name = "DST"
+# model_name = "QDA(VIF)"
+# model_name = "QDA(CHI2)"
+# model_name = "LGBC(VIF)"
+model_name = "LGBC(CHI2)"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "DOA"  # no optimizer
-# optimizer_name = "COA"  # no optimizer
+optimizer_name = "SWO"  # no optimizer
 if optimizer_name:
     sheet_name = f"{model_name} + {optimizer_name}"
 else:
@@ -29,7 +29,7 @@ Accuracy_target = 0.0
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 # Convergence_metric = "Precision"
-Convergence_metric = "Accuracy"
+Convergence_metric = "Recall"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
