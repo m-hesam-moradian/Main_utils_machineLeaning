@@ -8,6 +8,7 @@ dt = pd.read_excel(
     sheet_name="Data_after_KFold_LGBC(CHI2)"  # Adjust sheet name as needed,
 )
 
+
 target_column = dt.columns[-1]
 X = dt.drop(target_column, axis=1)
 y = dt[target_column]
