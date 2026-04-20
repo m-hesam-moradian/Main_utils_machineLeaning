@@ -6,8 +6,9 @@ from itertools import combinations
 # Load structured data from Excel
 df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
+    # r"C:\Users\Sam\Downloads\Telegram Desktop\749.xlsx",
     header=0,
-    sheet_name="predicts(CHI2)",
+    sheet_name="predicts(Z-Score)",
 )
   
 # Dynamically extract model names and predictions

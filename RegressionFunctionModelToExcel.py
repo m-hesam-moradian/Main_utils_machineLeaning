@@ -22,35 +22,28 @@ params = {
 }
 
 
-
-# optimizer_name: use "" or " " for no optimizer, otherwise "CFOA" or "OOA"
 optimizer_name = " "  # no optimizer
-# optimizer_name = "FFOA"  # no optimizer
-optimizer_name = "GGO"
-
+optimizer_name = "DOA"
+optimizer_name = "POA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "HGBR"          # e.g., "RR(CFOA)", "ETR(OOA)", "HGBR"
+model_name = "SGB(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 
-sheet_name = "HGBR+GGO"          # should match Excel sheet label you want
-
-R2_target = 0.912452546
+R2_target = 0.0
 min_error = -5600.54
 max_error = 5500.43
 
-# Model	Best Fold	Best R2
-# Lasso	1	0.528421584
-# QR	1	0.523217958
-# HGBR	1	0.479066773
-
-
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
+
+sheet_name = model_name      
+if optimizer_name.strip():
+    sheet_name = model_name + " + " + optimizer_name.strip()  # should match Excel sheet label you want
 
 
 import pandas as pd
@@ -59,18 +52,14 @@ from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
 
-    def log_cosh_loss(y_true, y_hat):
-        return np.mean(np.log(np.cosh(y_hat - y_true)))
-
-
-    def mape(y_true, y_hat):
+    def mare(y_true, y_hat):
         y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
         # avoid division by zero
         non_zero = y_true != 0
         return np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
     
-    def com_metric(y_true, y_hat):
-        # CV(RMSE) = RMSE / mean(y_true)
+    def cov_metric(y_true, y_hat):
+        # COV (Coefficient of Variation) = RMSE / mean(y_true)
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
         mean_y = np.mean(y_true)
         return rmse / mean_y if mean_y != 0 else np.nan
@@ -84,20 +73,16 @@ def build_metrics_table(y_real, y_pred):
 
         r2 = r2_score(y_true, y_hat)
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
-        logcosh = log_cosh_loss(y_true, y_hat)
-        mape_val = mape(y_true, y_hat)
-        com_val = com_metric(y_true, y_hat)
+        mare_val = mare(y_true, y_hat)
+        cov_val = cov_metric(y_true, y_hat)
         U95 = U95_metric(y_true, y_hat)
     
-
-
         return {
             "R2": r2,
             "RMSE": rmse,
-            "LogCosh": logcosh,
-            "MAPE": mape_val,
-            "U95": U95,
-            "COM": com_val
+            "MARE": mare_val,
+            "COV": cov_val,
+            "U95": U95
         }
 
     # --- Split ---
@@ -117,7 +102,8 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-    cols = ["Set", "R2", "RMSE", "LogCosh","MAPE", "U95", "COM"]
+    # Updated column names to requested metrics
+    cols = ["Set", "R2", "RMSE", "MARE", "COV", "U95"]
 
     rows = []
     for set_name, m in sets.items():
@@ -125,10 +111,9 @@ def build_metrics_table(y_real, y_pred):
             set_name,
             m["R2"],
             m["RMSE"],
-            m["LogCosh"],
-            m["MAPE"],
-            m["U95"],
-            m["COM"]
+            m["MARE"],
+            m["COV"],
+            m["U95"]
         ])
 
     return pd.DataFrame(rows, columns=cols)

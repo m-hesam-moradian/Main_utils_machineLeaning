@@ -5,24 +5,25 @@ from sklearn.ensemble import RandomForestRegressor
 # Load the dataset
 dt = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Data_after_KFold_LGBC(CHI2)"  # Adjust sheet name as needed,
+    sheet_name="Data_after_KFold_LSSVR(ANOVA)"  # Adjust sheet name as needed,
 )
-
-
+ 
 target_column = dt.columns[-1]
 X = dt.drop(target_column, axis=1)
 y = dt[target_column]
 
 features = X.columns
+from xgboost import XGBRegressor
 
 # 🌲 Random Forest Classifier (anti-overfitting setup)
-model = RandomForestRegressor(
-    n_estimators=200,        # more trees = stability
-    max_depth=10,            # prevent deep overfit trees
-    min_samples_split=10,    # avoid weak splits
-    min_samples_leaf=4,      # smoother leaves
-    max_features=0.7,        # feature randomness
-
+model = XGBRegressor(
+    n_estimators=7,       # keep moderate
+    # max_depth=4,            # smaller depth
+    # learning_rate=0.05,     # slower learning
+    # subsample=0.8,          # randomness to reduce overfit
+    # colsample_bytree=0.8,
+    # reg_alpha=0.1,
+    # reg_lambda=1
 )
 
 model.fit(X, y)
