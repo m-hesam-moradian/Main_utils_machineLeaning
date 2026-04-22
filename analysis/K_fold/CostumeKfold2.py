@@ -56,7 +56,7 @@ models = {
     random_state=42
 )
 }
-
+1
 print("✅ Models ready for training:")
 for name in models:
     print("-", name)
