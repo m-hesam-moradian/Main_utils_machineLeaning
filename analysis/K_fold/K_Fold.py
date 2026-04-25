@@ -35,7 +35,8 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
+sheet_name = "Optimal_Data_MRMR"  # Change this to your actual sheet name if different
+# sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -43,23 +44,18 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
-from sklearn.linear_model import QuantileRegressor
-from sklearn.ensemble import GradientBoostingRegressor
-
+from sklearn.linear_model import HuberRegressor
+from sklearn.kernel_ridge import KernelRidge
 models = {
-    "QR": QuantileRegressor(
-        # quantile=0.5,       # median regression (you can tune this)
-        alpha=0.440001,         # regularization strength
-        # solver="highs",
-        # fit_intercept=True
+    "HR": HuberRegressor(
+        epsilon=1.35,   # robustness parameter (default is usually fine)
+        alpha=0.0001    # regularization strength
     ),
 
-    "SGB": GradientBoostingRegressor(
-        n_estimators=60,
-        # learning_rate=0.1,
-        # subsample=0.8,      # makes it stochastic
-        # max_depth=3,
-        # random_state=42
+    "KRR": KernelRidge(
+        # alpha=1.0,          # regularization
+        # kernel="rbf",       # you can also try 'linear', 'poly'
+        # gamma=0.1           # important for rbf kernel (tune this!)
     )
 }
 
@@ -136,12 +132,12 @@ close_excel_file(filepath)
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics(ANOVA_FS)", index=False
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics(MRMR)", index=False
         )
         df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}(ANOVA_FS)", index=False
+            writer, sheet_name=f"Data_after_KFold_{model_name}(MRMR)", index=False
         )
-    summary_df.to_excel(writer, sheet_name="Model_Summary(ANOVA_FS)", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Summary(MRMR)", index=False)
 
 open_excel_file(filepath)
 

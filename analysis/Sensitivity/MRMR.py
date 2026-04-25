@@ -67,7 +67,7 @@ def get_mrmr_ranking(X, y):
 if __name__ == "__main__":
     excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
     close_excel_file(excel_path)
-    df = pd.read_excel(excel_path, sheet_name="Z-Score")
+    df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
 
     target_column = df.columns[-1]
     X, y = df.drop(columns=[target_column]), df[target_column]
@@ -97,21 +97,44 @@ if __name__ == "__main__":
 
     eval_df = pd.DataFrame(evaluation_rows)
 
-    # 3. Find the Optimal Number of Features
-    if is_classification:
-        # در طبقه‌بندی: بیشترین F1
-        best_row = eval_df.loc[eval_df["F1-Score"].idxmax()]
-    else:
-        # در رگرسیون: کمترین RMSE
-        best_row = eval_df.loc[eval_df["RMSE"].idxmin()]
 
+    # 3. Find the Optimal Number of Features
+    metric_col = "F1-Score" if is_classification else "RMSE"
+    
+    # Calculate the absolute percentage change from step to step
+    eval_df['Pct_Change'] = eval_df[metric_col].pct_change().abs()
+    
+    # --- STABILITY LOGIC SETTINGS ---
+    # tolerance: What you consider "no significant change" (0.01 = 1% change)
+    # patience: How many steps in a row must be below the tolerance to be considered "stable"
+    tolerance = 0.01 
+    patience = 3     
+    
+    opt_idx = None
+    
+    # Loop through the dataframe to find where it stabilizes
+    for i in range(1, len(eval_df) - patience + 1):
+        # Check if the change is below tolerance for 'patience' consecutive steps
+        if all(eval_df['Pct_Change'].iloc[i : i + patience] < tolerance):
+            # If stable, we set the cutoff point
+            opt_idx = i + patience - 1
+            break
+            
+    # Fallback: If it never stabilizes, go back to picking the absolute best
+    if opt_idx is None:
+        if is_classification:
+            opt_idx = eval_df[metric_col].idxmax()
+        else:
+            opt_idx = eval_df[metric_col].idxmin()
+
+    best_row = eval_df.iloc[opt_idx]
     opt_count = int(best_row["Features Count"])
     best_features = ordered_features[:opt_count]
     
-    # اضافه کردن وضعیت Kept/Removed به گزارش رنکینگ
+    # Add Status to ranking report
     ranking_df["Status"] = ["Kept" if r <= opt_count else "Removed" for r in ranking_df["Rank"]]
 
-    print(f"🎯 Optimal choice: {opt_count} features (Metric: {best_row.values[1]:.4f})")
+    print(f"🎯 Optimal choice: {opt_count} features (Metric: {best_row[metric_col]:.4f})")
 
     # 4. Prepare Final Dataset
     final_dataset = df[best_features + [target_column]]

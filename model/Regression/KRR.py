@@ -2,40 +2,32 @@ import pandas as pd
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Columns to drop ---
-# COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
-
 # --- Load reordered data for KRR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_QR"  # keep same sheet unless you change it
+sheet_name = "Data_after_KFold_KRR(ANOVA_FS)"  # optional rename
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
-# Drop the specified columns from the dataset
-# df = df.drop(columns=COLUMNS_TO_DROP)
-
-# Prepare the features and target
+# Prepare features and target
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Use last 20% as test set to match K-Fold logic ---
+# --- Use last 20% as test set ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize KRR model ---
-from sklearn.kernel_ridge import KernelRidge
-
-# --- KRR with optimized hyperparameters (optimizer result) ---
 model = KernelRidge(
-        alpha=1.7868,       # regularization
-    kernel='linear',     # best general kernel
-    gamma=5.154        # controls smoothness
+    # alpha=0.0001,      # regularization strength (tune this)
+    kernel="linear",   # options: 'linear', 'poly', 'rbf'
+    # gamma=0.0001       # important for RBF kernel (tune this)
+    degree=100,          # for polynomial kernel
+
 )
 
-
-# Train the model
+# Train
 model.fit(X_train, y_train)
 
 # Predictions
@@ -69,5 +61,3 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
 # --- Export to clipboard ---
 df_all.to_clipboard(index=False, header=False)
-# df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)

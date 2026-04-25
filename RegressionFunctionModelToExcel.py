@@ -23,14 +23,14 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-optimizer_name = "DOA"
+# optimizer_name = "PRO"
 optimizer_name = "POA"
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "SGB(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "KRR(MR)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 
-R2_target = 0.0
+R2_target = 0.99124
 min_error = -5600.54
 max_error = 5500.43
 
@@ -48,6 +48,10 @@ if optimizer_name.strip():
 
 import pandas as pd
 import numpy as np
+from sklearn.metrics import r2_score, mean_squared_error
+
+import numpy as np
+import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
@@ -71,18 +75,34 @@ def build_metrics_table(y_real, y_pred):
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
 
+        # Existing metrics
         r2 = r2_score(y_true, y_hat)
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
         mare_val = mare(y_true, y_hat)
         cov_val = cov_metric(y_true, y_hat)
         U95 = U95_metric(y_true, y_hat)
+        
+        # --- NEW METRICS ---
+        # SI (Scatter Index): Usually defined identically to COV (RMSE / Mean of True)
+        mean_y = np.mean(y_true)
+        si = rmse / mean_y if mean_y != 0 else np.nan
+        
+        # MBE (Mean Bias Error): Average of the differences (predicted - actual)
+        mbe = np.mean(y_hat - y_true)
+        
+        # LogCosh Loss (Numerically stable implementation)
+        diff = y_hat - y_true
+        logcosh = np.mean(np.abs(diff) - np.log(2.0) + np.log1p(np.exp(-2.0 * np.abs(diff))))
     
         return {
             "R2": r2,
             "RMSE": rmse,
             "MARE": mare_val,
             "COV": cov_val,
-            "U95": U95
+            "U95": U95,
+            "SI": si,
+            "MBE": mbe,
+            "LogCoshLoss": logcosh
         }
 
     # --- Split ---
@@ -102,10 +122,10 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-    # Updated column names to requested metrics
-    cols = ["Set", "R2", "RMSE", "MARE", "COV", "U95"]
+    # Updated column names to include requested metrics
+    cols =["Set", "R2", "RMSE", "MARE", "COV", "U95", "SI", "MBE", "LogCoshLoss"]
 
-    rows = []
+    rows =[]
     for set_name, m in sets.items():
         rows.append([
             set_name,
@@ -113,7 +133,10 @@ def build_metrics_table(y_real, y_pred):
             m["RMSE"],
             m["MARE"],
             m["COV"],
-            m["U95"]
+            m["U95"],
+            m["SI"],
+            m["MBE"],
+            m["LogCoshLoss"]
         ])
 
     return pd.DataFrame(rows, columns=cols)

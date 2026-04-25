@@ -1,42 +1,45 @@
 import pandas as pd
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score
+from xgboost import XGBRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
 
-# --- Columns to drop ---
-# COLUMNS_TO_DROP = ['workload_type', 'energy_source', 'security_level', 'pqc_enabled']
-
-# --- Load reordered data for KNNC (after K-Fold) ---
+# --- Load data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Balanced_SMOTE"  # Changed to "KNNC" sheet name
+sheet_name = "Encoded_Data_Sheet2"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
-# Drop the specified columns from the dataset
-# df = df.drop(columns=COLUMNS_TO_DROP)
-
-# Prepare the features and target
+# --- Prepare features and target ---
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Use last 20% as test set to match K-Fold logic ---
+# --- Train/Test split ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize KNNC model ---
-# n_neighbors=5 is the standard default for KNN
-model = KNeighborsClassifier(n_neighbors=4)
+# --- Model ---
+model = XGBRegressor(
+    # n_estimators=300,
+    # max_depth=1,
+    # learning_rate=0.1
+)
 
-# Train the model
+# --- Train ---
 model.fit(X_train, y_train)
 
-# Predictions
+# --- Predictions ---
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
 
-# --- Metrics (Classification) ---
+# ✅ --- OPTIONAL: Round predictions (since your values are integers) ---
+y_pred_all = np.round(y_pred_all)
+y_pred_train = np.round(y_pred_train)
+y_pred_test = np.round(y_pred_test)
+
+# --- Metrics ---
 mid = len(y_test) // 2
 sets = [
     ("All", y, y_pred_all),
@@ -46,22 +49,21 @@ sets = [
     ("Test-Value", y_test[mid:], y_pred_test[mid:])
 ]
 
-# Calculate Accuracy, F1 Score, and Precision for each set
 df_metrics = pd.DataFrame([{
     "Set": s,
-    "Accuracy": accuracy_score(y_t, y_p),
-    "F1 Score": f1_score(y_t, y_p, average='weighted'),
-    "Precision": precision_score(y_t, y_p, average='weighted', zero_division=0)
+    "MAE": mean_absolute_error(y_t, y_p),
+    "RMSE": np.sqrt(mean_squared_error(y_t, y_p)),
+    "R2": r2_score(y_t, y_p)
 } for s, y_t, y_p in sets])
 
 print(df_metrics)
 
-# --- Output predictions ---
+# --- Output ---
 df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# --- Export to clipboard ---
+# --- Export ---
 df_all.to_clipboard(index=False, header=False)
 # df_train.to_clipboard(index=False)
 # df_test.to_clipboard(index=False)
