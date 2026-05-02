@@ -4,11 +4,18 @@ import os
 import win32com.client
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.linear_model import QuantileRegressor
-# --- New Model Imports ---
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.kernel_ridge import KernelRidge
-import lightgbm as lgb # Ensure you have run: pip install lightgbm
+
+# --- Scaling Requirement for Distance Models ---
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+# --- New Model Imports (The "Perfect 6") ---
+from sklearn.linear_model import ElasticNet
+from interpret.glassbox import ExplainableBoostingRegressor # pip install interpret
+from xgboost import XGBRegressor                          # pip install xgboost
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -35,28 +42,34 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
+sheet_name = "DATA_Shuffled"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# ================== Updated Models ==================
-from sklearn.linear_model import QuantileRegressor
-from sklearn.ensemble import GradientBoostingRegressor
-
+# ================== Updated Models (The 6 Paradigms) ==================
 models = {
-
-"SGB": GradientBoostingRegressor(
-    n_estimators=10,
-    learning_rate=0.1,
-    subsample=0.8,      # ✅ THIS makes it stochastic
-    max_depth=3,
-    random_state=42
-)
+    # 1. Linear Model
+    "ElasticNet": ElasticNet(),
+    
+    # 2. Generalized Additive Model (GAM)
+    "EBM": ExplainableBoostingRegressor(),
+    
+    # 3. Advanced Tree-Based Ensemble (Boosting)
+    "XGBoost": XGBRegressor(n_estimators=400),
+    
+    # 4. Advanced Tree-Based Ensemble (Bagging)
+    "RandomForest": RandomForestRegressor(n_estimators=100),
+    
+    # 5. Mathematical Margin Model (Needs Scaling)
+    "SVR_RBF": make_pipeline(StandardScaler(), SVR(kernel="rbf")),
+    
+    # 6. Distance / Neural Model (Needs Scaling, increased max_iter for convergence)
+    "MLP_Neural": make_pipeline(StandardScaler(), MLPRegressor(max_iter=1000))
 }
-1
+
 print("✅ Models ready for training:")
 for name in models:
     print("-", name)
@@ -71,7 +84,7 @@ fold_indices_dict = {}
 
 for model_name, model in models.items():
     fold_metrics_list = []
-    fold_indices_list = []
+    fold_indices_list =[]
 
     print(f"Processing {model_name}...")
 
@@ -81,8 +94,14 @@ for model_name, model in models.items():
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
         model.fit(X_train, y_train)
+        
+        # --- Make Predictions ---
         y_pred = model.predict(X_test)
+        
+        # ✅ --- ROUNDING STEP (IMPORTANT) ---
+        y_pred = np.round(y_pred).astype(int)
 
+        # --- Calculate Metrics ---
         fold_metrics_list.append({
             "Fold": fold_index,
             "R2": r2_score(y_test, y_pred),
@@ -108,7 +127,7 @@ for model_name, model in models.items():
     )
 
 # ================== Summary Generation ==================
-summary_rows = []
+summary_rows =[]
 for model_name in models:
     metrics_df = metrics_df_dict[model_name]
     best_fold = metrics_df.loc[metrics_df["R2"].idxmax()]
@@ -140,6 +159,6 @@ with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="repl
 open_excel_file(filepath)
 
 # ================== Print Results ==================
-print("\n" + "="*30)
+print("\n" + "="*50)
 print(summary_df.to_string(index=False))
-print("="*30)
+print("="*50)
