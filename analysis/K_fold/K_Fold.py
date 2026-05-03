@@ -4,11 +4,7 @@ import os
 import win32com.client
 from sklearn.model_selection import KFold
 from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.linear_model import QuantileRegressor
-# --- New Model Imports ---
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.kernel_ridge import KernelRidge
-import lightgbm as lgb # Ensure you have run: pip install lightgbm
+
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -35,8 +31,8 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Optimal_Data_MRMR"  # Change this to your actual sheet name if different
-# sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
+# sheet_name = "Optimal_Data_MRMR"  # Change this to your actual sheet name if different
+sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -44,18 +40,19 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
-from sklearn.linear_model import HuberRegressor
-from sklearn.kernel_ridge import KernelRidge
+from sklearn.linear_model import HuberRegressor, LassoLars
+
 models = {
     "HR": HuberRegressor(
-        epsilon=1.35,   # robustness parameter (default is usually fine)
-        alpha=0.0001    # regularization strength
+        max_iter=8,    # Maximum number of iterations for convergence
+        # epsilon=1.35,   # Robustness parameter
+        # alpha=1.0   # Regularization strength
     ),
 
-    "KRR": KernelRidge(
-        # alpha=1.0,          # regularization
-        # kernel="rbf",       # you can also try 'linear', 'poly'
-        # gamma=0.1           # important for rbf kernel (tune this!)
+    "LLAR": LassoLars(
+        alpha=100,      # Constant that multiplies the penalty term
+        fit_intercept=True,
+        max_iter=2
     )
 }
 
@@ -132,12 +129,12 @@ close_excel_file(filepath)
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics(MRMR)", index=False
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics(ANOVA)", index=False
         )
         df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}(MRMR)", index=False
+            writer, sheet_name=f"Data_after_KFold_{model_name}(ANOVA)", index=False
         )
-    summary_df.to_excel(writer, sheet_name="Model_Summary(MRMR)", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Summary(ANOVA)", index=False)
 
 open_excel_file(filepath)
 

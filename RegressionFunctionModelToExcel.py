@@ -11,11 +11,6 @@ import win32com.client
 # Optimizers: Catch Fish Optimization Algorithm (CFOA) and Orangutan Optimization Algorithm (OOA)
 
 # NOTE: This script does not train models; it formats prediction results + metrics into Excel.
-# 'params' is only written to Excel as metadata.
-# NGMB params 
-        # n_estimators=763, 
-        # subsample=0.9183,
-
 
 params = {
     "n_estimators": 100,
@@ -23,19 +18,22 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "PRO"
-optimizer_name = "POA"
+# optimizer_name = "SWOA"
+
+
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "KRR(MR)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "LLAR(MRMR)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "LLAR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 
-R2_target = 0.99124
-min_error = -5600.54
-max_error = 5500.43
+
+R2_target = 0.0
+min_error = -56000.54
+max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"

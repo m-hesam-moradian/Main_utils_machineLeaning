@@ -1,37 +1,41 @@
 import pandas as pd
-from sklearn.linear_model import LassoLars
+from interpret.glassbox import ExplainableBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --- Load reordered data for LLAR (after K-Fold) ---
+# --- Load data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LLAR(MRMR)"   # 🔁 changed to LLAR sheet name
+sheet_name = "Data_after_KFold_EBM"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
-# Prepare the features and target
-X = df.drop(columns=[target_column])
+X = df.drop(columns=target_column)
 y = df[target_column]
 
-# --- Use last 20% as test set to match K-Fold logic ---
+# --- Split (last 20% as test) ---
 split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize LLAR model (Lasso Least Angle Regression) ---
-model = LassoLars(
-        alpha=75,      # Constant that multiplies the penalty term
-        fit_intercept=True,
-        max_iter=2
+# --- Model (EBM) ---
+model = ExplainableBoostingRegressor(
+    # interactions=0,        # pure GAM (fully interpretable)
+    # max_bins=256,
+    # learning_rate=0.01,
+    # max_rounds=500
 )
 
-# Train the model
 model.fit(X_train, y_train)
 
-# Predictions
+# --- Predictions ---
 y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
+
+# ✅ --- ROUNDING STEP ---
+y_pred_all = y_pred_all.round().astype(int)
+y_pred_train = y_pred_train.round().astype(int)
+y_pred_test = y_pred_test.round().astype(int)
 
 # --- Metrics ---
 mid = len(y_test) // 2
@@ -40,15 +44,20 @@ sets = [
     ("Train", y_train, y_pred_train),
     ("Test", y_test, y_pred_test),
     ("Value", y_test[:mid], y_pred_test[:mid]),
-    ("Test-Value", y_test[mid:], y_pred_test[mid:])
+    ("Test-Value", y_test[mid:], y_pred_test[mid:]),
 ]
 
-df_metrics = pd.DataFrame([{
-    "Set": s,
-    "MAE": mean_absolute_error(y_t, y_p),
-    "RMSE": mean_squared_error(y_t, y_p) ** 0.5,
-    "R2": r2_score(y_t, y_p)
-} for s, y_t, y_p in sets])
+df_metrics = pd.DataFrame(
+    [
+        {
+            "Set": s,
+            "MAE": mean_absolute_error(y_t, y_p),
+            "RMSE": mean_squared_error(y_t, y_p) ** 0.5,
+            "R2": r2_score(y_t, y_p),
+        }
+        for s, y_t, y_p in sets
+    ]
+)
 
 print(df_metrics)
 
@@ -57,7 +66,5 @@ df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
 df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
 df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
-# --- Export to clipboard ---
+# --- Export ---
 df_all.to_clipboard(index=False, header=False)
-# df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)
