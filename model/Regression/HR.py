@@ -22,7 +22,7 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 model = HuberRegressor(
     # epsilon=1.35,
     # alpha=0.0001,
-    max_iter=10,
+    max_iter=15,
     # alpha=1.0001
 )
 

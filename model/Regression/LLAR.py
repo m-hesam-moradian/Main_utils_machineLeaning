@@ -20,9 +20,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize LLAR model (Lasso Least Angle Regression) ---
 model = LassoLars(
-        alpha=75,      # Constant that multiplies the penalty term
+        alpha=20,      # Constant that multiplies the penalty term
         fit_intercept=True,
-        max_iter=2
+        max_iter=20
 )
 
 # Train the model
