@@ -13,12 +13,12 @@ params = {
     "max_depth": 1,
 }
 
-# model_name = "QDA(VIF)"
-# model_name = "QDA(CHI2)"
-# model_name = "LGBC(VIF)"
-model_name = "LGBC(CHI2)"
+
+# model_name = "LR(RFE)"
+model_name = "LR(CHI2)"
 optimizer_name = ""  # no optimizer
-optimizer_name = "SWO"  # no optimizer
+# optimizer_name = "OOA"  # no optimizer
+optimizer_name = "HEOA"  # no optimizer
 
 
 
@@ -160,87 +160,251 @@ def build_classification_reports(y_real, y_pred):
     """
     Builds classification evaluation DataFrames:
     1️⃣ df_combined – global + per-class metrics
-    2️⃣ roc_df – ROC curve points and AUC (only for binary)
+    2️⃣ roc_df – ROC curve points and AUC
     3️⃣ cm_df – confusion matrix table
+
+    Metrics:
+    Accuracy, Precision, Recall, F1-Score,
+    Kappa, Class-Wise Error, MCC, AUC
     """
 
     from sklearn.metrics import (
-        accuracy_score, recall_score, f1_score,
-        precision_score, matthews_corrcoef,
-        confusion_matrix, roc_curve, auc
+        accuracy_score,
+        recall_score,
+        f1_score,
+        precision_score,
+        matthews_corrcoef,
+        confusion_matrix,
+        roc_curve,
+        auc,
+        cohen_kappa_score
     )
+
     import pandas as pd
     import numpy as np
 
-    # --- Metric helper (weighted = works for binary & multiclass)
+    # =========================
+    # Metric Helper
+    # =========================
     def get_metrics(y_true, y_pred):
-        return {
+        metrics = {
             "Accuracy": accuracy_score(y_true, y_pred),
-            "Recall": recall_score(y_true, y_pred, average='weighted', zero_division=0),
-            "F1": f1_score(y_true, y_pred, average='weighted', zero_division=0),
-            "Precision": precision_score(y_true, y_pred, average='weighted', zero_division=0),
+            "Precision": precision_score(
+                y_true, y_pred,
+                average='weighted',
+                zero_division=0
+            ),
+            "Recall": recall_score(
+                y_true, y_pred,
+                average='weighted',
+                zero_division=0
+            ),
+            "F1-Score": f1_score(
+                y_true, y_pred,
+                average='weighted',
+                zero_division=0
+            ),
+            "Kappa": cohen_kappa_score(y_true, y_pred),
             "MCC": matthews_corrcoef(y_true, y_pred)
         }
 
-    # --- Split Train/Test (same logic as yours)
-    split_idx = int(len(y_real) * 0.8)
-    y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
-    y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+        metrics["Class-Wise Error"] = 1 - metrics["Accuracy"]
 
-    # --- Global metrics
+        return metrics
+
+    # =========================
+    # Split Train/Test
+    # =========================
+    split_idx = int(len(y_real) * 0.8)
+
+    y_real_train = y_real[:split_idx]
+    y_real_test = y_real[split_idx:]
+
+    y_pred_train = y_pred[:split_idx]
+    y_pred_test = y_pred[split_idx:]
+
+    # =========================
+    # Global Metrics
+    # =========================
     metrics_all = get_metrics(y_real, y_pred)
     metrics_train = get_metrics(y_real_train, y_pred_train)
     metrics_test = get_metrics(y_real_test, y_pred_test)
 
-    df_main = pd.DataFrame({
-        "Set": ["All", "Train", "Test"],
-        "Accuracy": [metrics_all["Accuracy"], metrics_train["Accuracy"], metrics_test["Accuracy"]],
-        "Recall": [metrics_all["Recall"], metrics_train["Recall"], metrics_test["Recall"]],
-        # "Class-Wise Error": ["", "", ""],
-        "F1": [metrics_all["F1"], metrics_train["F1"], metrics_test["F1"]],
-        "Precision": [metrics_all["Precision"], metrics_train["Precision"], metrics_test["Precision"]],
-        "MCC": [metrics_all["MCC"], metrics_train["MCC"], metrics_test["MCC"]],
-    })
-
-    # --- Per-class metrics
+    # =========================
+    # AUC Calculation
+    # =========================
     classes = np.unique(y_real)
 
-    precision_per_class = precision_score(y_real, y_pred, average=None, zero_division=0)
-    recall_per_class = recall_score(y_real, y_pred, average=None, zero_division=0)
-    f1_per_class = f1_score(y_real, y_pred, average=None, zero_division=0)
+    if len(classes) == 2:
+        fpr, tpr, thresholds = roc_curve(y_real, y_pred)
+        roc_auc = auc(fpr, tpr)
+
+        auc_all = roc_auc
+
+        # Train AUC
+        fpr_tr, tpr_tr, _ = roc_curve(y_real_train, y_pred_train)
+        auc_train = auc(fpr_tr, tpr_tr)
+
+        # Test AUC
+        fpr_te, tpr_te, _ = roc_curve(y_real_test, y_pred_test)
+        auc_test = auc(fpr_te, tpr_te)
+
+    else:
+        auc_all = np.nan
+        auc_train = np.nan
+        auc_test = np.nan
+
+    # =========================
+    # Main Report
+    # =========================
+    df_main = pd.DataFrame({
+        "Set": ["All", "Train", "Test"],
+
+        "Accuracy": [
+            metrics_all["Accuracy"],
+            metrics_train["Accuracy"],
+            metrics_test["Accuracy"]
+        ],
+
+        "Precision": [
+            metrics_all["Precision"],
+            metrics_train["Precision"],
+            metrics_test["Precision"]
+        ],
+
+        "Recall": [
+            metrics_all["Recall"],
+            metrics_train["Recall"],
+            metrics_test["Recall"]
+        ],
+
+        "F1-Score": [
+            metrics_all["F1-Score"],
+            metrics_train["F1-Score"],
+            metrics_test["F1-Score"]
+        ],
+
+        "Kappa": [
+            metrics_all["Kappa"],
+            metrics_train["Kappa"],
+            metrics_test["Kappa"]
+        ],
+
+        "Class-Wise Error": [
+            metrics_all["Class-Wise Error"],
+            metrics_train["Class-Wise Error"],
+            metrics_test["Class-Wise Error"]
+        ],
+
+        "MCC": [
+            metrics_all["MCC"],
+            metrics_train["MCC"],
+            metrics_test["MCC"]
+        ],
+
+        "AUC": [
+            auc_all,
+            auc_train,
+            auc_test
+        ]
+    })
+
+    # =========================
+    # Per-Class Metrics
+    # =========================
+    precision_per_class = precision_score(
+        y_real, y_pred,
+        average=None,
+        zero_division=0
+    )
+
+    recall_per_class = recall_score(
+        y_real, y_pred,
+        average=None,
+        zero_division=0
+    )
+
+    f1_per_class = f1_score(
+        y_real, y_pred,
+        average=None,
+        zero_division=0
+    )
 
     accuracy_per_class = []
     class_error_per_class = []
     mcc_per_class = []
+    kappa_per_class = []
+    auc_per_class = []
 
     for i, cls in enumerate(classes):
-        idx = y_real == cls
+
+        idx = (y_real == cls)
+
+        # Accuracy
         acc = accuracy_score(y_real[idx], y_pred[idx])
+
         accuracy_per_class.append(acc)
+
+        # Error
         class_error_per_class.append(1 - acc)
 
-        # MCC per class (binary view: this class vs rest)
+        # Binary view
         y_true_bin = (y_real == cls).astype(int)
         y_pred_bin = (y_pred == cls).astype(int)
-        mcc_per_class.append(matthews_corrcoef(y_true_bin, y_pred_bin))
 
+        # MCC
+        mcc_per_class.append(
+            matthews_corrcoef(y_true_bin, y_pred_bin)
+        )
+
+        # Kappa
+        kappa_per_class.append(
+            cohen_kappa_score(y_true_bin, y_pred_bin)
+        )
+
+        # AUC
+        try:
+            fpr_c, tpr_c, _ = roc_curve(y_true_bin, y_pred_bin)
+            auc_per_class.append(auc(fpr_c, tpr_c))
+        except:
+            auc_per_class.append(np.nan)
+
+    # =========================
+    # Per-Class Report
+    # =========================
     df_class = pd.DataFrame({
         "Set": [f"Class {cls}" for cls in classes],
+
         "Accuracy": accuracy_per_class,
-        "Recall": recall_per_class,
-        # "Class-Wise Error": class_error_per_class,
-        "F1": f1_per_class,
+
         "Precision": precision_per_class,
-        "MCC": mcc_per_class
+
+        "Recall": recall_per_class,
+
+        "F1-Score": f1_per_class,
+
+        "Kappa": kappa_per_class,
+
+        "Class-Wise Error": class_error_per_class,
+
+        "MCC": mcc_per_class,
+
+        "AUC": auc_per_class
     })
 
-    # --- Combine
-    df_combined = pd.concat([df_main, df_class], ignore_index=True)
+    # =========================
+    # Combine Reports
+    # =========================
+    df_combined = pd.concat(
+        [df_main, df_class],
+        ignore_index=True
+    )
 
-    # --- ROC (ONLY for binary classification)
+    # =========================
+    # ROC DataFrame
+    # =========================
     if len(classes) == 2:
-        fpr, tpr, thresholds = roc_curve(y_real, y_pred)
-        roc_auc = auc(fpr, tpr)
+
         auc_column = [""] * (len(fpr) - 1) + [round(roc_auc, 3)]
 
         roc_df = pd.DataFrame({
@@ -248,13 +412,20 @@ def build_classification_reports(y_real, y_pred):
             "TPR": tpr,
             "AUC": auc_column
         })
+
     else:
+
         roc_df = pd.DataFrame({
-            "Info": ["ROC not available for multi-class without probabilities"]
+            "Info": [
+                "ROC not available for multi-class without probabilities"
+            ]
         })
 
-    # --- Confusion Matrix
+    # =========================
+    # Confusion Matrix
+    # =========================
     cm = confusion_matrix(y_real, y_pred)
+
     cm_df = pd.DataFrame(
         cm,
         index=[f"Actual {i}" for i in classes],
@@ -262,7 +433,6 @@ def build_classification_reports(y_real, y_pred):
     )
 
     return df_combined, roc_df, cm_df
-
 def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="down" ,Convergence_metric=Convergence_metric):
     if "Train" in df_combined["Set"].values:
         Target_metric_train = df_combined.loc[df_combined["Set"] == "Train", Convergence_metric].values[0]

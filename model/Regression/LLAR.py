@@ -4,7 +4,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for LLAR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LLAR(MRMR)"   # 🔁 changed to LLAR sheet name
+# sheet_name = "Data_after_KFold_LSSVR"  # you may rename later to HR
+sheet_name = "Data_after_KFold_LSSVR(Z-Score)"  # you may rename later to HR
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -20,9 +21,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize LLAR model (Lasso Least Angle Regression) ---
 model = LassoLars(
-        alpha=20,      # Constant that multiplies the penalty term
-        fit_intercept=True,
-        max_iter=20
+        alpha=10.0,      # Constant that multiplies the penalty term
+        # fit_intercept=True,
+        max_iter=1000
 )
 
 # Train the model

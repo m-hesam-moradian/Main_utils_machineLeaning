@@ -4,7 +4,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for HR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_HR(ANOVA)"  # you may rename later to HR
+# sheet_name = "Data_after_KFold_HR"  # you may rename later to HR
+sheet_name = "Data_after_KFold_HR(Z-Score)"  # you may rename later to HR
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -20,10 +21,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize HR model ---
 model = HuberRegressor(
-    # epsilon=1.35,
-    # alpha=0.0001,
-    max_iter=15,
-    # alpha=1.0001
+        max_iter=1000,    # Maximum number of iterations for convergence
+        # epsilon=10.35,   # Robustness parameter
+        alpha=10.0   # Regularization strength
 )
 
 # Train

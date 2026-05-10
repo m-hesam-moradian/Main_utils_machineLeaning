@@ -3,7 +3,7 @@ import statsmodels.api as sm
 
 # -------------------- 1. Load data --------------------
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(DATA_PATH, sheet_name="Encoded_Data")
+df = pd.read_excel(DATA_PATH, sheet_name="data_after_RFE")  # Change sheet name as needed
 target_column = df.columns[-1]
 
 # -------------------- 2. Separate features and target --------------------

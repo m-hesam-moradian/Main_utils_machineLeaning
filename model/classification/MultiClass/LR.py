@@ -5,7 +5,7 @@ from sklearn.linear_model import LogisticRegression # Changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LR(CHI2)" 
+sheet_name = "Data_after_KFold_LR(RFE)" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -22,9 +22,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- Train Logistic Regression ---
 # Sabotaging performance with tiny C and low max_iter for the optimizer to fix
 model = LogisticRegression(
-#  tol=0.000001, 
-# C=0.004
-# , max_iter=1
+        C=1.0,
+        max_iter=150,
+        # random_state=42
 )
 
 # Note: We use try/except because max_iter=10 will likely trigger a ConvergenceWarning

@@ -27,7 +27,7 @@ def open_excel_file(filepath):
 # Load your Excel file
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path ,sheet_name="Data_daily_format")
+df = pd.read_excel(excel_path ,sheet_name="Data")
 
 # Create a copy to avoid modifying original
 df_encoded = df.copy()

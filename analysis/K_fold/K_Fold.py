@@ -31,8 +31,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-# sheet_name = "Optimal_Data_MRMR"  # Change this to your actual sheet name if different
-sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
+sheet_name = "Z-Score"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -44,15 +43,15 @@ from sklearn.linear_model import HuberRegressor, LassoLars
 
 models = {
     "HR": HuberRegressor(
-        max_iter=8,    # Maximum number of iterations for convergence
-        # epsilon=1.35,   # Robustness parameter
-        # alpha=1.0   # Regularization strength
+        max_iter=1000,    # Maximum number of iterations for convergence
+        # epsilon=10.35,   # Robustness parameter
+        alpha=10.0   # Regularization strength
     ),
 
-    "LLAR": LassoLars(
-        alpha=100,      # Constant that multiplies the penalty term
-        fit_intercept=True,
-        max_iter=2
+    "LSSVR": LassoLars(
+        alpha=10.0,      # Constant that multiplies the penalty term
+        # fit_intercept=True,
+        max_iter=1000
     )
 }
 
@@ -129,12 +128,12 @@ close_excel_file(filepath)
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics(ANOVA)", index=False
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics(Z-Score)", index=False
         )
         df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}(ANOVA)", index=False
+            writer, sheet_name=f"Data_after_KFold_{model_name}(Z-Score)", index=False
         )
-    summary_df.to_excel(writer, sheet_name="Model_Summary(ANOVA)", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Summary(Z-Score)", index=False)
 
 open_excel_file(filepath)
 

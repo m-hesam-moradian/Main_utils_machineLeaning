@@ -18,22 +18,24 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "SWOA"
+optimizer_name = "DOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "LLAR(MRMR)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "HR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "HR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "LLAR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "LLAR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 
 
-R2_target = 0.0
+R2_target = 0.99124
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -43,13 +45,8 @@ sheet_name = model_name
 if optimizer_name.strip():
     sheet_name = model_name + " + " + optimizer_name.strip()  # should match Excel sheet label you want
 
-
 import pandas as pd
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error
-
-import numpy as np
-import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error
 
 def build_metrics_table(y_real, y_pred):
@@ -69,7 +66,7 @@ def build_metrics_table(y_real, y_pred):
     def U95_metric(y_true, y_hat):
         return np.percentile(np.abs(y_true - y_hat), 95)
 
-    def compute_metrics(y_true, y_hat):
+    def compute_metrics(y_true, y_hat, delta=1.0):
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
 
@@ -80,17 +77,36 @@ def build_metrics_table(y_real, y_pred):
         cov_val = cov_metric(y_true, y_hat)
         U95 = U95_metric(y_true, y_hat)
         
-        # --- NEW METRICS ---
         # SI (Scatter Index): Usually defined identically to COV (RMSE / Mean of True)
         mean_y = np.mean(y_true)
         si = rmse / mean_y if mean_y != 0 else np.nan
         
         # MBE (Mean Bias Error): Average of the differences (predicted - actual)
-        mbe = np.mean(y_hat - y_true)
+        diff = y_hat - y_true
+        mbe = np.mean(diff)
         
         # LogCosh Loss (Numerically stable implementation)
-        diff = y_hat - y_true
         logcosh = np.mean(np.abs(diff) - np.log(2.0) + np.log1p(np.exp(-2.0 * np.abs(diff))))
+        
+        # --- NEW METRICS ---
+        
+        # Huber Loss
+        is_small_error = np.abs(diff) <= delta
+        squared_loss = 0.5 * np.square(diff)
+        linear_loss = delta * np.abs(diff) - 0.5 * np.square(delta)
+        huber_loss = np.mean(np.where(is_small_error, squared_loss, linear_loss))
+        
+        # MAPE (Mean Absolute Percentage Error)
+        # Computed safely avoiding zero division
+        non_zero = y_true != 0
+        if np.any(non_zero):
+            mape = np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
+        else:
+            mape = np.nan
+            
+        # COM (Coefficient of Residual Mass)
+        sum_y = np.sum(y_true)
+        com = (sum_y - np.sum(y_hat)) / sum_y if sum_y != 0 else np.nan
     
         return {
             "R2": r2,
@@ -100,7 +116,10 @@ def build_metrics_table(y_real, y_pred):
             "U95": U95,
             "SI": si,
             "MBE": mbe,
-            "LogCoshLoss": logcosh
+            "LogCoshLoss": logcosh,
+            "HuberLoss": huber_loss,
+            "MAPE": mape,
+            "COM": com
         }
 
     # --- Split ---
@@ -120,10 +139,13 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-    # Updated column names to include requested metrics
-    cols =["Set", "R2", "RMSE", "MARE", "COV", "U95", "SI", "MBE", "LogCoshLoss"]
+    # Updated column names to include the new metrics
+    cols = [
+        "Set", "R2", "RMSE", "MARE", "COV", "U95", 
+        "SI", "MBE", "LogCoshLoss", "HuberLoss", "MAPE", "COM"
+    ]
 
-    rows =[]
+    rows = []
     for set_name, m in sets.items():
         rows.append([
             set_name,
@@ -134,7 +156,10 @@ def build_metrics_table(y_real, y_pred):
             m["U95"],
             m["SI"],
             m["MBE"],
-            m["LogCoshLoss"]
+            m["LogCoshLoss"],
+            m["HuberLoss"],
+            m["MAPE"],
+            m["COM"]
         ])
 
     return pd.DataFrame(rows, columns=cols)

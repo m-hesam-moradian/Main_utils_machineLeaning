@@ -25,7 +25,7 @@ def open_excel_file(filepath):
 # --- Load original dataset ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="Z-Score")
+df = pd.read_excel(excel_path, sheet_name="SMOTE")
 
 # --- Improved Randomization ---
 # 1. Use numpy permutation for better entropy
