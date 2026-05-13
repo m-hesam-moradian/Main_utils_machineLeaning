@@ -20,8 +20,13 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train CatBoost Regression model ---
 model = CatBoostRegressor(
-
-)
+        iterations=500,
+        learning_rate=0.05,
+        depth=6,
+        loss_function='RMSE',
+        verbose=0,
+        random_state=42
+    )
 model.fit(X_train, y_train)
 
 # --- Predictions ---

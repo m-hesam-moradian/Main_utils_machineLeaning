@@ -72,4 +72,4 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 # --- Export to clipboard ---
 df_all.to_clipboard(index=False,header=False)
 # df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)1
+# df_test.to_clipboard(index=False)

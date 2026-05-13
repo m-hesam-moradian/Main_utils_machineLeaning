@@ -8,7 +8,7 @@ from sklearn.inspection import PartialDependenceDisplay
 
 # 1. خواندن داده
 excel_path = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
-df = pd.read_excel(excel_path, sheet_name='Data_after_KFold_HGBR')
+df = pd.read_excel(excel_path, sheet_name='Data_after_KFold_ENR(Z-Score)')
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
@@ -18,8 +18,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # 3. آموزش مدل
 model = HistGradientBoostingRegressor(
-    max_depth=20,          # Maximum depth of each tree
-    random_state=42       # Random seed for reproducibility
+    # max_depth=20,          # Maximum depth of each tree
+    # random_state=42       # Random seed for reproducibility
 )
 model.fit(X_train, y_train)
 

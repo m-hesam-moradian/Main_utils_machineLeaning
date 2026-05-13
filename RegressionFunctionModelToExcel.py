@@ -18,24 +18,24 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-optimizer_name = "DOA"
+optimizer_name = "LOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-# model_name = "HR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "HR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "LLAR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "LLAR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "ENR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "ENR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "CATR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "CATR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 
 
-R2_target = 0.99124
+R2_target = 0.981741215
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -53,20 +53,39 @@ def build_metrics_table(y_real, y_pred):
 
     def mare(y_true, y_hat):
         y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
+
         # avoid division by zero
         non_zero = y_true != 0
-        return np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
-    
+
+        return np.mean(
+            np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])
+        ) * 100
+
+
     def cov_metric(y_true, y_hat):
-        # COV (Coefficient of Variation) = RMSE / mean(y_true)
+
+        # COV = RMSE / mean(y_true)
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
         mean_y = np.mean(y_true)
+
         return rmse / mean_y if mean_y != 0 else np.nan
-    
+
+
     def U95_metric(y_true, y_hat):
         return np.percentile(np.abs(y_true - y_hat), 95)
 
+
+    # === NEW: RAE Metric ===
+    def rae_metric(y_true, y_hat):
+
+        numerator = np.sum(np.abs(y_true - y_hat))
+        denominator = np.sum(np.abs(y_true - np.mean(y_true)))
+
+        return numerator / denominator if denominator != 0 else np.nan
+
+
     def compute_metrics(y_true, y_hat, delta=1.0):
+
         y_true = np.asarray(y_true)
         y_hat = np.asarray(y_hat)
 
@@ -76,38 +95,52 @@ def build_metrics_table(y_real, y_pred):
         mare_val = mare(y_true, y_hat)
         cov_val = cov_metric(y_true, y_hat)
         U95 = U95_metric(y_true, y_hat)
-        
-        # SI (Scatter Index): Usually defined identically to COV (RMSE / Mean of True)
+
+        # SI
         mean_y = np.mean(y_true)
         si = rmse / mean_y if mean_y != 0 else np.nan
-        
-        # MBE (Mean Bias Error): Average of the differences (predicted - actual)
+
+        # MBE
         diff = y_hat - y_true
         mbe = np.mean(diff)
-        
-        # LogCosh Loss (Numerically stable implementation)
-        logcosh = np.mean(np.abs(diff) - np.log(2.0) + np.log1p(np.exp(-2.0 * np.abs(diff))))
-        
-        # --- NEW METRICS ---
-        
+
+        # LogCosh Loss
+        logcosh = np.mean(
+            np.abs(diff)
+            - np.log(2.0)
+            + np.log1p(np.exp(-2.0 * np.abs(diff)))
+        )
+
         # Huber Loss
         is_small_error = np.abs(diff) <= delta
         squared_loss = 0.5 * np.square(diff)
         linear_loss = delta * np.abs(diff) - 0.5 * np.square(delta)
-        huber_loss = np.mean(np.where(is_small_error, squared_loss, linear_loss))
-        
-        # MAPE (Mean Absolute Percentage Error)
-        # Computed safely avoiding zero division
+
+        huber_loss = np.mean(
+            np.where(is_small_error, squared_loss, linear_loss)
+        )
+
+        # MAPE
         non_zero = y_true != 0
+
         if np.any(non_zero):
-            mape = np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
+            mape = np.mean(
+                np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])
+            ) * 100
         else:
             mape = np.nan
-            
-        # COM (Coefficient of Residual Mass)
+
+        # COM
         sum_y = np.sum(y_true)
-        com = (sum_y - np.sum(y_hat)) / sum_y if sum_y != 0 else np.nan
-    
+
+        com = (
+            (sum_y - np.sum(y_hat)) / sum_y
+            if sum_y != 0 else np.nan
+        )
+
+        # === NEW: RAE ===
+        rae = rae_metric(y_true, y_hat)
+
         return {
             "R2": r2,
             "RMSE": rmse,
@@ -119,17 +152,28 @@ def build_metrics_table(y_real, y_pred):
             "LogCoshLoss": logcosh,
             "HuberLoss": huber_loss,
             "MAPE": mape,
-            "COM": com
+            "COM": com,
+            "RAE": rae
         }
+
 
     # --- Split ---
     split_idx = int(len(y_real) * 0.8)
-    y_real_train, y_real_test = y_real[:split_idx], y_real[split_idx:]
-    y_pred_train, y_pred_test = y_pred[:split_idx], y_pred[split_idx:]
+
+    y_real_train = y_real[:split_idx]
+    y_real_test = y_real[split_idx:]
+
+    y_pred_train = y_pred[:split_idx]
+    y_pred_test = y_pred[split_idx:]
 
     mid = len(y_real_test) // 2
-    y_real_value, y_pred_value = y_real_test[:mid], y_pred_test[:mid]
-    y_real_valte, y_pred_valte = y_real_test[mid:], y_pred_test[mid:]
+
+    y_real_value = y_real_test[:mid]
+    y_pred_value = y_pred_test[:mid]
+
+    y_real_valte = y_real_test[mid:]
+    y_pred_valte = y_pred_test[mid:]
+
 
     sets = {
         "All": compute_metrics(y_real, y_pred),
@@ -139,14 +183,28 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-    # Updated column names to include the new metrics
+
     cols = [
-        "Set", "R2", "RMSE", "MARE", "COV", "U95", 
-        "SI", "MBE", "LogCoshLoss", "HuberLoss", "MAPE", "COM"
+        "Set",
+        "R2",
+        "RMSE",
+        "MARE",
+        "COV",
+        "U95",
+        "SI",
+        "MBE",
+        "LogCoshLoss",
+        "HuberLoss",
+        "MAPE",
+        "COM",
+        "RAE"
     ]
 
+
     rows = []
+
     for set_name, m in sets.items():
+
         rows.append([
             set_name,
             m["R2"],
@@ -159,8 +217,10 @@ def build_metrics_table(y_real, y_pred):
             m["LogCoshLoss"],
             m["HuberLoss"],
             m["MAPE"],
-            m["COM"]
+            m["COM"],
+            m["RAE"]
         ])
+
 
     return pd.DataFrame(rows, columns=cols)
 

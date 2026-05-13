@@ -8,7 +8,7 @@ df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     # r"C:\Users\Sam\Downloads\Telegram Desktop\749.xlsx",
     header=0,
-    sheet_name="predicts(Z-Score)",
+    sheet_name="predicts",
 )
   
 # Dynamically extract model names and predictions
