@@ -5,7 +5,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Load reordered data for ENR (after K-Fold)
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_ENR"
+sheet_name = "Data_after_KFold_ElasticNet"
 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -21,11 +21,11 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
 model = ElasticNet(
-    alpha=0.2,
-    l1_ratio=0.7,
-    max_iter=100,
-    tol=1e-4,
-    random_state=42
+    # alpha=0.2,
+    # l1_ratio=0.7,
+    max_iter=10,
+    # tol=1e-4,
+    # random_state=42
 )
 model.fit(X_train, y_train)
 y_pred_all = model.predict(X)

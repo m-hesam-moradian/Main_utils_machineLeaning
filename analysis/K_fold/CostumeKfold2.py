@@ -52,22 +52,62 @@ y = df[target_column]
 # ================== Updated Models (The 6 Paradigms) ==================
 models = {
     # 1. Linear Model
-    "ElasticNet": ElasticNet(),
+    "ElasticNet": ElasticNet(
+    # alpha=0.2,
+    # l1_ratio=0.7,
+    max_iter=10,
+    # tol=1e-4,
+    # random_state=42
+    ),
     
     # 2. Generalized Additive Model (GAM)
-    "EBM": ExplainableBoostingRegressor(),
+    "EBM": ExplainableBoostingRegressor(
+    interactions=0,        # pure GAM (fully interpretable)
+    max_bins=200,
+    learning_rate=0.006,
+    max_rounds=400
+    ),
     
     # 3. Advanced Tree-Based Ensemble (Boosting)
-    "XGBoost": XGBRegressor(n_estimators=400),
+    "XGBoost": XGBRegressor(
+    n_estimators=7,       # keep moderate
+    # max_depth=4,            # smaller depth
+    # learning_rate=0.05,     # slower learning
+    # subsample=0.8,          # randomness to reduce overfit
+    # colsample_bytree=0.8,
+    # reg_alpha=0.1,
+    # reg_lambda=1
+    ),
     
     # 4. Advanced Tree-Based Ensemble (Bagging)
-    "RandomForest": RandomForestRegressor(n_estimators=100),
+    "RandomForest": RandomForestRegressor(
+    n_estimators=10,
+    max_depth=5,
+    # min_samples_leaf=10,
+    # max_features=0.7,
+    # random_state=42,
+    # n_jobs=-1
+    ),
     
     # 5. Mathematical Margin Model (Needs Scaling)
-    "SVR_RBF": make_pipeline(StandardScaler(), SVR(kernel="rbf")),
+    "SVR_RBF": SVR(
+    kernel="rbf",   # non-linear regression
+    # C=70,          # regularization strength
+    # epsilon=0.1,    # epsilon-insensitive loss
+    # gamma="scale"   # kernel coefficient
+    # tol=1e-3, 
+    max_iter=1500
+),
     
     # 6. Distance / Neural Model (Needs Scaling, increased max_iter for convergence)
-    "MLP_Neural": make_pipeline(StandardScaler(), MLPRegressor(max_iter=1000))
+    "MLP_Neural": MLPRegressor(
+    hidden_layer_sizes=(100,),  # single hidden layer with 100 neurons
+    activation='relu',
+    solver='adam',
+    # alpha=0.0001,
+    max_iter=100,  # increase iterations for better convergence
+    random_state=42
+    ) 
 }
 
 print("✅ Models ready for training:")

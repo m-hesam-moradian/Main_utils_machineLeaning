@@ -18,21 +18,21 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-optimizer_name = "LOA"
+# optimizer_name = "LOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
 # model_name = "ENR(Z-Score)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "ENR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "CATR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "ELR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "CATR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "CATR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-
-
-R2_target = 0.981741215
+R2_target = 0.0
 min_error = -56000.54
 max_error = 55000.43
+
+
 
 # Convergence: Based on MDAPE (lower is better)
 Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
