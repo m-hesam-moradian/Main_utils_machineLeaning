@@ -6,7 +6,8 @@ from SALib.sample import saltelli
 from SALib.analyze import sobol
 
 # --- Load dataset ---
-sheet_name = "Data_after_KFold_RFC"
+# sheet_name = "Data_after_KFold_LLAR"
+sheet_name = "Data_after_KFold_LLAR(IF)"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 
@@ -19,7 +20,7 @@ y = df[target_column]
 
 # --- Train-Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-
+from sklearn.linear_model import LassoLars
 # --- Train XGBoost model (The "Best Model") ---
 model = XGBRegressor(random_state=42, n_estimators=100, learning_rate=0.1)
 model.fit(X_train, y_train)

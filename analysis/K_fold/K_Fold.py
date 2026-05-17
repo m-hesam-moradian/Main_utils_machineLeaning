@@ -31,7 +31,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data"  # Change this to your actual sheet name if different
+sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -39,26 +39,28 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
-from sklearn.linear_model import ElasticNet
-from catboost import CatBoostRegressor
+
+from xgboost import XGBRegressor
+
+from sklearn.linear_model import LassoLars
+
 
 models = {
-
-    "ENR": ElasticNet(
-        # alpha=1.0,        # Regularization strength
-        # # l1_ratio=0.5,     # Balance between L1 and L2 regularization
-        # max_iter=1000,
-        # random_state=42
-    ),
-
-    "CATR": CatBoostRegressor(
-        # iterations=500,
-        # learning_rate=0.05,
-        # depth=6,
-        # loss_function='RMSE',
-        # verbose=0,
-        # random_state=42
-    )
+    "HR":XGBRegressor(
+    n_estimators=5,       # keep moderate
+    max_depth=1,            # smaller depth
+    # learning_rate=0.05,     # slower learning
+    # subsample=0.8,          # randomness to reduce overfit
+    # colsample_bytree=0.8,
+    # reg_alpha=0.1,
+    # reg_lambda=1
+),
+    "LLAR": LassoLars(
+        alpha=100,      # Constant that multiplies the penalty term
+        # fit_intercept=True,
+        max_iter=1
+),
+  
 }
 
 print("✅ Models ready for training:")
