@@ -31,7 +31,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_After_ANOVA"  # Change this to your actual sheet name if different
+sheet_name = "Isolation_Forest"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -39,31 +39,61 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
-
+from sklearn.model_selection import KFold
+from sklearn.linear_model import (
+    LinearRegression,
+    QuantileRegressor,
+    BayesianRidge
+)
+from sklearn.ensemble import (
+    ExtraTreesRegressor,
+    GradientBoostingRegressor
+)
 from xgboost import XGBRegressor
 
-from sklearn.linear_model import LassoLars
-
-
 models = {
-    "HR":XGBRegressor(
-    n_estimators=5,       # keep moderate
-    max_depth=1,            # smaller depth
-    # learning_rate=0.05,     # slower learning
-    # subsample=0.8,          # randomness to reduce overfit
-    # colsample_bytree=0.8,
-    # reg_alpha=0.1,
-    # reg_lambda=1
-),
-    "LLAR": LassoLars(
-        alpha=100,      # Constant that multiplies the penalty term
-        # fit_intercept=True,
-        max_iter=1
-),
-  
+
+    # Lasso Regression (LR)
+    "LR": LinearRegression(),
+
+    # Extra Trees Regression (ETR)
+    "ETR": ExtraTreesRegressor(
+        n_estimators=100,
+        random_state=42
+    ),
+
+    # Extreme Gradient Boosting Regression (XGBR)
+    "XGBR": XGBRegressor(
+        n_estimators=100,
+        max_depth=3,
+        learning_rate=0.05,
+        objective="reg:squarederror",
+        random_state=42
+    ),
+
+    # Quantile Regression (QR)
+    "QR": QuantileRegressor(
+        quantile=0.5,
+        alpha=0.1
+    ),
+
+    # Stochastic Gradient Boosting (SGB)
+    "SGB": GradientBoostingRegressor(
+        n_estimators=100,
+        learning_rate=0.05,
+        max_depth=3,
+        random_state=42
+    ),
+
+    # Sparse Bayesian Regression (SBR)
+    "SBR": BayesianRidge()
 }
 
-print("✅ Models ready for training:")
+# -------------------------------
+# Print Models
+# -------------------------------
+print("✅ Models ready for training with 5-Fold Cross Validation:")
+
 for name in models:
     print("-", name)
 

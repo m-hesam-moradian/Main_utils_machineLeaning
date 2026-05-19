@@ -18,24 +18,24 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
+# optimizer_name = "SWOA"
 optimizer_name = "BOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-# model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "HR(IF)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "LLAR"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "LLAR(IF)"          # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "XGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+        # e.g., "RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.9224541
+R2_target = 0.98124541
+
 min_error = -56000.54
 max_error = 55000.43
 
 
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "RAE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -418,177 +418,13 @@ def make_style(color):
         "fill": PatternFill(start_color=color, end_color=color, fill_type="solid"),
     }
 
-# # Step 9: Close Excel if open, then export to Excel
-# close_excel_file(outputPath)
+# Step 9: Close Excel if open, then export to Excel
+close_excel_file(outputPath)
 
-# from openpyxl import load_workbook
+from openpyxl import load_workbook
 
-# # Load existing workbook (unchanged usage)
-# book = load_workbook(outputPath)
-
-# # Calculate indices based on total length
-# total_len = len(data)
-# idx_1 = int(total_len * 0.80)
-# idx_2 = idx_1 + int(total_len * 0.10)
-
-# # Create DataFrames for the Excel writer
-# df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])
-# df_test_data  = pd.DataFrame(data[idx_1:idx_2], columns=["Test_Real", "Test_Pred"])
-# df_val_data   = pd.DataFrame(data[idx_2:], columns=["Val_Real", "Val_Pred"])
-
-# with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-#     # Create new sheet
-#     worksheet = writer.book.create_sheet(sheet_name)
-#     writer.sheets[sheet_name] = worksheet
-
-#     # 1. Value Pred Table
-#     write_table(
-#         df_value_pred,
-#         startrow=1,
-#         startcol=0,
-#         style_key="value_pred",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # 2. Params Table
-#     params_col = len(df_value_pred.columns) + 1
-#     write_table(
-#         df_params,
-#         startrow=1,
-#         startcol=params_col,
-#         style_key="params",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # 3. Metrics Table (UPDATED columns)
-#     metrics_col = params_col + len(df_params.columns) + 1
-#     write_table(
-#         df_metrics,
-#         startrow=1,
-#         startcol=metrics_col,
-#         style_key="metrics",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # 4. Error Table
-#     error_col = metrics_col + len(df_metrics.columns) + 1
-#     write_table(
-#         df_error,
-#         startrow=1,
-#         startcol=error_col,
-#         style_key="error",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # 5. REC Curve (Below Params)
-#     rec_start_row = len(df_params) + 6
-#     write_table(
-#         df_rec_curve,
-#         startrow=rec_start_row,
-#         startcol=params_col,
-#         style_key="rec_curve",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # === Determine Next Column Position ===
-#     current_col = error_col + len(df_error.columns)
-
-#     # 6. Convergence (Optional)
-#     if optimizer_name.strip():
-#         write_table(
-#             df_convergence,
-#             startrow=1,
-#             startcol=current_col,
-#             style_key="error",
-#             worksheet=worksheet,
-#             writer=writer,
-#             header_styles=None,
-#             sheet_name=sheet_name,
-#         )
-#         current_col += len(df_convergence.columns)
-
-#     # === Write Split Data Tables (Side by Side) ===
-#     train_col = current_col + 1
-#     write_table(
-#         df_train_data,
-#         startrow=1,
-#         startcol=train_col,
-#         style_key="value_pred",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     test_col = train_col + len(df_train_data.columns) + 1
-#     write_table(
-#         df_test_data,
-#         startrow=1,
-#         startcol=test_col,
-#         style_key="value_pred",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     val_col = test_col + len(df_test_data.columns) + 1
-#     write_table(
-#         df_val_data,
-#         startrow=1,
-#         startcol=val_col,
-#         style_key="value_pred",
-#         worksheet=worksheet,
-#         writer=writer,
-#         header_styles=None,
-#         sheet_name=sheet_name,
-#     )
-
-#     # === Custom Header Row (Merge Title) ===
-#     final_used_col = val_col + len(df_val_data.columns)
-
-#     if optimizer_name.strip():
-#         title = f"{model_name} + {optimizer_name.strip()}"
-#     else:
-#         title = model_name
-
-#     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=final_used_col)
-#     # worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=current_col)
-
-#     cell = worksheet.cell(row=1, column=1)
-#     cell.value = title
-#     cell.font = Font(bold=True)
-#     cell.alignment = Alignment(horizontal="center", vertical="center")
-#     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
-
-# open_excel_file(outputPath)
-
-print("✅ Structured Excel file saved successfully.")
-
-import pandas as pd
-from openpyxl.styles import Font, Alignment, PatternFill
-
-# ==========================================
-# STEP 9: EXPORT TO A BRAND NEW EXCEL FILE
-# ==========================================
-
-# 1. Define the new file name here!
-new_excel_file = "new_model_results.xlsx"
+# Load existing workbook (unchanged usage)
+book = load_workbook(outputPath)
 
 # Calculate indices based on total length
 total_len = len(data)
@@ -600,19 +436,10 @@ df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])
 df_test_data  = pd.DataFrame(data[idx_1:idx_2], columns=["Test_Real", "Test_Pred"])
 df_val_data   = pd.DataFrame(data[idx_2:], columns=["Val_Real", "Val_Pred"])
 
-# Create the brand new Excel file
-with pd.ExcelWriter(new_excel_file, engine="openpyxl") as writer:
-    
-    # Explicitly create the new sheet
+with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+    # Create new sheet
     worksheet = writer.book.create_sheet(sheet_name)
-    
-    # Remove the default "Sheet" if pandas/openpyxl generated one automatically
-    if "Sheet" in writer.book.sheetnames and sheet_name != "Sheet":
-        del writer.book["Sheet"]
-        
-    # Register the sheet properly
     writer.sheets[sheet_name] = worksheet
-    writer.book.active = worksheet
 
     # 1. Value Pred Table
     write_table(
@@ -639,7 +466,7 @@ with pd.ExcelWriter(new_excel_file, engine="openpyxl") as writer:
         sheet_name=sheet_name,
     )
 
-    # 3. Metrics Table
+    # 3. Metrics Table (UPDATED columns)
     metrics_col = params_col + len(df_params.columns) + 1
     write_table(
         df_metrics,
@@ -741,6 +568,7 @@ with pd.ExcelWriter(new_excel_file, engine="openpyxl") as writer:
         title = model_name
 
     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=final_used_col)
+    # worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=current_col)
 
     cell = worksheet.cell(row=1, column=1)
     cell.value = title
@@ -748,4 +576,176 @@ with pd.ExcelWriter(new_excel_file, engine="openpyxl") as writer:
     cell.alignment = Alignment(horizontal="center", vertical="center")
     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
 
-print(f"Results successfully saved to brand new file: {new_excel_file}")
+open_excel_file(outputPath)
+
+print("✅ Structured Excel file saved successfully.")
+
+# import pandas as pd
+# from openpyxl.styles import Font, Alignment, PatternFill
+
+# # ==========================================
+# # STEP 9: EXPORT TO A BRAND NEW EXCEL FILE
+# # ==========================================
+
+# # 1. Define the new file name here!
+# new_excel_file = "new_model_results.xlsx"
+
+# # Calculate indices based on total length
+# total_len = len(data)
+# idx_1 = int(total_len * 0.80)
+# idx_2 = idx_1 + int(total_len * 0.10)
+
+# # Create DataFrames for the Excel writer
+# df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])
+# df_test_data  = pd.DataFrame(data[idx_1:idx_2], columns=["Test_Real", "Test_Pred"])
+# df_val_data   = pd.DataFrame(data[idx_2:], columns=["Val_Real", "Val_Pred"])
+
+# # Create the brand new Excel file
+# with pd.ExcelWriter(new_excel_file, engine="openpyxl") as writer:
+    
+#     # Explicitly create the new sheet
+#     worksheet = writer.book.create_sheet(sheet_name)
+    
+#     # Remove the default "Sheet" if pandas/openpyxl generated one automatically
+#     if "Sheet" in writer.book.sheetnames and sheet_name != "Sheet":
+#         del writer.book["Sheet"]
+        
+#     # Register the sheet properly
+#     writer.sheets[sheet_name] = worksheet
+#     writer.book.active = worksheet
+
+#     # 1. Value Pred Table
+#     write_table(
+#         df_value_pred,
+#         startrow=1,
+#         startcol=0,
+#         style_key="value_pred",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # 2. Params Table
+#     params_col = len(df_value_pred.columns) + 1
+#     write_table(
+#         df_params,
+#         startrow=1,
+#         startcol=params_col,
+#         style_key="params",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # 3. Metrics Table
+#     metrics_col = params_col + len(df_params.columns) + 1
+#     write_table(
+#         df_metrics,
+#         startrow=1,
+#         startcol=metrics_col,
+#         style_key="metrics",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # 4. Error Table
+#     error_col = metrics_col + len(df_metrics.columns) + 1
+#     write_table(
+#         df_error,
+#         startrow=1,
+#         startcol=error_col,
+#         style_key="error",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # 5. REC Curve (Below Params)
+#     rec_start_row = len(df_params) + 6
+#     write_table(
+#         df_rec_curve,
+#         startrow=rec_start_row,
+#         startcol=params_col,
+#         style_key="rec_curve",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # === Determine Next Column Position ===
+#     current_col = error_col + len(df_error.columns)
+
+#     # 6. Convergence (Optional)
+#     if optimizer_name.strip():
+#         write_table(
+#             df_convergence,
+#             startrow=1,
+#             startcol=current_col,
+#             style_key="error",
+#             worksheet=worksheet,
+#             writer=writer,
+#             header_styles=None,
+#             sheet_name=sheet_name,
+#         )
+#         current_col += len(df_convergence.columns)
+
+#     # === Write Split Data Tables (Side by Side) ===
+#     train_col = current_col + 1
+#     write_table(
+#         df_train_data,
+#         startrow=1,
+#         startcol=train_col,
+#         style_key="value_pred",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     test_col = train_col + len(df_train_data.columns) + 1
+#     write_table(
+#         df_test_data,
+#         startrow=1,
+#         startcol=test_col,
+#         style_key="value_pred",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     val_col = test_col + len(df_test_data.columns) + 1
+#     write_table(
+#         df_val_data,
+#         startrow=1,
+#         startcol=val_col,
+#         style_key="value_pred",
+#         worksheet=worksheet,
+#         writer=writer,
+#         header_styles=None,
+#         sheet_name=sheet_name,
+#     )
+
+#     # === Custom Header Row (Merge Title) ===
+#     final_used_col = val_col + len(df_val_data.columns)
+
+#     if optimizer_name.strip():
+#         title = f"{model_name} + {optimizer_name.strip()}"
+#     else:
+#         title = model_name
+
+#     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=final_used_col)
+
+#     cell = worksheet.cell(row=1, column=1)
+#     cell.value = title
+#     cell.font = Font(bold=True)
+#     cell.alignment = Alignment(horizontal="center", vertical="center")
+#     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+
+# print(f"Results successfully saved to brand new file: {new_excel_file}")

@@ -1,5 +1,8 @@
 import pandas as pd
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import (
+    ExtraTreesRegressor,
+    GradientBoostingRegressor
+)
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for ETR (after K-Fold) ---
@@ -18,8 +21,9 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize ETR model ---
 model = ExtraTreesRegressor(
-          max_depth=5,
-            random_state=42
+        n_estimators=2,
+        random_state=42,
+        max_depth=5
 )
 
 # Train the model
