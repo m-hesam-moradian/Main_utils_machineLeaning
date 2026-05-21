@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for XGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGBR"  # keep same sheet
+sheet_name = "Data_after_KFold_XGBoost"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -18,12 +18,23 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train XGBR model ---
+# model = XGBRegressor(
+#     n_estimators=100,       # keep moderate
+#     max_depth=3,            # smaller depth
+#     # learning_rate=0.05,     # slower learning
+#     # subsample=0.8,          # randomness to reduce overfit
+#     # colsample_bytree=0.8,
+#     # reg_alpha=0.1,
+#     # reg_lambda=1
+# )
 model = XGBRegressor(
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.05,
-        objective="reg:squarederror",
-        random_state=42
+    n_estimators=1000,       # keep moderate
+    max_depth=3,            # smaller depth
+    # learning_rate=0.05,     # slower learning
+    # subsample=0.8,          # randomness to reduce overfit
+    # colsample_bytree=0.8,
+    # reg_alpha=0.1,
+    # reg_lambda=1
 )
 
 model.fit(X_train, y_train)

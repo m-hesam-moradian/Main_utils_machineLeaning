@@ -1,0 +1,3 @@
+Scenario Name,Feature Altered,Baseline Mean Score,Scenario Mean Score,ATE (Point Delta),Elasticity,Pass/Fail Transition
+Scenario A: +35% Study Hours,Hours_Studied,67.12,69.08,+1.96,0.0834,39 Rescued
+Scenario B: -25% Tutoring & Internet,Tutoring_Sessions & Internet_Access,67.12,66.73,-0.39,0.023,31 Dropped to Fail

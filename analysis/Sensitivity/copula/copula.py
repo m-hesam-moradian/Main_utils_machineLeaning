@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 # Load the dataset
 dt = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name="Data_after_KFold_ETR"  # Adjust sheet name as needed,
+    sheet_name="Data_after_KFold_XGBoost"  # Adjust sheet name as needed,
 )
  
 target_column = dt.columns[-1]
@@ -16,13 +16,16 @@ features = X.columns
 from xgboost import XGBRegressor
 
 # 🌲 Random Forest Classifier (anti-overfitting setup)
-model = XGBRegressor(
-        n_estimators=200,
-        max_depth=7,
-        learning_rate=0.05,
-        objective="reg:squarederror",
-        random_state=42
-)
+model = XGBRegressor(    n_estimators=100,       # keep moderate
+    max_depth=3,
+  )
+# model = XGBRegressor(
+#         n_estimators=200,
+#         max_depth=7,
+#         learning_rate=0.05,
+#         objective="reg:squarederror",
+#         random_state=42
+# )
 
 model.fit(X, y)
 

@@ -21,10 +21,10 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # Train and predict
 model = ElasticNet(
-    # alpha=0.2,
-    # l1_ratio=0.7,
-    max_iter=10,
-    # tol=1e-4,
+    alpha=0.2,
+    l1_ratio=0.5,
+    max_iter=1000,
+    tol=2e-4,
     # random_state=42
 )
 model.fit(X_train, y_train)

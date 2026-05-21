@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import HuberRegressor, LassoLars
+from sklearn.linear_model import ElasticNet
+from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from lime.lime_tabular import LimeTabularExplainer
 
@@ -76,7 +77,7 @@ def lime_sensitivity_analysis(
 # Load data
 dt = pd.read_excel(
     r'C:\Users\Sam\Desktop\ML\task\Data.xlsx',
-    sheet_name='Data_after_KFold_LLAR(MRMR)'
+    sheet_name='Data_after_KFold_XGBoost'
 )
 
 target_column = dt.columns[-1]
@@ -90,22 +91,24 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # ---------------------------------------------------------
-# MODELS (UNCHANGED HYPERPARAMETERS)
+# MODELS (ENR & XGBR)
 # ---------------------------------------------------------
 
-# 1. Huber Regressor
-knnc_model = HuberRegressor(
-    max_iter=15
+# 1. ElasticNet Regressor (ENR)
+enr_model = ElasticNet(
+    alpha=1.0, 
+    l1_ratio=0.5, 
+    random_state=42
 )
-knnc_model.fit(X_train, y_train)
+enr_model.fit(X_train, y_train)
 
-# 2. LassoLars
-adac_model = LassoLars(
-    alpha=20,
-    fit_intercept=True,
-    max_iter=20
+# 2. XGBoost Regressor (XGBR)
+xgbr_model = XGBRegressor(
+    n_estimators=100,
+    learning_rate=0.1,
+    random_state=42
 )
-adac_model.fit(X_train, y_train)
+xgbr_model.fit(X_train, y_train)
 
 # ---------------------------------------------------------
 # REGRESSION METRICS
@@ -122,12 +125,12 @@ def regression_metrics(name, y_true, y_pred):
     print("-" * 30)
 
 # Predictions
-knnc_pred = knnc_model.predict(X_test)
-adac_pred = adac_model.predict(X_test)
+enr_pred = enr_model.predict(X_test)
+xgbr_pred = xgbr_model.predict(X_test)
 
 # Metrics
-regression_metrics("HuberRegressor (KNNC)", y_test, knnc_pred)
-regression_metrics("LassoLars (ADAC)", y_test, adac_pred)
+regression_metrics("ElasticNet (ENR)", y_test, enr_pred)
+regression_metrics("XGBRegressor (XGBR)", y_test, xgbr_pred)
 
 print("\n" + "=" * 30 + "\n")
 
@@ -135,16 +138,16 @@ print("\n" + "=" * 30 + "\n")
 # LIME SENSITIVITY ANALYSIS (BOTH MODELS)
 # ---------------------------------------------------------
 
-lime_KNNC = lime_sensitivity_analysis(
-    model=knnc_model,
+lime_ENR = lime_sensitivity_analysis(
+    model=enr_model,
     X_train=X_train,
     X_test=X_test,
     sample_index=5,
     epsilon=0.05
 )
 
-lime_ADAC = lime_sensitivity_analysis(
-    model=adac_model,
+lime_XGBR = lime_sensitivity_analysis(
+    model=xgbr_model,
     X_train=X_train,
     X_test=X_test,
     sample_index=5,
@@ -152,23 +155,24 @@ lime_ADAC = lime_sensitivity_analysis(
 )
 
 # Convert to DataFrames
-lime_KNNC_df = pd.DataFrame.from_dict(
-    lime_KNNC,
+lime_ENR_df = pd.DataFrame.from_dict(
+    lime_ENR,
     orient='index',
-    columns=['Huber Sensitivity']
+    columns=['ENR Sensitivity']
 )
 
-lime_ADAC_df = pd.DataFrame.from_dict(
-    lime_ADAC,
+lime_XGBR_df = pd.DataFrame.from_dict(
+    lime_XGBR,
     orient='index',
-    columns=['LassoLars Sensitivity']
+    columns=['XGBR Sensitivity']
 )
 
 # Merge for comparison report
-final_report = pd.concat([lime_KNNC_df, lime_ADAC_df], axis=1)
+final_report = pd.concat([lime_ENR_df, lime_XGBR_df], axis=1)
 
 print("\n📊 FINAL LIME SENSITIVITY COMPARISON")
 print(final_report)
 
 # Export
 final_report.to_clipboard(index=True, header=True)
+print("\n✅ Table copied to clipboard!")

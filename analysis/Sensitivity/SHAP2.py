@@ -1,8 +1,9 @@
 # =========================================================
 # SHAP Sensitivity Analysis → Table + Dependence Plots (Saved as Images)
+# Modified for XGBoost (XGBRegressor)
 # =========================================================
 # Requirements:
-#   pip install pandas numpy shap scikit-learn matplotlib openpyxl
+#   pip install pandas numpy shap scikit-learn matplotlib openpyxl xgboost
 # =========================================================
 
 import pandas as pd
@@ -10,13 +11,12 @@ import numpy as np
 import shap
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
+from xgboost import XGBRegressor  # <-- Changed to XGBoost
 import os
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "DATA"
+sheet_name = "Data_after_KFold_XGBoost"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name)
 
@@ -25,20 +25,22 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# -------------------- 2. Split & scale data --------------------
+# -------------------- 2. Split data --------------------
+# Note: StandardScaler was removed because XGBoost does not need scaled data.
+# This makes your SHAP plots much easier to read (they will use original units).
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
 # -------------------- 3. Train model --------------------
-model = LinearRegression()
-model.fit(X_train_scaled, y_train)
+# Changed to XGBoost Regressor
+model = XGBRegressor(    n_estimators=100,       # keep moderate
+    max_depth=3,      )
+    
+model.fit(X_train, y_train)
 
 # -------------------- 4. Compute SHAP values --------------------
-explainer = shap.LinearExplainer(model, X_train_scaled)
-shap_values = explainer.shap_values(X_test_scaled)
+# Changed to TreeExplainer (optimized for XGBoost)
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
 
 # -------------------- 5. Build Sensitivity Table (for Clipboard) --------------------
 print("Calculating Sensitivity Metrics...")
