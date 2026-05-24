@@ -7,7 +7,7 @@ from SALib.analyze import sobol
 
 # --- Load dataset ---
 # sheet_name = "Data_after_KFold_LLAR"
-sheet_name = "Data_after_KFold_LLAR(IF)"
+sheet_name = "Data_after_KFold_GPR"  # Use the GPR sheet for consistency with the best model
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 
@@ -22,7 +22,14 @@ y = df[target_column]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
 from sklearn.linear_model import LassoLars
 # --- Train XGBoost model (The "Best Model") ---
-model = XGBRegressor(random_state=42, n_estimators=100, learning_rate=0.1)
+model = XGBRegressor(
+        n_estimators=50,
+        max_depth=50,
+        # learning_rate=0.03,
+        # subsample=0.8,
+        # colsample_bytree=0.8,
+        random_state=42
+    )
 model.fit(X_train, y_train)
 
 # --- Define problem space for SALib ---

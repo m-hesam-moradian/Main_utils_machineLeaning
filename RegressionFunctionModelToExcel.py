@@ -18,21 +18,20 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "HEOA"
-optimizer_name = "LOA"
+optimizer_name = "WEOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "XGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "GPR(IF)"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.928959541
+R2_target = 0.98
 
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"

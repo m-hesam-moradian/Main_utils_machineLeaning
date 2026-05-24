@@ -31,6 +31,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+# sheet_name = "Data"  # Change this to your actual sheet name if different
 sheet_name = "Isolation_Forest"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -40,53 +41,69 @@ y = df[target_column]
 
 # ================== Updated Models ==================
 from sklearn.model_selection import KFold
-from sklearn.linear_model import (
-    LinearRegression,
-    QuantileRegressor,
-    BayesianRidge
-)
+
 from sklearn.ensemble import (
-    ExtraTreesRegressor,
-    GradientBoostingRegressor
+    GradientBoostingRegressor,
+    HistGradientBoostingRegressor,
+    RandomForestRegressor,
+    ExtraTreesRegressor
 )
+
 from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
 
 models = {
 
-    # Lasso Regression (LR)
-    "LR": LinearRegression(),
-
-    # Extra Trees Regression (ETR)
-    "ETR": ExtraTreesRegressor(
-        n_estimators=100,
-        random_state=42
-    ),
-
-    # Extreme Gradient Boosting Regression (XGBR)
-    "XGBR": XGBRegressor(
-        n_estimators=100,
+    # Histogram Gradient Boosting Regression
+    "SBR": HistGradientBoostingRegressor(
+        max_iter=25,
         max_depth=3,
-        learning_rate=0.05,
-        objective="reg:squarederror",
+        # learning_rate=0.03,
+        # min_samples_leaf=5,
         random_state=42
     ),
 
-    # Quantile Regression (QR)
-    "QR": QuantileRegressor(
-        quantile=0.5,
-        alpha=0.1
-    ),
+    # Gradient Boosting Regression
+    # "GBR": GradientBoostingRegressor(
+    #     n_estimators=10,
+    #     max_depth=3,
+    #     # learning_rate=0.03,
+    #     random_state=42
+    # ),
 
-    # Stochastic Gradient Boosting (SGB)
-    "SGB": GradientBoostingRegressor(
-        n_estimators=100,
-        learning_rate=0.05,
-        max_depth=3,
+    # # XGBoost Regression
+    "GPR": XGBRegressor(
+        n_estimators=15,
+        max_depth=2,
+        # learning_rate=0.03,
+        # subsample=0.8,
+        # colsample_bytree=0.8,
         random_state=42
     ),
 
-    # Sparse Bayesian Regression (SBR)
-    "SBR": BayesianRidge()
+    # # LightGBM Regression
+    # "LGBMR": LGBMRegressor(
+    #     n_estimators=300,
+    #     max_depth=3,
+    #     learning_rate=0.03,
+    #     subsample=0.8,
+    #     colsample_bytree=0.8,
+    #     random_state=42
+    # ),
+
+    # # Random Forest Regression
+    # "RFR": RandomForestRegressor(
+    #     n_estimators=300,
+    #     max_depth=5,
+    #     random_state=42
+    # ),
+
+    # # Extra Trees Regression
+    # "ETR": ExtraTreesRegressor(
+    #     n_estimators=300,
+    #     max_depth=5,
+    #     random_state=42
+    # )
 }
 
 # -------------------------------
@@ -166,12 +183,12 @@ close_excel_file(filepath)
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics(IF)", index=False
         )
         df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
+            writer, sheet_name=f"Data_after_KFold_{model_name}(IF)", index=False
         )
-    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Summary(IF)", index=False)
 
 open_excel_file(filepath)
 

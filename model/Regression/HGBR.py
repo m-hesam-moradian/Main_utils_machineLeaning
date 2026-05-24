@@ -7,7 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for HGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_HGBR(VIF)"  # Changed to "HGBR" sheet name
+sheet_name = "Data_after_KFold_SBR(IF)"  # Changed to "HGBR" sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -26,10 +26,12 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize HGBR model ---
 model = HistGradientBoostingRegressor(
-    max_depth=10,          # Maximum depth of each tree
-    learning_rate=0.001,
-    random_state=42       # Random seed for reproducibility
-)
+        max_iter=25,
+        max_depth=3,
+        # learning_rate=0.03,
+        # min_samples_leaf=5,
+        random_state=42
+    )
 
 # Train the model
 model.fit(X_train, y_train)
