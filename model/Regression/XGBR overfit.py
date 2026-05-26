@@ -1,39 +1,34 @@
 import pandas as pd
-from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import numpy as np
-# --- Load reordered data for LGBR (after K-Fold) ---
+
+# --- Load reordered data for XGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Z-Score"  # keep same sheet
+sheet_name = "Data_after_KFold_LSSVR(ANOVA)"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 
-
 X = df.drop(columns=target_column)
 y = df[target_column]
 
-
 # --- Use last 20% as test set to match K-Fold logic ---
-from sklearn.model_selection import train_test_split
+split_idx = int(len(df) * 0.8)
+X_train, X_test = X[:split_idx], X[split_idx:]
+y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Random Train/Test Split (80/20) ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, 
-    test_size=0.2,       # 20% test
-    random_state=42,     # for reproducibility
-    shuffle=True         # random shuffle
-)
+# --- Define and train XGBR model ---
 
-# --- Define and train LGBR model ---
-model = LGBMRegressor(
-        n_estimators=10,
-        max_depth=2,
-        random_state=42
-       
-)
+model =XGBRegressor(
+        # n_estimators=10,
+        # max_depth=5,
+        # learning_rate=0.1,
+        # # subsample=0.8,
+        # # colsample_bytree=0.8,
+        # random_state=42
+    )
 
-model.fit(X_train, y_train)
+model.fit(X, y)
 
 # --- Predictions ---
 y_pred_all = model.predict(X)

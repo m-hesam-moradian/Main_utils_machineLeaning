@@ -46,7 +46,7 @@ def remove_outliers(df):
 
 # === CONFIGURATION ===
 input_file = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
-input_sheet = 'Encoded_Data'
+input_sheet = 'Data'
 output_sheet = 'Z-Score'
 report_sheet = 'Z-Score_Report'  # Name of the new sheet for the report
 

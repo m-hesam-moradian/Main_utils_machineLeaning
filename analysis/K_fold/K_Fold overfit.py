@@ -41,14 +41,12 @@ y = df[target_column]
 
 # ================== Updated Models ==================
 from sklearn.model_selection import KFold
-
 from sklearn.ensemble import (
     GradientBoostingRegressor,
     HistGradientBoostingRegressor,
     RandomForestRegressor,
     ExtraTreesRegressor
 )
-
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
@@ -57,11 +55,13 @@ models = {
 
     # Histogram Gradient Boosting Regression
     "LSSVR": XGBRegressor(
-    n_estimators=10,        # Increased, but paired with early stopping
-    max_depth=5,             # Shallow trees
-    learning_rate=0.1,      # Small steps
-    random_state=42
-),
+        n_estimators=10,
+        max_depth=5,
+        learning_rate=0.1,
+        # subsample=0.8,
+        # colsample_bytree=0.8,
+        random_state=42
+    ),
 
     # Gradient Boosting Regression
     # "GBR": GradientBoostingRegressor(
@@ -133,13 +133,13 @@ for model_name, model in models.items():
         X_test  = X_full.iloc[test_idx]
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        model.fit(X_full, y)
+        y_pred = model.predict(X_full)
 
         fold_metrics_list.append({
             "Fold": fold_index,
-            "R2": r2_score(y_test, y_pred),
-            "RMSE": np.sqrt(mean_squared_error(y_test, y_pred))
+            "R2": r2_score(y, y_pred),
+            "RMSE": np.sqrt(mean_squared_error(y, y_pred))
         })
 
         fold_indices_list.append({
