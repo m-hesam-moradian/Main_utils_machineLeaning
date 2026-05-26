@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for XGBR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_After_ANOVA"  # keep same sheet
+sheet_name = "Data_after_KFold_LSSVR(RFE)"  # keep same sheet
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -19,13 +19,40 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Define and train XGBR model ---
 
+# model = XGBRegressor(
+#     n_estimators=10,        # Increased, but paired with early stopping
+#     max_depth=5,             # Shallow trees
+#     learning_rate=0.1,      # Small steps
+#     random_state=42
+# )
+# model = XGBRegressor(
+#     n_estimators=15,        # Increased, but paired with early stopping
+#     max_depth=10,             # Shallow trees
+#     learning_rate=0.1,      # Small steps
+#     random_state=42
+# )
+# model = XGBRegressor(
+#     n_estimators=17,        # Increased, but paired with early stopping
+#     max_depth=10,             # Shallow trees
+#     learning_rate=0.1,      # Small steps
+#     random_state=42
+# )
+# model = XGBRegressor(
+#     n_estimators=11,        # Increased, but paired with early stopping
+#     max_depth=5,             # Shallow trees
+#     learning_rate=0.1,      # Small steps
+#     random_state=42
+# )
+# model = XGBRegressor(
+#     n_estimators=16,        # Increased, but paired with early stopping
+#     max_depth=10,             # Shallow trees
+#     learning_rate=0.1,      # Small steps
+#     random_state=42
+# )
 model = XGBRegressor(
-    n_estimators=500,        # Increased, but paired with early stopping
-    max_depth=3,             # Shallow trees
-    learning_rate=0.03,      # Small steps
-    subsample=0.7,           # Row sampling
-    colsample_bytree=0.7,    # Feature sampling
-    gamma=1,                 # Minimum loss reduction to split
+    n_estimators=18,        # Increased, but paired with early stopping
+    max_depth=10,             # Shallow trees
+    learning_rate=0.1,      # Small steps
     random_state=42
 )
 

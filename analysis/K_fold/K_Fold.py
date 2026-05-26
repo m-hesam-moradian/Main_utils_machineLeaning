@@ -56,12 +56,13 @@ from lightgbm import LGBMRegressor
 models = {
 
     # Histogram Gradient Boosting Regression
-    "LSSVR": XGBRegressor(
-    n_estimators=10,        # Increased, but paired with early stopping
-    max_depth=5,             # Shallow trees
-    learning_rate=0.1,      # Small steps
-    random_state=42
-),
+    "LSSVR": SVR(
+    kernel="rbf",   # non-linear regression
+    # C=70,          # regularization strength
+    # epsilon=0.1,    # epsilon-insensitive loss
+    gamma="scale"   # kernel coefficient
+)
+,
 
     # Gradient Boosting Regression
     # "GBR": GradientBoostingRegressor(
