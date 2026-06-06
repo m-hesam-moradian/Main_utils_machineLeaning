@@ -18,16 +18,18 @@ params = {
 }
 
 ShowProbs = False  # False → hide probability columns & ROC table
-model_name = "DST"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "LDA"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "MLR"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "Ensemble(Stacking Method)"  # model name for title (e.g., "Extra Trees Classifier")
 optimizer_name = ""  # no optimizer
-# optimizer_name = "ROA"  # optimizer
-# optimizer_name = "HOA"  #  optimizer
+# optimizer_name = "SWOA"  # optimizer
+# optimizer_name = "CCO"  #  optimizer
  
 Accuracy_target = 0.0
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Recall"
+Convergence_metric = "Precision"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

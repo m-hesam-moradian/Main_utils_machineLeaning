@@ -6,10 +6,10 @@ from sklearn.preprocessing import LabelEncoder
 from getAllMetrics_Classification import getAllMetric
 
 # Load data
-sheet_name = "Data after K-FOLD (LDA)"
-excel_path = r"D:\ML\Main_utils\task\WA_Fn-UseC_-HR-Employee-Attrition.xlsx"
+sheet_name = "Data_after_KFold_LDA"
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = "Attrition"
+target_column = df.columns[-1]
 
 # --- Encode Target Variable ---
 # If Attrition is categorical ("Yes"/"No"), encode it to 0/1
@@ -49,7 +49,40 @@ model = LinearDiscriminantAnalysis(
     store_covariance=False,  # Default: Do not compute covariance matrix
     tol=0.2641,  # Default: Tolerance for singular values
 )
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+import numpy as np
 
+# 1. Initialize the base model
+lda = LinearDiscriminantAnalysis(solver='eigen')
+
+# 2. Define a search space tightly clustered around your successful numbers
+param_distributions = {
+    # Search around your 0.338 success (from 0.20 to 0.50)
+    'shrinkage': np.linspace(0.20, 0.50, 100), 
+    
+    # Search around your 0.2641 tolerance
+    'tol': np.linspace(0.10, 0.50, 100),       
+}
+
+# 3. Set up the automated search
+# It will try 100 different combinations of the numbers above
+search = RandomizedSearchCV(
+    estimator=lda,
+    param_distributions=param_distributions,
+    n_iter=100,          # Number of combinations to try
+    cv=5,                # 5-fold cross-validation
+    scoring='accuracy',  # Change to 'f1_macro' or 'f1_weighted' if you prefer
+    random_state=42,
+    n_jobs=-1            # Uses all your CPU cores to run faster
+)
+
+# 4. Run this on your actual training data!
+search.fit(X_train, y_train)
+
+# 5. Print the absolute best setup
+print("Best parameters found:", search.best_params_)
+print("Best score achieved:", search.best_score_)
 # Fit the model
 model.fit(X_train, y_train)
 

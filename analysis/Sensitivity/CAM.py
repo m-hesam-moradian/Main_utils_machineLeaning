@@ -46,7 +46,7 @@ def CAM_function(X, predictions):
     return df
 
 # Example usage:
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_XGBoost")
+df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_MLR")
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 

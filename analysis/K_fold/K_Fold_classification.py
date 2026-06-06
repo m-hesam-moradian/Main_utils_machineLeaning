@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_CHI2" 
+sheet_name = "data_after_chi2" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -38,32 +38,23 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Corrected Models ==================
-from sklearn.svm import SVC
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
-from xgboost import XGBClassifier
 
 models = {
-    # "SVC": SVC(
-    #     # kernel='rbf',
-    #     C=0.01,
-    #     # gamma='scale',
-    #     # probability=True,
-    #     # random_state=42
-    # ),
 
-    "LR": LogisticRegression(
-        C=1.0,
-        max_iter=10,
-        # random_state=42
+    "LDA": LinearDiscriminantAnalysis(
+
+        # solver='svd', # 'svd' is the default solver and usually works well
     ),
 
-    # "XGB": XGBClassifier(
-    #     n_estimators=100,
-    #     learning_rate=0.002,
-    #     max_depth=100,
-    #     # random_state=42,
-    #     # eval_metric='logloss'
-    # )
+    "MLR": LogisticRegression(
+        multi_class='multinomial',
+        solver='lbfgs', # 'lbfgs' is the default and supports multinomial loss
+        # max_iter=1000,  # Increased from 10 to 1000 to prevent convergence warnings
+        # C=1.0,
+        # random_state=42
+    )
 }
 # =============== K-Fold Execution ==================
 n_splits = 5

@@ -18,7 +18,7 @@ params = {
 model_name = "LR(CHI2)"
 optimizer_name = ""  # no optimizer
 # optimizer_name = "OOA"  # no optimizer
-optimizer_name = "HEOA"  # no optimizer
+# optimizer_name = "HEOA"  # no optimizer
 
 
 
@@ -26,7 +26,7 @@ if optimizer_name:
     sheet_name = f"{model_name} + {optimizer_name}"
 else:
     sheet_name = model_name
-Accuracy_target = 0.0
+Accuracy_target = 0.88456
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
