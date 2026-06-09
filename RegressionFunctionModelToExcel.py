@@ -6,6 +6,7 @@ import os
 import win32com.client
 
 
+
 # === CONFIGURATION ===
 # Models: Ridge Regression (RR), Extra Trees Regression (ETR), Histogram-Based Gradient Boosting Regression (HGBR)
 # Optimizers: Catch Fish Optimization Algorithm (CFOA) and Orangutan Optimization Algorithm (OOA)
@@ -18,14 +19,14 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "POA"
-optimizer_name = "EOA"
+# optimizer_name = "HOA"
+# optimizer_name = "DSOA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-# model_name = "LSSVR(ANOVA)"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "LSSVR(RFE)"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "CATR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 R2_target = 0.0
 
@@ -33,7 +34,7 @@ min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -43,44 +44,34 @@ sheet_name = model_name
 if optimizer_name.strip():
     sheet_name = model_name + " + " + optimizer_name.strip()  # should match Excel sheet label you want
 
-import pandas as pd
+
 import numpy as np
-from sklearn.metrics import r2_score, mean_squared_error
+import pandas as pd
+from sklearn.metrics import mean_squared_error, r2_score
 
 def build_metrics_table(y_real, y_pred):
 
     def mare(y_true, y_hat):
         y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
-
         # avoid division by zero
         non_zero = y_true != 0
-
         return np.mean(
             np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])
         ) * 100
 
-
     def cov_metric(y_true, y_hat):
-
         # COV = RMSE / mean(y_true)
         rmse = np.sqrt(mean_squared_error(y_true, y_hat))
         mean_y = np.mean(y_true)
-
         return rmse / mean_y if mean_y != 0 else np.nan
-
 
     def U95_metric(y_true, y_hat):
         return np.percentile(np.abs(y_true - y_hat), 95)
 
-
-    # === NEW: RAE Metric ===
     def rae_metric(y_true, y_hat):
-
         numerator = np.sum(np.abs(y_true - y_hat))
         denominator = np.sum(np.abs(y_true - np.mean(y_true)))
-
         return numerator / denominator if denominator != 0 else np.nan
-
 
     def compute_metrics(y_true, y_hat, delta=1.0):
 
@@ -93,6 +84,17 @@ def build_metrics_table(y_real, y_pred):
         mare_val = mare(y_true, y_hat)
         cov_val = cov_metric(y_true, y_hat)
         U95 = U95_metric(y_true, y_hat)
+
+        # === NEW: MAE ===
+        mae = np.mean(np.abs(y_true - y_hat))
+
+        # === NEW: AARD ===
+        # Average Absolute Relative Deviation (Percentage)
+        non_zero = y_true != 0
+        if np.any(non_zero):
+            aard = np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
+        else:
+            aard = np.nan
 
         # SI
         mean_y = np.mean(y_true)
@@ -119,8 +121,6 @@ def build_metrics_table(y_real, y_pred):
         )
 
         # MAPE
-        non_zero = y_true != 0
-
         if np.any(non_zero):
             mape = np.mean(
                 np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])
@@ -130,18 +130,19 @@ def build_metrics_table(y_real, y_pred):
 
         # COM
         sum_y = np.sum(y_true)
-
         com = (
             (sum_y - np.sum(y_hat)) / sum_y
             if sum_y != 0 else np.nan
         )
 
-        # === NEW: RAE ===
+        # RAE
         rae = rae_metric(y_true, y_hat)
 
         return {
             "R2": r2,
             "RMSE": rmse,
+            "MAE": mae,       # Added
+            "AARD": aard,     # Added
             "MARE": mare_val,
             "COV": cov_val,
             "U95": U95,
@@ -153,7 +154,6 @@ def build_metrics_table(y_real, y_pred):
             "COM": com,
             "RAE": rae
         }
-
 
     # --- Split ---
     split_idx = int(len(y_real) * 0.8)
@@ -181,11 +181,12 @@ def build_metrics_table(y_real, y_pred):
         "Value-test": compute_metrics(y_real_valte, y_pred_valte)
     }
 
-
     cols = [
         "Set",
         "R2",
         "RMSE",
+        "MAE",       # Added
+        "AARD",      # Added
         "MARE",
         "COV",
         "U95",
@@ -198,15 +199,15 @@ def build_metrics_table(y_real, y_pred):
         "RAE"
     ]
 
-
     rows = []
 
     for set_name, m in sets.items():
-
         rows.append([
             set_name,
             m["R2"],
             m["RMSE"],
+            m["MAE"],       # Added
+            m["AARD"],      # Added
             m["MARE"],
             m["COV"],
             m["U95"],
@@ -219,9 +220,7 @@ def build_metrics_table(y_real, y_pred):
             m["RAE"]
         ])
 
-
     return pd.DataFrame(rows, columns=cols)
-
 def fake_r2_prediction(y_real, y_pred, R2_target):
     current_r2 = r2_score(y_real, y_pred)
     if current_r2 >= R2_target:

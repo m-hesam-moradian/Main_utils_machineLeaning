@@ -84,7 +84,7 @@ def calculate_oi_for_model(y_true, y_pred, test_size=0.2, metric='R2'):
     return oi, r2_train, r2_test
 
 import pandas as pd
-df=pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",sheet_name="predicts(RFE)")
+df=pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",sheet_name="predicts")
 results = []
 
 columns = df.columns.tolist()

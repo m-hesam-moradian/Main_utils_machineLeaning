@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for RF (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFR_Zscore"   # update if needed
+sheet_name = "Data_after_KFold_SF(RFE)"   # update if needed
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -18,13 +18,11 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Train and predict with Random Forest ---
 model = RandomForestRegressor(
-    n_estimators=542,
-    max_depth=74,
-    min_samples_leaf=10,
-    max_features=0.7,
-    random_state=42,
-    # n_jobs=-1
-)
+        # max_depth=10,
+        # n_estimators=20,
+        bootstrap=True, # This introduces the 'stochastic' element
+        random_state=42
+    )
 model.fit(X_train, y_train)
 
 y_pred_all = model.predict(X)

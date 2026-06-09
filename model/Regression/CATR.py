@@ -4,7 +4,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for CATR (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_CATR"
+sheet_name = "Data_after_KFold_CATR(RFE)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -19,14 +19,27 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 
 # --- Define and train CatBoost Regression model ---
+# model = CatBoostRegressor(
+#         iterations=500,
+#         learning_rate=0.05,
+#         depth=6,
+#         loss_function='RMSE',
+#         verbose=0,
+#         random_state=42
+#     )
 model = CatBoostRegressor(
-        iterations=500,
+        iterations=200,
         learning_rate=0.05,
         depth=6,
         loss_function='RMSE',
         verbose=0,
         random_state=42
     )
+# model = CatBoostRegressor(
+#         iterations=20,
+#         random_state=42,
+#         # verbose=0       # Keeps the output clean
+#     )
 model.fit(X_train, y_train)
 
 # --- Predictions ---

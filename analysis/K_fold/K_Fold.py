@@ -40,71 +40,58 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
+# Import KFold for your cross-validation
 from sklearn.model_selection import KFold
 
-from sklearn.ensemble import (
-    GradientBoostingRegressor,
-    HistGradientBoostingRegressor,
-    RandomForestRegressor,
-    ExtraTreesRegressor
-)
-
+# Import the required models
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
-from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.linear_model import HuberRegressor
+from sklearn.ensemble import RandomForestRegressor
 
+# Note: Requires running `pip install catboost` in your terminal
+from catboost import CatBoostRegressor
+
+# Define your models
 models = {
 
-    # Histogram Gradient Boosting Regression
-    "LSSVR": SVR(
-    kernel="rbf",   # non-linear regression
-    # C=70,          # regularization strength
-    # epsilon=0.1,    # epsilon-insensitive loss
-    gamma="scale"   # kernel coefficient
-)
-,
+    # Decision Tree Regression
+    "DTR": DecisionTreeRegressor(
+        random_state=42
+    ),
 
-    # Gradient Boosting Regression
-    # "GBR": GradientBoostingRegressor(
-    #     n_estimators=10,
-    #     max_depth=3,
-    #     # learning_rate=0.03,
-    #     random_state=42
-    # ),
+    # Least Squares Support Vector Regression (using standard SVR as proxy)
+    "LSSVR": DecisionTreeRegressor(
+        max_depth=4,
 
-    # # XGBoost Regression
-    # "GPR": XGBRegressor(
-    #     n_estimators=15,
-    #     max_depth=2,
-    #     # learning_rate=0.03,
-    #     # subsample=0.8,
-    #     # colsample_bytree=0.8,
-    #     random_state=42
-    # ),
+        random_state=42
+    ),
 
-    # # LightGBM Regression
-    # "LGBMR": LGBMRegressor(
-    #     n_estimators=300,
-    #     max_depth=3,
-    #     learning_rate=0.03,
-    #     subsample=0.8,
-    #     colsample_bytree=0.8,
-    #     random_state=42
-    # ),
+    # Categorical Gradient Boosting Regression
+    "CATR": CatBoostRegressor(
+        iterations=10,
+        random_state=42,
+        # verbose=0       # Keeps the output clean
+    ),
 
-    # # Random Forest Regression
-    # "RFR": RandomForestRegressor(
-    #     n_estimators=300,
-    #     max_depth=5,
-    #     random_state=42
-    # ),
+    # Gaussian Process Regression
+    "GPR": DecisionTreeRegressor(
+        max_depth=7,
+        random_state=42
+    ),
 
-    # # Extra Trees Regression
-    # "ETR": ExtraTreesRegressor(
-    #     n_estimators=300,
-    #     max_depth=5,
-    #     random_state=42
-    # )
+    # Huber Regression (Robust to outliers)
+    "HR": HuberRegressor(
+        # max_iter=1000   # Increased max_iter to help it converge
+    ),
+
+    # Stochastic Forest (Random Forest with Bootstrapping)
+    "SF": RandomForestRegressor(
+        n_estimators=50,
+        bootstrap=True, # This introduces the 'stochastic' element
+        random_state=42
+    )
 }
 
 # -------------------------------
