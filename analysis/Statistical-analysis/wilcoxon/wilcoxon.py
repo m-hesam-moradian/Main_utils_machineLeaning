@@ -46,8 +46,9 @@ for model_a, model_b in combinations(predictions.keys(), 2):
 for key, value in results.items():
     print(f"\n{key}:")
     for sub_key, sub_value in value.items():
+        # CHANGED :.5f to :.5e here so tiny numbers display in scientific notation (e.g., 1.23456e-07)
         print(
-            f"  {sub_key}: {sub_value:.5f}"
+            f"  {sub_key}: {sub_value:.5e}"
             if not pd.isna(sub_value)
             else f"  {sub_key}: NaN"
         )
@@ -59,15 +60,11 @@ df_p_values = pd.DataFrame(
 )
 df_results = pd.merge(df_stats, df_p_values, on="Comparison")
 
+# --- ADD THIS LINE HERE ---
+# This forces the P-Values to display as standard decimals with 15 decimal places
+df_results["P-Value"] = df_results["P-Value"].apply(lambda x: f"{x:.15f}" if pd.notna(x) else "NaN")
+# --------------------------
+
 # Display final merged results
 print("\nWilcoxon Comparison Results:")
 print(df_results)
-
-# Optional: significance check for one pair
-alpha = 0.05
-first_pair = list(results["p_values"].keys())[0]
-if results["p_values"][first_pair] < alpha:
-    print(f"\n{first_pair} shows a significant difference.")
-else:
-    print(f"\nNo significant difference between {first_pair}.")
-df_results.to_clipboard()

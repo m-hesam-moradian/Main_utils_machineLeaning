@@ -25,7 +25,8 @@ optimizer_name = ""  # no optimizer
 # optimizer_name = "SWOA"  # optimizer
 # optimizer_name = "CCO"  #  optimizer
  
-Accuracy_target = 0.0
+Accuracy_target = 0.975
+
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
