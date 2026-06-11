@@ -32,7 +32,7 @@ def open_excel_file(filepath):
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 # sheet_name = "Data"  # Change this to your actual sheet name if different
-sheet_name = "Selected_Data_RFE"  # Change this to your actual sheet name if different
+sheet_name = "Isolation_Forest"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -40,57 +40,71 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Updated Models ==================
-# Import KFold for your cross-validation
-from sklearn.model_selection import KFold
+# # Import KFold for your cross-validation
+# from sklearn.model_selection import KFold
 
-# Import the required models
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import SVR
-from sklearn.gaussian_process import GaussianProcessRegressor
+# # Import the required models
+# from sklearn.tree import DecisionTreeRegressor
+# from sklearn.svm import SVR
+# from sklearn.gaussian_process import GaussianProcessRegressor
+# from sklearn.linear_model import HuberRegressor
+# from sklearn.ensemble import RandomForestRegressor
+
+# # Note: Requires running `pip install catboost` in your terminal
+# from catboost import CatBoostRegressor
+
+# # Define your models
+# models = {
+
+#     # Decision Tree Regression
+#     "DTR": DecisionTreeRegressor(
+#         random_state=42
+#     ),
+
+#     # Least Squares Support Vector Regression (using standard SVR as proxy)
+#     "LSSVR": SVR(
+#         kernel="rbf",   # non-linear regression
+#         gamma="scale"   # kernel coefficient
+#     ),
+
+#     # Categorical Gradient Boosting Regression
+#     "CATR": CatBoostRegressor(
+#         random_state=42,
+#         verbose=0       # Keeps the output clean
+#     ),
+
+#     # Gaussian Process Regression
+#     "GPR": GaussianProcessRegressor(
+#         random_state=42
+#     ),
+
+#     # Huber Regression (Robust to outliers)
+#     "HR": HuberRegressor(
+#         max_iter=1000   # Increased max_iter to help it converge
+#     ),
+
+#     # Stochastic Forest (Random Forest with Bootstrapping)
+#     "SF": RandomForestRegressor(
+#         n_estimators=100,
+#         bootstrap=True, # This introduces the 'stochastic' element
+#         random_state=42
+#     )
+# }
+
+
+
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn.linear_model import HuberRegressor
-from sklearn.ensemble import RandomForestRegressor
 
-# Note: Requires running `pip install catboost` in your terminal
-from catboost import CatBoostRegressor
-
-# Define your models
 models = {
-
-    # Decision Tree Regression
-    "DTR": DecisionTreeRegressor(
-        random_state=42
-    ),
-
-    # Least Squares Support Vector Regression (using standard SVR as proxy)
-    "LSSVR": DecisionTreeRegressor(
-        max_depth=4,
-
-        random_state=42
-    ),
-
-    # Categorical Gradient Boosting Regression
-    "CATR": CatBoostRegressor(
-        iterations=10,
-        random_state=42,
-        # verbose=0       # Keeps the output clean
-    ),
-
-    # Gaussian Process Regression
-    "GPR": DecisionTreeRegressor(
-        max_depth=7,
+    # Adaptive Gradient Boosting Regression
+    "ADAR": AdaBoostRegressor(
         random_state=42
     ),
 
     # Huber Regression (Robust to outliers)
     "HR": HuberRegressor(
-        # max_iter=1000   # Increased max_iter to help it converge
-    ),
-
-    # Stochastic Forest (Random Forest with Bootstrapping)
-    "SF": RandomForestRegressor(
-        n_estimators=50,
-        bootstrap=True, # This introduces the 'stochastic' element
-        random_state=42
+        max_iter=1000   # Increased max_iter to help it converge
     )
 }
 

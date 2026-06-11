@@ -1,5 +1,5 @@
 import pandas as pd
-from xgboost import XGBRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # --- Load reordered data for ADAR (after K-Fold) ---
@@ -18,16 +18,11 @@ split_idx = int(len(df) * 0.8)
 X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
-# --- Initialize ADAR model (XGBoost) ---
-model = XGBRegressor(
-        objective="reg:squarederror",
-        learning_rate=0.1,
-        n_estimators=20,
-        max_depth=5,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        verbosity=0
+# --- Initialize ADAR model ---
+# REMOVED the trailing comma here that was causing the tuple error
+model = AdaBoostRegressor(
+    n_estimators=213,
+    random_state=42
 )
 
 # Train model
@@ -64,5 +59,3 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 
 # --- Export to clipboard ---
 df_all.to_clipboard(index=False, header=False)
-# df_train.to_clipboard(index=False)
-# df_test.to_clipboard(index=False)

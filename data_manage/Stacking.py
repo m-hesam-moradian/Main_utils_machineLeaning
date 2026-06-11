@@ -97,9 +97,9 @@ print("\n--- Metrics Summary ---")
 print(df_metrics)
 
 # Exporting everything neatly into an Excel file
-output_excel = "Stacking_Regression_Report.xlsx"
-with pd.ExcelWriter(output_excel) as writer:
-    df_fused.to_excel(writer, sheet_name="Predictions", index=False)
-    df_metrics.to_excel(writer, sheet_name="Metrics", index=False)
-
-print(f"\nAll data successfully exported to {output_excel}")
+# output_excel = "Stacking_Regression_Report.xlsx"
+# with pd.ExcelWriter(output_excel) as writer:
+#     df_fused.to_excel(writer, sheet_name="Predictions", index=False)
+    # df_metrics.to_excel(writer, sheet_name="Metrics", index=False)
+df_fused.to_clipboard(index=False)
+# print(f"\nAll data successfully exported to {output_excel}")
