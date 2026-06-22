@@ -193,3 +193,4 @@ for metric, (low, high) in results.items():
 
 
 df_results = pd.DataFrame(results).T
+df_results.to_clipboard()

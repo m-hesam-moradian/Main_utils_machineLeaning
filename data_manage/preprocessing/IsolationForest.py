@@ -26,7 +26,7 @@ def open_excel_file(filepath):
 # --- Load Excel file ---
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(filepath)
-df = pd.read_excel(filepath, sheet_name="Optimal_Data_MRMR")
+df = pd.read_excel(filepath, sheet_name="DATA_Shuffled")
 
 # --- Separate features and target ---
 target_column = df.columns[-1]

@@ -10,7 +10,7 @@ def remove_outliers(df):
     z_scores = df_cleaned[numeric_cols].apply(zscore)
 
     # Create a mask for outliers (True if value is an outlier)
-    outlier_mask = (z_scores > 3) | (z_scores < -3)
+    outlier_mask = (z_scores > 1.8) | (z_scores < -1.8)
     
     # Find rows that have AT LEAST ONE outlier in any column
     rows_with_outliers = outlier_mask.any(axis=1)
@@ -46,7 +46,7 @@ def remove_outliers(df):
 
 # === CONFIGURATION ===
 input_file = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
-input_sheet = 'Data'
+input_sheet = 'DATA_Shuffled'
 output_sheet = 'Z-Score'
 report_sheet = 'Z-Score_Report'  # Name of the new sheet for the report
 

@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 # -------------------------
 data = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
-    sheet_name='Data_after_KFold_LinearSVC'
+    sheet_name='Data_after_KFold_ADAC(IF)'
 ).head(1000)
 
 # Target column
@@ -68,13 +68,13 @@ uncertainty_svc = entropy(proba_svc)
 # -------------------------
 # Add uncertainty columns
 # -------------------------
-data["Uncertainty_LR"] = uncertainty_lr
-data["Uncertainty_SVC"] = uncertainty_svc
+data["Uncertainty_Model_1"] = uncertainty_lr
+data["Uncertainty_Model_2"] = uncertainty_svc
 
 # -------------------------
 # Display results
 # -------------------------
-print(data[["Uncertainty_LR", "Uncertainty_SVC"]].head())
+print(data[["Uncertainty_Model_1", "Uncertainty_Model_2"]].head())
 data.to_clipboard()
 # Optional: Save to Excel
 # data.to_excel(

@@ -20,7 +20,7 @@ from sklearn.metrics import (
 file_path = Path(r"C:\Users\Sam\Desktop\ML\data\Data_err.npt")
 
 # Output report file
-out_path = Path(r"C:\Users\Sam\Desktop\ML\task\metrics_binary_report.xlsx")
+# out_path = Path(r"C:\Users\Sam\Desktop\ML\task\metrics_binary_report.xlsx")
 
 # -------------------------
 # Load predictions
@@ -67,13 +67,13 @@ for i in range(cm.shape[0]):
 report_df = pd.DataFrame(metrics, columns=["Metric", "Value"])
 report_df.insert(0, "No.", range(1, len(report_df) + 1))
 
-try:
-    report_df.to_excel(out_path, index=False)
-    saved = out_path
-except Exception:
-    csvp = out_path.with_suffix(".csv")
-    report_df.to_csv(csvp, index=False)
-    saved = csvp
+# try:
+#     report_df.to_excel(out_path, index=False)
+#     saved = out_path
+# except Exception:
+#     csvp = out_path.with_suffix(".csv")
+#     report_df.to_csv(csvp, index=False)
+#     saved = csvp
 
 # Copy to clipboard (best effort)
 try:
@@ -85,7 +85,7 @@ except Exception:
 # Print preview
 # -------------------------
 print("✅ Binary classification report created.")
-print("Saved to:", saved)
+# print("Saved to:", saved)
 print("\nPreview:")
 report_df.to_clipboard(index=False)
 print(report_df.to_string(index=False))

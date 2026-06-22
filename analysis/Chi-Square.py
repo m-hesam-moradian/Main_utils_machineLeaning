@@ -67,7 +67,7 @@ def chi_square_selection(X, y, k=10):
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="ENN")
+df = pd.read_excel(excel_path, sheet_name="IQR")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])

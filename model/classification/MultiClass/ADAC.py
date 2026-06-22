@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score
 
 # --- Load reordered data for ADAC (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_ADAC"
+sheet_name = "Data_after_KFold_ADAC(IF)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -19,7 +19,7 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize ADAC model ---
-model = AdaBoostClassifier(n_estimators=10, learning_rate=0.1)
+model = AdaBoostClassifier(n_estimators=2000, learning_rate=0.6)
 
 # Train the model
 model.fit(X_train, y_train)

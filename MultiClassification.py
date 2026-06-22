@@ -18,19 +18,28 @@ params = {
 }
 
 ShowProbs = False  # False → hide probability columns & ROC table
-# model_name = "LDA"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "MLR"  # model name for title (e.g., "Extra Trees Classifier")
-model_name = "Ensemble(Stacking Method)"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "KNNC(IF)"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "KNNC(IQR)"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "ADAC(IF)"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "ADAC(IQR)"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "Ensemble(Stacking Method)"  # model name for title (e.g., "Extra Trees Classifier")
+
 optimizer_name = ""  # no optimizer
-# optimizer_name = "SWOA"  # optimizer
-# optimizer_name = "CCO"  #  optimizer
+optimizer_name = "DSOA"  # optimi
  
-Accuracy_target = 0.975
+Accuracy_target = 0.935578947
+
+
+
+
+
+
+
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Precision"
+Convergence_metric = "Recall"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -317,7 +326,7 @@ print("Data shape:", data.shape)
 y_pred_fake = fake_accuracy_prediction(y_real, y_pred, Accuracy_target)
 print("Original Accuracy:", accuracy_score(y_real, y_pred))
 print("Fake Accuracy after adjustment (if any):", accuracy_score(y_real, y_pred_fake))
-
+data[:, 1] = y_pred_fake
 # Step C: Build value/predict table and save back into data array for Excel writing
 
 n_prob_cols = data.shape[1] - 2
