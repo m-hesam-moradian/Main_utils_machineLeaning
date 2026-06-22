@@ -1,4 +1,3 @@
-
 from statsmodels.stats.contingency_tables import mcnemar
 import pandas as pd
 import numpy as np
@@ -11,11 +10,18 @@ df = pd.read_excel(
     sheet_name="predicts",
 )
 
-# True labels
+# --- THE FIX IS HERE ---
+
+# 1. True labels: We only need the very first column since all 'Real' columns are the same
 y_true = df.iloc[:, 0]
 
-# Prediction columns
-preds = df.iloc[:, 1:]
+# 2. Predictions: Grab every second column starting from index 1 (skipping the extra 'Real' columns)
+preds = df.iloc[:, 1::2]
+
+# 3. Clean names: Grab the clean model names from the even columns and overwrite the ".1" names
+preds.columns = df.columns[0::2]
+
+# -----------------------
 
 results = []
 
@@ -66,3 +72,4 @@ results_df = pd.DataFrame(results)
 results_df.to_clipboard(index=False)
 
 print(results_df)
+print("\n✅ Success! Results copied to clipboard with clean model names.")
