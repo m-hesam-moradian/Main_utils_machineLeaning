@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score
 
 # --- Load reordered data for KNNC (after K-Fold) ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Balanced_SMOTE"  # Changed to "KNNC" sheet name
+sheet_name = "Data_after_KFold_LR"  # Changed to "KNNC" sheet name
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -26,7 +26,10 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize KNNC model ---
 # n_neighbors=5 is the standard default for KNN
-model = KNeighborsClassifier(n_neighbors=4)
+model = KNeighborsClassifier(
+    n_neighbors=22,
+    leaf_size=5,
+    )
 
 # Train the model
 model.fit(X_train, y_train)

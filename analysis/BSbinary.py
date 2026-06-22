@@ -40,6 +40,11 @@ y_pred = arr[:, 1].astype(int)
 metrics = []
 metrics.append(("N", len(y_true)))
 metrics.append(("Accuracy", round(float(accuracy_score(y_true, y_pred)), 6)))
+# Brier score for hard binary predictions
+accuracy = accuracy_score(y_true, y_pred)
+brier_hard = 1.0 - accuracy
+
+metrics.append(("Brier_Score", round(float(brier_hard), 6)))
 metrics.append(("Precision", round(float(precision_score(y_true, y_pred, zero_division=0)), 6)))
 metrics.append(("Recall", round(float(recall_score(y_true, y_pred, zero_division=0)), 6)))
 metrics.append(("F1", round(float(f1_score(y_true, y_pred, zero_division=0)), 6)))

@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_chi2" 
+sheet_name = "DATA_Shuffled" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -38,22 +38,16 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Corrected Models ==================
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.linear_model import LogisticRegression
+from lssvs import lssvc
 
 models = {
+    "LR": LogisticRegression(
 
-    "LDA": LinearDiscriminantAnalysis(
-
-        # solver='svd', # 'svd' is the default solver and usually works well
     ),
 
-    "MLR": LogisticRegression(
-        multi_class='multinomial',
-        solver='lbfgs', # 'lbfgs' is the default and supports multinomial loss
-        # max_iter=1000,  # Increased from 10 to 1000 to prevent convergence warnings
-        # C=1.0,
-        # random_state=42
+    "LSSVC": LinearSVC(
+
     )
 }
 # =============== K-Fold Execution ==================
@@ -121,9 +115,9 @@ close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(RFE)", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(RFE)", index=False)
-    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(RFE)", index=False)
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
 open_excel_file(filepath)
 

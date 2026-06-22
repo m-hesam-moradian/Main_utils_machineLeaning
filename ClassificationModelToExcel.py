@@ -14,11 +14,11 @@ params = {
 }
 
 
-# model_name = "LR(RFE)"
-model_name = "LR(CHI2)"
+# model_name = "LR"
+model_name = "LSVCC"
 optimizer_name = ""  # no optimizer
-# optimizer_name = "OOA"  # no optimizer
-# optimizer_name = "HEOA"  # no optimizer
+# optimizer_name = "NOA"  # no optimizer
+optimizer_name = "WEOA"  # no optimizer
 
 
 
@@ -26,13 +26,13 @@ if optimizer_name:
     sheet_name = f"{model_name} + {optimizer_name}"
 else:
     sheet_name = model_name
-Accuracy_target = 0.88456
+Accuracy_target = 0.9625741
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
 # Convergence_metric = "Precision"
-Convergence_metric = "Recall"
+Convergence_metric = "F1-Score"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -492,131 +492,131 @@ df_convergence = generate_fake_convergence(df_combined, y_real, y_pred_fake, con
 print("Convergence data created successfully.")
 # -------------------------------------------------------------------------
 
-# Step I: Export to Excel (close file first if open)
-close_excel_file(outputPath)
+# # Step I: Export to Excel (close file first if open)
+# close_excel_file(outputPath)
 
-# Ensure workbook exists; load/create using openpyxl
-if not os.path.exists(outputPath):
-    from openpyxl import Workbook
-    wb = Workbook()
-    wb.save(outputPath)
+# # Ensure workbook exists; load/create using openpyxl
+# if not os.path.exists(outputPath):
+#     from openpyxl import Workbook
+#     wb = Workbook()
+#     wb.save(outputPath)
 
-book = load_workbook(outputPath)
+# book = load_workbook(outputPath)
 
-with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
-    # Create new sheet and attach to writer
-    worksheet = writer.book.create_sheet(sheet_name)
-    writer.sheets[sheet_name] = worksheet
+# with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+#     # Create new sheet and attach to writer
+#     worksheet = writer.book.create_sheet(sheet_name)
+#     writer.sheets[sheet_name] = worksheet
 
-    # Header/title (preserve original logic)
-    if optimizer_name.strip():
-        title = f"{model_name} + {optimizer_name.strip()}"
-        merge_end_col = 14
-        include_convergence = True
-    else:
-        title = model_name
-        merge_end_col = 13
-        include_convergence = False
+#     # Header/title (preserve original logic)
+#     if optimizer_name.strip():
+#         title = f"{model_name} + {optimizer_name.strip()}"
+#         merge_end_col = 14
+#         include_convergence = True
+#     else:
+#         title = model_name
+#         merge_end_col = 13
+#         include_convergence = False
 
-    worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
-    cell = worksheet.cell(row=1, column=1)
-    cell.value = title
-    cell.font = Font(bold=True)
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+#     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=merge_end_col + 1)
+#     cell = worksheet.cell(row=1, column=1)
+#     cell.value = title
+#     cell.font = Font(bold=True)
+#     cell.alignment = Alignment(horizontal="center", vertical="center")
+#     cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
 
-    # Write tables similar to original layout
-    write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # Write tables similar to original layout
+#     write_table(df_value_pred, startrow=1, startcol=0, style_key="value_pred", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    params_col = len(df_value_pred.columns) + 1
-    write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     params_col = len(df_value_pred.columns) + 1
+#     write_table(df_params, startrow=1, startcol=params_col, style_key="params", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    metrics_col = params_col + len(df_params.columns) + 1
-    write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     metrics_col = params_col + len(df_params.columns) + 1
+#     write_table(df_combined, startrow=1, startcol=metrics_col, style_key="metrics", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
-    # CM_col = len(df_value_pred.columns) + 1
-    CM_start_row = len(df_params) + 6
-    write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # REC used to be written at CM_start_row, params_col; write df_combined (metrics) there
+#     # CM_col = len(df_value_pred.columns) + 1
+#     CM_start_row = len(df_params) + 6
+#     write_table(cm_df, startrow=CM_start_row, startcol=params_col, style_key="rec_curve", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    # Write ROC table just under df_combined (preserve spacing)
-    write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     # Write ROC table just under df_combined (preserve spacing)
+#     write_table(roc_df, startrow=CM_start_row, startcol=metrics_col, style_key="roc", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-    if include_convergence:
-        convergence_col = metrics_col + len(df_combined.columns) + 1
-        write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
+#     if include_convergence:
+#         convergence_col = metrics_col + len(df_combined.columns) + 1
+#         write_table(df_convergence, startrow=1, startcol=convergence_col, style_key="error", worksheet=worksheet, writer=writer, header_styles=None, sheet_name=sheet_name)
 
-open_excel_file(outputPath)
-print("✅ Structured Excel file saved successfully.")
+# open_excel_file(outputPath)
+# print("✅ Structured Excel file saved successfully.")
 
 
 
-# import pandas as pd
-# import numpy as np
-# import os
+import pandas as pd
+import numpy as np
+import os
 
-# # ==== Title logic ====
-# if optimizer_name.strip():
-#     title = f"{model_name} + {optimizer_name.strip()}"
-#     include_convergence = True
-# else:
-#     title = model_name
-#     include_convergence = False
+# ==== Title logic ====
+if optimizer_name.strip():
+    title = f"{model_name} + {optimizer_name.strip()}"
+    include_convergence = True
+else:
+    title = model_name
+    include_convergence = False
 
-# # ==== Helper: place df in canvas ====
-# def place_df(canvas, df, start_row, start_col):
-#     for i in range(df.shape[0]):
-#         for j in range(df.shape[1]):
-#             canvas[start_row + i][start_col + j] = df.iat[i, j]
+# ==== Helper: place df in canvas ====
+def place_df(canvas, df, start_row, start_col):
+    for i in range(df.shape[0]):
+        for j in range(df.shape[1]):
+            canvas[start_row + i][start_col + j] = df.iat[i, j]
 
-#     # write headers
-#     for j, col in enumerate(df.columns):
-#         canvas[start_row - 1][start_col + j] = col
+    # write headers
+    for j, col in enumerate(df.columns):
+        canvas[start_row - 1][start_col + j] = col
 
-# # ==== Calculate layout ====
-# params_col = len(df_value_pred.columns) + 1
-# metrics_col = params_col + len(df_params.columns) + 1
+# ==== Calculate layout ====
+params_col = len(df_value_pred.columns) + 1
+metrics_col = params_col + len(df_params.columns) + 1
 
-# CM_start_row = len(df_params) + 6
+CM_start_row = len(df_params) + 6
 
-# if include_convergence:
-#     convergence_col = metrics_col + len(df_combined.columns) + 1
-#     total_cols = convergence_col + len(df_convergence.columns)
-# else:
-#     total_cols = metrics_col + len(df_combined.columns)
+if include_convergence:
+    convergence_col = metrics_col + len(df_combined.columns) + 1
+    total_cols = convergence_col + len(df_convergence.columns)
+else:
+    total_cols = metrics_col + len(df_combined.columns)
 
-# total_rows = max(
-#     len(df_value_pred),
-#     len(df_params),
-#     len(df_combined),
-#     CM_start_row + len(cm_df),
-#     CM_start_row + len(roc_df)
-# ) + 5
+total_rows = max(
+    len(df_value_pred),
+    len(df_params),
+    len(df_combined),
+    CM_start_row + len(cm_df),
+    CM_start_row + len(roc_df)
+) + 5
 
-# # ==== Create empty canvas ====
-# canvas = [["" for _ in range(total_cols + 5)] for _ in range(total_rows + 5)]
+# ==== Create empty canvas ====
+canvas = [["" for _ in range(total_cols + 5)] for _ in range(total_rows + 5)]
 
-# # ==== Title ====
-# canvas[0][0] = title
+# ==== Title ====
+canvas[0][0] = title
 
-# # ==== Place tables ====
-# place_df(canvas, df_value_pred, start_row=2, start_col=0)
-# place_df(canvas, df_params, start_row=2, start_col=params_col)
-# place_df(canvas, df_combined, start_row=2, start_col=metrics_col)
+# ==== Place tables ====
+place_df(canvas, df_value_pred, start_row=2, start_col=0)
+place_df(canvas, df_params, start_row=2, start_col=params_col)
+place_df(canvas, df_combined, start_row=2, start_col=metrics_col)
 
-# place_df(canvas, cm_df, start_row=CM_start_row+1, start_col=params_col)
-# place_df(canvas, roc_df, start_row=CM_start_row+1, start_col=metrics_col)
+place_df(canvas, cm_df, start_row=CM_start_row+1, start_col=params_col)
+place_df(canvas, roc_df, start_row=CM_start_row+1, start_col=metrics_col)
 
-# if include_convergence:
-#     place_df(canvas, df_convergence, start_row=2, start_col=convergence_col)
+if include_convergence:
+    place_df(canvas, df_convergence, start_row=2, start_col=convergence_col)
 
-# # ==== Convert to DataFrame ====
-# final_df = pd.DataFrame(canvas)
+# ==== Convert to DataFrame ====
+final_df = pd.DataFrame(canvas)
 
-# # ==== Save CSV ====
-# csv_path = outputPath.replace(".xlsx", ".csv")
-# final_df.to_csv(csv_path, index=False, header=False)
+# ==== Save CSV ====
+csv_path = outputPath.replace(".xlsx", ".csv")
+final_df.to_csv(csv_path, index=False, header=False)
 
-# print(f"✅ CSV saved: {csv_path}")
+print(f"✅ CSV saved: {csv_path}")
 
 
