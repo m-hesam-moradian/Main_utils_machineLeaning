@@ -3,7 +3,7 @@ import statsmodels.api as sm
 
 # -------------------- 1. Load data --------------------
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_XGBoost")  # Change sheet name as needed
+df = pd.read_excel(DATA_PATH, sheet_name="shuffeled_data")  # Change sheet name as needed
 target_column = df.columns[-1]
 
 # -------------------- 2. Separate features and target --------------------
