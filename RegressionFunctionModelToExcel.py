@@ -19,23 +19,23 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "KOA"
-# optimizer_name = "SDOA"
+# optimizer_name = "NOA"
+optimizer_name = "COA"
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-# model_name = "ADAR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "HGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.0
+R2_target = 0.942573
 
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -138,10 +138,17 @@ def build_metrics_table(y_real, y_pred):
 
         # RAE
         rae = rae_metric(y_true, y_hat)
+        from sklearn.metrics import mean_squared_log_error
 
+        # RMSLE
+        if np.all(y_true >= 0) and np.all(y_hat >= 0):
+            rmsle = np.sqrt(mean_squared_log_error(y_true, y_hat))
+        else:
+            rmsle = np.nan  # RMSLE is only defined for non-negative values
         return {
             "R2": r2,
             "RMSE": rmse,
+            "RMSLE": rmsle,
             "MAE": mae,       # Added
             "AARD": aard,     # Added
             "MARE": mare_val,

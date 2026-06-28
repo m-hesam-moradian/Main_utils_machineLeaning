@@ -16,7 +16,7 @@ import os
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Data_after_KFold_HR"
+sheet_name = "Data_after_KFold_HGBR(IF)"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name)
 
@@ -32,8 +32,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # -------------------- 3. Train model --------------------
 # Changed to XGBoost Regressor
-model = XGBRegressor(    n_estimators=100,       # keep moderate
-    max_depth=3,      )
+model = XGBRegressor(    n_estimators=1000,       # keep moderate
+    max_depth=1000,      )
     
 model.fit(X_train, y_train)
 

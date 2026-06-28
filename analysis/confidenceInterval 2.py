@@ -127,7 +127,7 @@ def build_ci_classification_reports(y_real, y_pred, model_name="Model", n_bootst
 
 # 1. Load the data
 # Make sure this path is correct for your machine
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", header=0, sheet_name="predicts(IQR)")
+df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", header=0, sheet_name="predicts")
 columns = df.columns.tolist()
 
 all_reports = []

@@ -32,7 +32,7 @@ def open_excel_file(filepath):
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 # sheet_name = "Data"  # Change this to your actual sheet name if different
-sheet_name = "Isolation_Forest"  # Change this to your actual sheet name if different
+sheet_name = "Data"  # Change this to your actual sheet name if different
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -53,7 +53,7 @@ y = df[target_column]
 # # Note: Requires running `pip install catboost` in your terminal
 # from catboost import CatBoostRegressor
 
-# # Define your models
+# Define your models
 # models = {
 
 #     # Decision Tree Regression
@@ -93,18 +93,12 @@ y = df[target_column]
 
 
 
-from sklearn.ensemble import AdaBoostRegressor
-from sklearn.linear_model import HuberRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 
 models = {
-    # Adaptive Gradient Boosting Regression
-    "ADAR": AdaBoostRegressor(
+    # Histogram-Based Gradient Boosting Regression
+    "HGBR": HistGradientBoostingRegressor(
         random_state=42
-    ),
-
-    # Huber Regression (Robust to outliers)
-    "HR": HuberRegressor(
-        max_iter=1000   # Increased max_iter to help it converge
     )
 }
 
@@ -180,17 +174,17 @@ for model_name in models:
 summary_df = pd.DataFrame(summary_rows)
 
 # ================== Save to Excel ==================
-close_excel_file(filepath)
+# close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
         metrics_df_dict[model_name].to_excel(
-            writer, sheet_name=f"{model_name}_KFOLD_Metrics(RFE)", index=False
+            writer, sheet_name=f"{model_name}_KFOLD_Metrics", index=False
         )
         df_reordered_dict[model_name].to_excel(
-            writer, sheet_name=f"Data_after_KFold_{model_name}(RFE)", index=False
+            writer, sheet_name=f"Data_after_KFold_{model_name}", index=False
         )
-    summary_df.to_excel(writer, sheet_name="Model_Summary(RFE)", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Summary", index=False)
 
 open_excel_file(filepath)
 
