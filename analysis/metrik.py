@@ -24,13 +24,11 @@ test_val_pred = test_pred
 def getAllMetric(y, pred):
     y    = np.array(y).flatten()
     pred = np.array(pred).flatten()
-    
     rmse = np.sqrt(mean_squared_error(y, pred))
     r2   = r2_score(y, pred)
     mape = np.mean(np.abs((y - pred) / (y + 1e-10))) * 100
     rae  = np.sum(np.abs(y - pred)) / (np.sum(np.abs(y - np.mean(y))) + 1e-10)
     mdape= np.median(np.abs((y - pred) / (y + 1e-10))) * 100
-    
     return [rmse, r2, mape, rae, mdape]
 
 # ===================== 4) Calculate Metrics =====================

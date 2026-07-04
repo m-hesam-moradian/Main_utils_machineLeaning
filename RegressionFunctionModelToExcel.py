@@ -19,17 +19,18 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "NOA"
-optimizer_name = "COA"
+# optimizer_name = "HEOA"  # no optimizer
+# optimizer_name = "LOA"  # no optimizer
+optimizer_name = "BOA"  # no optimizer
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "HGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "XGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.942573
+R2_target = 0.9811245124
 
 min_error = -56000.54
 max_error = 55000.43

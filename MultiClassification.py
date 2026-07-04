@@ -29,13 +29,6 @@ optimizer_name = "DSOA"  # optimi
  
 Accuracy_target = 0.935578947
 
-
-
-
-
-
-
-
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"

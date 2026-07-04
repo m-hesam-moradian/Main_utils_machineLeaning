@@ -14,9 +14,11 @@ params = {
 }
 
 ShowProbs = False  # Strictly False
-model_name = "Ensemble(Stacking Method)"
-optimizer_name = ""  # no optimizer
-Accuracy_target = 0.974584 # if you want to force prediction adjustments
+model_name = "XGBC"
+# optimizer_name = "HEOA"  # no optimizer
+# optimizer_name = "LOA"  # no optimizer
+optimizer_name = "BOA"  # no optimizer
+Accuracy_target = 0.95113165 # if you want to force prediction adjustments
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
