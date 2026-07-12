@@ -6,7 +6,7 @@ import numpy as np
 
 # -------------------- 1. Configuration & Load Data --------------------
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-INPUT_SHEET = "Z-Score"     
+INPUT_SHEET = "Delete_timestamp"     
 P_VALUE_THRESHOLD = 0.05  # Features with p-value >= 0.05 will be removed
 
 print(f"Loading data from {DATA_PATH}...")

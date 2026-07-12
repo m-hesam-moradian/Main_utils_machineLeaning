@@ -28,14 +28,14 @@ def open_excel_file(filepath):
 def calculate_vif_horizontal(X, threshold=5.0):
     X = X.copy()
     num_rows = len(X)
-    
+
     # --- STEP 0: REMOVE UNIQUE IDENTIFIERS (The Overfitting Fix) ---
     leaky_cols = []
     for col in X.columns:
         # If every row has a unique value, it's a "leaky" fingerprint
         if X[col].nunique() == num_rows:
             leaky_cols.append(col)
-    
+
     if leaky_cols:
         print(f"🚫 حذف خودکار ستون‌های شناسایی (Leakage): {leaky_cols}")
         # X.drop(columns=leaky_cols, inplace=True)
@@ -44,15 +44,33 @@ def calculate_vif_horizontal(X, threshold=5.0):
     step = 1
 
     while True:
-        if X.empty: break
-        X_const = add_constant(X)
+
+        # VIF cannot be computed with fewer than 2 predictors
+        if X.shape[1] < 2:
+            break
+
+        # Recommended statsmodels approach
+        X_const = add_constant(X, has_constant="add")
+
         vif = pd.DataFrame()
         vif["feature"] = X.columns
-        vif["VIF"] = [variance_inflation_factor(X_const.values, i + 1) for i in range(X.shape[1])]
+        vif["VIF"] = [
+            variance_inflation_factor(X_const.values, i + 1)
+            for i in range(X.shape[1])
+        ]
+
+        # Handle NaN/Inf VIF values
+        vif["VIF"] = (
+            vif["VIF"]
+            .replace([float("inf"), float("-inf")], float("inf"))
+            .fillna(float("inf"))
+        )
+
         vif["Step"] = step
         vif_snapshots.append(vif.reset_index(drop=True))
-        
+
         max_vif = vif["VIF"].max()
+
         if max_vif > threshold:
             drop_feature = vif.loc[vif["VIF"].idxmax(), "feature"]
             print(f"📌 حذف ویژگی '{drop_feature}' با VIF = {max_vif:.2f}")
@@ -63,24 +81,33 @@ def calculate_vif_horizontal(X, threshold=5.0):
 
     # --- Formatting for Excel Output ---
     max_rows = max(len(df) for df in vif_snapshots)
+
     for i in range(len(vif_snapshots)):
         rows_to_add = max_rows - len(vif_snapshots[i])
+
         if rows_to_add > 0:
-            empty_rows = pd.DataFrame([["", "", ""]] * rows_to_add, columns=["feature", "VIF", "Step"])
-            vif_snapshots[i] = pd.concat([vif_snapshots[i], empty_rows], ignore_index=True)
+            empty_rows = pd.DataFrame(
+                [["", "", ""]] * rows_to_add,
+                columns=["feature", "VIF", "Step"]
+            )
+            vif_snapshots[i] = pd.concat(
+                [vif_snapshots[i], empty_rows],
+                ignore_index=True
+            )
 
     spaced_snapshots = []
+
     for df_snap in vif_snapshots:
         spaced_snapshots.append(df_snap)
         spaced_snapshots.append(pd.DataFrame({"": [""] * max_rows}))
 
     final_vif = pd.concat(spaced_snapshots[:-1], axis=1)
-    return X, final_vif
 
+    return X, final_vif
 # --- Main Logic ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="Data")
+df = pd.read_excel(excel_path, sheet_name="Delete_timestamp")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])

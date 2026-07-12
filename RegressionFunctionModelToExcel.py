@@ -19,24 +19,23 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "HEOA"  # no optimizer
-# optimizer_name = "LOA"  # no optimizer
-optimizer_name = "BOA"  # no optimizer
+# optimizer_name = "MAOA"  # no optimizer
+optimizer_name = "HEOA"  # no optimizer
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "XGBR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "QR(VIF)"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.9811245124
+R2_target = 0.9754281
 
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -45,7 +44,6 @@ outputPath = r"task\Data.xlsx"
 sheet_name = model_name      
 if optimizer_name.strip():
     sheet_name = model_name + " + " + optimizer_name.strip()  # should match Excel sheet label you want
-
 
 import numpy as np
 import pandas as pd
