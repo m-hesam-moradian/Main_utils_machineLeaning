@@ -4,7 +4,7 @@ import numpy as np
 # -------------------------
 # MONTE CARLO SETTINGS (Report these to the reviewer)
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-SHEET_NAME = "predicts"
+SHEET_NAME = "predicts(VIF)"
 N_SIMULATIONS = 1000               # Number of Monte Carlo simulations
 NOISE_LEVEL = 0.05                 # 5% noise level
 CONFIDENCE_INTERVAL = [2.5, 97.5]  # 95% Confidence Interval boundaries

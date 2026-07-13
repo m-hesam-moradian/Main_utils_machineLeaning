@@ -3,18 +3,18 @@ import pandas as pd
 import time
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import HuberRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import QuantileRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # =====================================================
 # 1. CONFIGURATION
 # =====================================================
-DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_GBR"
+DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\BMM-EI. No.23-Data.xlsx"
+sheet_name = "Data_after_KFold_QR"   # Changed to your QR sheet
 
 CONFIG = {
-    "optimizer": "MAOA",
-    "population": 25,
+    "optimizer": "WEOA",          # You can change this later
+    "population": 30,
     "iterations": 200,
     "cv": 5,
     "random_state": 42
@@ -23,10 +23,9 @@ CONFIG = {
 # =====================================================
 # 2. LOAD DATA
 # =====================================================
-# Assuming the file exists at the path provided
 df = pd.read_excel(DATA_PATH, sheet_name=sheet_name)
-X = df.iloc[:, :-1].values
-y = df.iloc[:, -1].values
+X = df.drop(columns=["Remaining Useful Life "]).values
+y = df["Remaining Useful Life "].values
 
 X = StandardScaler().fit_transform(X)
 
@@ -35,15 +34,14 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # =====================================================
-# 3. MODEL DEFINITION (Huber Regression)
+# 3. MODEL DEFINITION (Quantile Regression)
 # =====================================================
 MODEL = {
-    "name": "Huber Regression (HR)",
-    "builder": HuberRegressor,
+    "name": "Quantile Regression (QR)",
+    "builder": QuantileRegressor,
     "bounds": {
-        "epsilon": (1.0, 2.0, float),   # Threshold for considering points outliers
-        "alpha": (0.0001, 0.1, float),  # L2 regularization parameter
-        "max_iter": (100, 500, int)     # Maximum iterations for solver
+        "alpha": (0.0001, 1.0, float),      # Regularization strength
+        "quantile": (0.5, 0.5, float)       # Fixed at 0.5 (median)
     }
 }
 
@@ -76,19 +74,18 @@ def make_objective(model_builder, bounds, cast):
                 scoring="neg_mean_squared_error",
                 n_jobs=-1
             ).mean()
-            return np.sqrt(-neg_mse)
+            return np.sqrt(-neg_mse)   # RMSE
         except:
-            return 1e10 # Return large error if solver fails to converge
+            return 1e10
     return objective
 
 # =====================================================
-# 5. MAOA OPTIMIZER (Makeup Artist Optimization Algorithm)
+# 5. OPTIMIZER (You can replace with any previous optimizer)
 # =====================================================
-def MAOA(objective, lb, ub, N, T, cast):
+def WEOA(objective, lb, ub, N, T, cast):
     start = time.time()
     D = len(lb)
     
-    # Initialize Population
     pop = lb + np.random.rand(N, D) * (ub - lb)
     fit = np.array([objective(pop[i]) for i in range(N)])
     
@@ -99,26 +96,26 @@ def MAOA(objective, lb, ub, N, T, cast):
     convergence = []
     log = []
 
-    print(f"\n💄 Starting {CONFIG['optimizer']} Optimization (Huber Regression)...")
+    print(f"\n🌿 Starting {CONFIG['optimizer']} Optimization for {MODEL['name']}...")
     print("-" * 100)
 
     for t in range(T):
+        water_level = 1.0 - (t / T)
+        
         for i in range(N):
-            # Phase 1: Makeup Artist (Exploration)
-            # Modeling the artist's ability to find the best look
-            r1 = np.random.rand()
-            random_artist = pop[np.random.randint(N)]
-            
-            if r1 < 0.5:
-                # Update based on best artist (best_pos)
-                step = np.random.rand(D) * (best_pos - pop[i])
-                candidate = pop[i] + step
+            r = np.random.rand()
+
+            if r < water_level:
+                # Flooding / Exploration
+                idx = np.random.randint(0, N)
+                flow = (pop[idx] - pop[i]) * np.random.uniform(0.6, 1.4, D)
+                candidate = pop[i] + flow + np.random.randn(D) * 0.25 * water_level
             else:
-                # Update based on peer influence
-                step = np.random.rand(D) * (random_artist - pop[i])
-                candidate = pop[i] + step
+                # Drying / Exploitation
+                growth = (best_pos - pop[i]) * np.random.uniform(0.1, 0.5, D)
+                evaporation = np.random.normal(0, 0.1 * (1 - water_level), D)
+                candidate = pop[i] + growth + evaporation
 
-            # Boundary Check & Evaluation
             candidate = np.clip(candidate, lb, ub)
             f_new = objective(candidate)
 
@@ -126,30 +123,24 @@ def MAOA(objective, lb, ub, N, T, cast):
                 pop[i] = candidate
                 fit[i] = f_new
 
-            # Phase 2: Client Satisfaction (Exploitation)
-            # Local refinement around the best solution
-            L = 0.2 * (1 - t/T) # Shrinking local search range
-            candidate = pop[i] + (np.random.uniform(-1, 1, D) * L * (ub - lb))
-            
-            candidate = np.clip(candidate, lb, ub)
-            f_new = objective(candidate)
+            # Biodiversity reset
+            if fit[i] > np.mean(fit) * 1.3 and np.random.rand() < 0.07:
+                pop[i] = lb + np.random.rand(D) * (ub - lb)
+                fit[i] = objective(pop[i])
 
-            if f_new < fit[i]:
-                pop[i] = candidate
-                fit[i] = f_new
-            
-            # Global Best Update
-            if fit[i] < best_fit:
-                best_fit = fit[i]
-                best_pos = pop[i].copy()
+        # Update global best
+        new_best_idx = np.argmin(fit)
+        if fit[new_best_idx] < best_fit:
+            best_fit = fit[new_best_idx]
+            best_pos = pop[new_best_idx].copy()
 
         convergence.append(best_fit)
         best_decoded = decode_params(best_pos, MODEL["bounds"], cast)
         log.append([t + 1] + [best_decoded[k] for k in MODEL["bounds"]] + [best_fit])
 
-        if (t + 1) % 10 == 0 or t == 0:
-            param_str = ", ".join([f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}" for k, v in best_decoded.items()])
-            print(f"Iteration {t+1:03d}/{T} | Best RMSE: {best_fit:.6f} | Params: [{param_str}]")
+        if (t + 1) % 20 == 0 or t == 0:
+            param_str = ", ".join([f"{k}: {v:.6f}" for k, v in best_decoded.items()])
+            print(f"Iteration {t+1:03d}/{T} | Best CV-RMSE: {best_fit:.6f} | Params: [{param_str}]")
 
     print("-" * 100)
     runtime = time.time() - start
@@ -161,27 +152,31 @@ def MAOA(objective, lb, ub, N, T, cast):
 lb, ub, cast = bounds_to_arrays(MODEL["bounds"])
 objective = make_objective(MODEL["builder"], MODEL["bounds"], cast)
 
-best_params, best_rmse, convergence, runtime, log = MAOA(
+best_params, best_rmse, convergence, runtime, log = WEOA(
     objective, lb, ub, CONFIG["population"], CONFIG["iterations"], cast
 )
 
 # =====================================================
-# 7. FINAL MODEL TRAINING
+# 7. FINAL MODEL TRAINING & EVALUATION
 # =====================================================
 final_model = MODEL["builder"](**best_params)
 final_model.fit(X_train, y_train)
 
 y_pred_test = final_model.predict(X_test)
 test_rmse = np.sqrt(mean_squared_error(y_test, y_pred_test))
+test_mae = mean_absolute_error(y_test, y_pred_test)
+test_r2 = r2_score(y_test, y_pred_test)
 
 # =====================================================
-# 8. OUTPUT DATASETS
+# 8. OUTPUT
 # =====================================================
 summary_df = pd.DataFrame([{
     "Model": MODEL["name"],
     "Optimizer": CONFIG["optimizer"],
     "Best_CV_RMSE": best_rmse,
     "Test_RMSE": test_rmse,
+    "Test_MAE": test_mae,
+    "Test_R2": test_r2,
     "Runtime_sec": runtime
 }])
 
@@ -189,3 +184,8 @@ print("\n✅ Final Summary:")
 print(summary_df)
 print("\n✅ Optimized Parameters:")
 print(best_params)
+
+# Save history
+log_df = pd.DataFrame(log, columns=["Iteration"] + list(MODEL["bounds"].keys()) + ["RMSE"])
+log_df.to_excel("WEOA_QR_Optimization_History.xlsx", index=False)
+print("\nOptimization history saved to 'WEOA_QR_Optimization_History.xlsx'")

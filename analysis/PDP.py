@@ -8,7 +8,7 @@ from sklearn.inspection import PartialDependenceDisplay
 
 # 1. خواندن داده
 excel_path = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
-df = pd.read_excel(excel_path, sheet_name='Data_after_KFold_ENR(Z-Score)')
+df = pd.read_excel(excel_path, sheet_name='Data_after_KFold_QR(ANOVA)')
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
