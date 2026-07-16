@@ -17,17 +17,16 @@ params = {
 
 }
 
-ShowProbs = False  # False → hide probability columns & ROC table
-# model_name = "KNNC(IF)"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "KNNC(IQR)"  # model name for title (e.g., "Extra Trees Classifier")
-model_name = "ADAC(IF)"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "ADAC(IQR)"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "Ensemble(Stacking Method)"  # model name for title (e.g., "Extra Trees Classifier")
+ShowProbs = True  # False → hide probability columns & ROC table
+# model_name = "MLR"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "Ensemble"  # model name for title (e.g., "Extra Trees Classifier")
+
 
 optimizer_name = ""  # no optimizer
-optimizer_name = "DSOA"  # optimi
+# optimizer_name = "SWO"  # optimi
+# optimizer_name = "HROA"  # optimi
  
-Accuracy_target = 0.935578947
+Accuracy_target = 0.0
 
  # if you want to force prediction adjustments to reach a target accuracy
 dataPath = r"data\Data_err.npt"
@@ -160,7 +159,8 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     from sklearn.metrics import (
         accuracy_score, recall_score, f1_score,
         precision_score, matthews_corrcoef,
-        confusion_matrix, roc_curve, auc
+        confusion_matrix, roc_curve, auc,
+        cohen_kappa_score
     )
     import numpy as np
     import pandas as pd
@@ -197,6 +197,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
             "Recall": recall_score(y_true, y_pred, average="macro", zero_division=0),
             "F1": f1_score(y_true, y_pred, average="macro", zero_division=0),
             "MCC": matthews_corrcoef(y_true, y_pred),
+            "Kappa": cohen_kappa_score(y_true, y_pred),
             "Class-Wise Error": 1 - acc,
             "Markedness": calculate_markedness(y_true, y_pred)
         }
@@ -207,7 +208,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     y_pred_train, y_pred_test = y_pred[:split], y_pred[split:]
 
     # Define columns explicitly for consistency
-    cols = ["Set", "Accuracy", "Precision", "Recall", "F1", "MCC", "Class-Wise Error", "Markedness"]
+    cols = ["Set", "Accuracy", "Precision", "Recall", "F1", "MCC", "Kappa", "Class-Wise Error", "Markedness"]
 
     df_main = pd.DataFrame([
         ["All", *get_metrics(y_real, y_pred).values()],
@@ -220,10 +221,13 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     recall_pc = recall_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
     f1_pc = f1_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
     
-    # Per-class calculation for Markedness
+    # Per-class calculation for Markedness and Kappa
     cm_all = confusion_matrix(y_real, y_pred, labels=classes)
     markedness_pc = []
-    for i in range(len(classes)):
+    kappa_pc = []
+    
+    for i, cls in enumerate(classes):
+        # Markedness
         tp = cm_all[i, i]
         fp = cm_all[:, i].sum() - tp
         fn = cm_all[i, :].sum() - tp
@@ -231,11 +235,16 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
         ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
         npv = tn / (tn + fn) if (tn + fn) > 0 else 0
         markedness_pc.append(ppv + npv - 1)
+        
+        # Kappa (One-Vs-Rest binary calculation for the specific class)
+        y_real_bin = (np.array(y_real) == cls).astype(int)
+        y_pred_bin = (np.array(y_pred) == cls).astype(int)
+        kappa_pc.append(cohen_kappa_score(y_real_bin, y_pred_bin))
 
     acc_pc, err_pc = [], []
     for cls in classes:
-        idx = y_real == cls
-        acc = accuracy_score(y_real[idx], y_pred[idx])
+        idx = np.array(y_real) == cls
+        acc = accuracy_score(np.array(y_real)[idx], np.array(y_pred)[idx])
         acc_pc.append(acc)
         err_pc.append(1 - acc)
 
@@ -246,6 +255,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
         "Recall": recall_pc,
         "F1": f1_pc,
         "MCC": ["" for _ in classes],
+        "Kappa": kappa_pc,
         "Class-Wise Error": err_pc,
         "Markedness": markedness_pc
     })
@@ -263,7 +273,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     # --- ROC & AUC (One-Vs-Rest)
     roc_rows = []
     for i, cls in enumerate(classes):
-        y_true_bin = (y_real == cls).astype(int)
+        y_true_bin = (np.array(y_real) == cls).astype(int)
         y_score = y_pred_prob[:, i]
         fpr, tpr, thr = roc_curve(y_true_bin, y_score)
         roc_auc = auc(fpr, tpr)
@@ -280,7 +290,6 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     roc_df = pd.DataFrame(roc_rows)
     print(df_combined)
     return df_combined, roc_df, cm_df
-
 def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="down" ,Convergence_metric=Convergence_metric):
     if "Train" in df_combined["Set"].values:
         Target_metric_train = df_combined.loc[df_combined["Set"] == "Train", Convergence_metric].values[0]

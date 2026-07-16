@@ -6,7 +6,7 @@ Expected input (whitespace or tab separated):
 y_true  y_pred  prob_class0  prob_class1  prob_class2  ...
 
 Example (3-class):
-0 0 0.6064521149 0.0905436299 0.3030042551
+0 0 0.6064521149 0.0905436299 0.30300425511
 """
 
 from pathlib import Path

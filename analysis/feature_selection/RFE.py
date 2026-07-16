@@ -49,7 +49,7 @@ close_excel_file(excel_path)
 
 df = pd.read_excel(
     excel_path,
-    sheet_name="Encoded_Data"
+    sheet_name="Balanced_SMOTE"
 )
 
 # --- Separate features and target ---

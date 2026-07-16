@@ -30,28 +30,31 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_chi2(IQR)" 
+sheet_name = "Selected_Data_RFE" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
-# ================== Corrected Models ==================
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import AdaBoostClassifier
+# ================== Models ==================
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import ExtraTreesClassifier
 
 models = {
-    "KNNC": KNeighborsClassifier(
-        n_neighbors=1,
-        # weights='uniform',
-        # metric='minkowski'
+    # Multinomial Logistic Regression
+    "MLR": LogisticRegression(
+        multi_class="multinomial",
+        # solver="lbfgs",
+        max_iter=5000,
+        # C=0.010,
+        random_state=42
     ),
 
-    "ADAC": AdaBoostClassifier(
-        # n_estimators=50,
-        learning_rate=2.0,
-        # random_state=42
+    # Extra Trees Classifier
+    "ETC": ExtraTreesClassifier(
+        n_estimators=10,
+        random_state=42
     )
 }
 # =============== K-Fold Execution ==================
@@ -115,15 +118,15 @@ for model_name, m_df in metrics_df_dict.items():
 summary_df = pd.DataFrame(summary_list)
 
 # ================== Save & Open ==================
-close_excel_file(filepath)
+# close_excel_file(filepath)
 
-with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-    for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(IQR)", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(IQR)", index=False)
-    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(IQR)", index=False)
+# with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+#     for model_name in models:
+#         metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
+#         df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
+#     summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
-open_excel_file(filepath)
+# open_excel_file(filepath)
 
 print("\n✅ All models processed and saved to Excel.")
 print(summary_df)

@@ -5,7 +5,7 @@ from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_ETC"  # renamed to reflect ETC
+sheet_name = "Data_after_KFold_MLR"  # renamed to reflect ETC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -21,10 +21,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train Extra Trees Classifier ---
 model = ExtraTreesClassifier(
-n_estimators=912,           # Pushing toward 1000 for maximum ensemble strength
-    max_depth=11,               # Specific depth found to hit the "elbow" of the curve
-    min_samples_split=6,
-    # random_state=42
+    
+        max_depth=16,
+        n_estimators=500,
+        random_state=42
 )
 
 model.fit(X_train, y_train)
