@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore')
 # ==========================================
 # 1. Load Data
 # ==========================================
-df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_LR")
+df = pd.read_excel(r"C:\Users\Sam\Desktop\ML\task\Data.xlsx", sheet_name="Data_after_KFold_MLR")
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 feature_names = list(X.columns)

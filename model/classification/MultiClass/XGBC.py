@@ -5,7 +5,7 @@ from xgboost import XGBClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGB"  # you can rename this if needed
+sheet_name = "Data_after_KFold_MLR"  # you can rename this if needed
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -21,9 +21,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train XGBoost Classifier ---
 model = XGBClassifier(
-        n_estimators=100,
+        n_estimators=1000,
         learning_rate=0.003,
-        max_depth=10,
+        max_depth=1000,
 ) # <--- REMOVE THE COMMA THAT WAS HERE
 # model = XGBClassifier(
 #         n_estimators=35,

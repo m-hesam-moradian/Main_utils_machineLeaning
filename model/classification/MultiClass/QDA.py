@@ -5,7 +5,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis  # ✅ C
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_QDA(VIF)" 
+sheet_name = "Data_after_KFold_QDA" 
 # sheet_name = "Data_after_KFold_QDA(CHI2)" 
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
@@ -22,7 +22,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # --- Train QDA Model ---
 model = QuadraticDiscriminantAnalysis(
-        reg_param=0.1,
+        reg_param=0.4,
         store_covariance=True,
         tol=1e-4
 )

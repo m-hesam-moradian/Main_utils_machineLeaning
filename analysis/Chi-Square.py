@@ -48,16 +48,23 @@ def chi_square_selection(X, y, k=10):
     scores = selector.scores_
     pvalues = selector.pvalues_
 
+    # --- Selected features ---
+    selected_features = X.columns[selector.get_support()]
+    removed_features = X.columns[~selector.get_support()]
+
+    print(f"✅ Selected Features ({len(selected_features)}): {list(selected_features)}")
+    print(f"❌ Removed Features ({len(removed_features)}): {list(removed_features)}")
+
     # --- Create report ---
     report = pd.DataFrame({
         "Feature": X.columns,
         "Chi2 Score": scores,
-        "p-value": pvalues
+        "p-value": pvalues,
+        "Status": [
+            "Selected" if f in selected_features else "Removed"
+            for f in X.columns
+        ]
     }).sort_values(by="Chi2 Score", ascending=False).reset_index(drop=True)
-
-    # --- Selected features ---
-    selected_features = X.columns[selector.get_support()]
-    print(f"✅ Selected Features ({len(selected_features)}): {list(selected_features)}")
 
     X_selected_df = X[selected_features]
 
@@ -67,7 +74,7 @@ def chi_square_selection(X, y, k=10):
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="IQR")
+df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])
