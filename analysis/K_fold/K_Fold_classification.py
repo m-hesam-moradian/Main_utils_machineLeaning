@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_chi2" 
+sheet_name = "Data_after_KFold_ETC(CHI2)" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -41,25 +41,17 @@ y = df[target_column]
 from sklearn.linear_model import LogisticRegression
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
 
 models = {
     # Multinomial Logistic Regression
-    "MLR": LogisticRegression(
-        multi_class="multinomial",
-        max_iter=5000,
-        random_state=42
-    ),
-
-    # Quadratic Discriminant Analysis
-    "QDA": QuadraticDiscriminantAnalysis(
-
-        tol=0.001
-    ),
-
     # K-Nearest Neighbors Classification
-    "KNNC": KNeighborsClassifier(
-        n_neighbors=5
-    )
+    "ETC": ExtraTreesClassifier(
+    
+        max_depth=2,
+        n_estimators=5,
+        random_state=42
+)
 }
 # =============== K-Fold Execution ==================
 n_splits = 5
@@ -126,9 +118,9 @@ close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
-    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(CHI2)", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(CHI2)", index=False)
+    # summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(RFE)", index=False)
 
 open_excel_file(filepath)
 

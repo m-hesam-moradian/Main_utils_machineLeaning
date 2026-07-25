@@ -5,7 +5,7 @@ from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_MLR"  # renamed to reflect ETC
+sheet_name = "Data_after_KFold_ETC(RFE)"  # renamed to reflect ETC
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -22,8 +22,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 # --- Train Extra Trees Classifier ---
 model = ExtraTreesClassifier(
     
-        max_depth=16,
-        n_estimators=500,
+        # max_depth=3,
+        # n_estimators=5,
+        # max_depth=6,
+        # n_estimators=20,
+        max_depth=7,
+        n_estimators=10,
+
         random_state=42
 )
 

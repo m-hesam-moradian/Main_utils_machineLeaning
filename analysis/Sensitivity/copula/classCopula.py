@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score # Import a classification metric
 # Load the dataset
 # Ensure the target column in this sheet contains your class labels
 dt = pd.read_excel(
-    r"C:\\Users\\Sam\\Desktop\\ML\\task\\Data.xlsx", sheet_name="Data_after_KFold_DTC"
+    r"C:\\Users\\Sam\\Desktop\\ML\\task\\Data.xlsx", sheet_name="Data_after_KFold_ETC(RFE)"
 )
 
 target_column = dt.columns[-1]
@@ -18,11 +18,24 @@ features = X.columns
 
 # Train the RandomForestClassifier model
 # Using RandomForestClassifier for classification tasks
-model = DecisionTreeClassifier(
-    max_depth=2,
-    min_samples_split=2,
-    min_samples_leaf=1
+# model = DecisionTreeClassifier(
+#     max_depth=10,
+#     min_samples_split=2,
+#     min_samples_leaf=1
 
+# )
+from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
+
+model = ExtraTreesClassifier(
+    
+        # max_depth=3,
+        # n_estimators=5,
+        # max_depth=6,
+        # n_estimators=20,
+        max_depth=7,
+        n_estimators=10,
+
+        random_state=42
 )
 
 model.fit(X, y)

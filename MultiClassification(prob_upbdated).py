@@ -15,22 +15,13 @@ params = {
 
 ShowProbs = True  # False → hide probability columns & ROC table
 # model_name = "MLR"  # model name for title (e.g., "Extra Trees Classifier")
-model_name = "QDA"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "KNNC"  # model name for title (e.g., "Extra Trees Classifier")
-
+# model_name = "ETC(CHI2)"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "ETC(RFE)"  # model name for title (e.g., "Extra Trees Classifier")
+Accuracy_target=0.97546
 
 optimizer_name = ""  # no optimizer
-# optimizer_name = "DCOA"  # optimi
-optimizer_name = "BOA"  # optimi
-# Accuracy_target = 0.87  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.956845  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.9253486  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.912454  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.986845  # if you want to force prediction adjustments to reach a target accuracy
-Accuracy_target = 0.942546  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.85864  # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.935478 # if you want to force prediction adjustments to reach a target accuracy
-# Accuracy_target = 0.909121 # if you want to force prediction adjustments to reach a target accuracy
+# optimizer_name = "SEOA"  # optimi
+optimizer_name = "POA"  # optimi
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
