@@ -20,16 +20,16 @@ params = {
 
 optimizer_name = " "  # no optimizer
 # optimizer_name = "MAOA"  # no optimizer
-optimizer_name = "HEOA"  # no optimizer
+optimizer_name = "BOA"  # no optimizer
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "QR(VIF)"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "KRR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.9754281
+R2_target = 0.95624456
 
 min_error = -56000.54
 max_error = 55000.43

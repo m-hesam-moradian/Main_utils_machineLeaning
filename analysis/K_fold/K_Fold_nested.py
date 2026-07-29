@@ -39,7 +39,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "KfoldXGBR"  # Change this to your actual sheet name if different
+sheet_name = "Selected_Data"  # Change this to your actual sheet name if different
 
 print(f"Loading data from sheet: '{sheet_name}'...")
 df = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -48,32 +48,37 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models & Hyperparameter Grids (For Nested CV) ==================
+from lightgbm import LGBMRegressor
+from sklearn.linear_model import QuantileRegressor
+from sklearn.kernel_ridge import KernelRidge
+
 models_and_params = {
-    "ENR": {
-        "model": ElasticNet(random_state=42),
-        "params": {
-            "alpha": [0.01, 0.1, 1.0, 10.0],
-            "l1_ratio": [0.1, 0.5, 0.9]
-        }
-    },
-    "XGBR": {
-        "model": XGBRegressor(random_state=42, objective='reg:squarederror'),
+    "LGBR": {
+        "model": LGBMRegressor(random_state=42),
         "params": {
             "n_estimators": [50, 100, 200],
             "max_depth": [3, 5, 7],
             "learning_rate": [0.01, 0.1, 0.2]
         }
     },
-    "ETR": {
-        "model": ExtraTreesRegressor(random_state=42),
+
+    "QR": {
+        "model": QuantileRegressor(),
         "params": {
-            "n_estimators": [50, 100, 200],
-            "max_depth": [None, 10, 20],
-            "min_samples_split": [2, 5, 10]
+            "alpha": [0.001, 0.01, 0.1, 1.0],
+            "quantile": [0.1, 0.5, 0.9]
+        }
+    },
+
+    "KRR": {
+        "model": KernelRidge(),
+        "params": {
+            "alpha": [0.01, 0.1, 1.0, 10.0],
+            "kernel": ["linear", "rbf", "polynomial"],
+            "gamma": [0.001, 0.01, 0.1]
         }
     }
 }
-
 print("✅ Models ready for Nested Cross-Validation (ENR, XGBR, ETR)")
 
 # ================== Nested K-Fold Execution ==================
