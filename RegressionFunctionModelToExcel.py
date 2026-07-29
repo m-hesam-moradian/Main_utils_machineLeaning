@@ -29,7 +29,7 @@ model_name = "KRR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.95624456
+R2_target = 0.0
 
 min_error = -56000.54
 max_error = 55000.43

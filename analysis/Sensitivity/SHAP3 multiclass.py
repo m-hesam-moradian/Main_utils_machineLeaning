@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Encoded Data"
+sheet_name = "Data_after_KFold_MLR(ENN)"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name)
 

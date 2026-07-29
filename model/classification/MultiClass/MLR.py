@@ -6,7 +6,8 @@ from sklearn.preprocessing import StandardScaler
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_MLR"
+# sheet_name = "Data_after_KFold_MLR(RFE)"
+sheet_name = "Data_after_KFold_MLR(ENN)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -30,7 +31,7 @@ X_scaled = scaler.transform(X)
 model = LogisticRegression(
     multi_class='multinomial',
     # solver='lbfgs',
-    max_iter=10,
+    max_iter=5,
     C=0.043,
     random_state=42
 )
