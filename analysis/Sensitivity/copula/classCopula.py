@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score # Import a classification metric
 # Load the dataset
 # Ensure the target column in this sheet contains your class labels
 dt = pd.read_excel(
-    r"C:\\Users\\Sam\\Desktop\\ML\\task\\Data.xlsx", sheet_name="Data_after_KFold_ETC(RFE)"
+    r"C:\\Users\\Sam\\Desktop\\ML\\task\\Data.xlsx", sheet_name="Data_after_KFold_ETC(CHI2)"
 )
 
 target_column = dt.columns[-1]

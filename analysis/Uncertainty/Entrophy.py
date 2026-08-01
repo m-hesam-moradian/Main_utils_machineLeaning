@@ -101,56 +101,72 @@ def normalized_entropy(probs: np.ndarray) -> np.ndarray:
 # CLI / Main Execution
 # -------------------------
 def main():
-    # --- 1. Define paths to your NPT files ---
-    # Update these paths to where your actual files are located
-    file_model_1 = r"C:\Users\Sam\Desktop\ML\data\model1.npt"
-    file_model_2 = r"C:\Users\Sam\Desktop\ML\data\model2.npt"
-    
+    # -------------------------
+    # Define model files
+    # -------------------------
+    model_files = {
+        "ETC(CHI2)": r"C:\Users\Sam\Desktop\ML\data\model1.npt",
+        "ETC(CHI2) + SEOA": r"C:\Users\Sam\Desktop\ML\data\model2.npt",
+        "ETC(CHI2) + POA": r"C:\Users\Sam\Desktop\ML\data\model3.npt",
+        "ETC(RFE)": r"C:\Users\Sam\Desktop\ML\data\model3.npt",
+        "ETC(RFE) + SEOA": r"C:\Users\Sam\Desktop\ML\data\model3.npt",
+        "ETC(RFE) + POA": r"C:\Users\Sam\Desktop\ML\data\model3.npt",
+    }
+
     print("Loading files...")
-    df_m1 = load_predictions_auto(file_model_1)
-    df_m2 = load_predictions_auto(file_model_2)
-    
-    # Ensure both files have the same number of rows
-    if len(df_m1) != len(df_m2):
-        print(f"Warning: Model 1 has {len(df_m1)} rows, Model 2 has {len(df_m2)} rows.")
-    
-    # --- 2. Extract probability columns ---
-    prob_cols_m1 = [c for c in df_m1.columns if c not in ["y_true", "y_pred"]]
-    prob_cols_m2 = [c for c in df_m2.columns if c not in ["y_true", "y_pred"]]
-    
-    probs_m1 = df_m1[prob_cols_m1].values
-    probs_m2 = df_m2[prob_cols_m2].values
-    
-    # --- 3. Calculate Uncertainty (Normalized Entropy) ---
-    uncertainty_m1 = normalized_entropy(probs_m1)
-    uncertainty_m2 = normalized_entropy(probs_m2)
-    
-    # --- 4. Create a unified DataFrame for comparison ---
-    # Assuming both files evaluate the same dataset in the same order
+
+    dataframes = {}
+    uncertainties = {}
+
+    # -------------------------
+    # Load each model
+    # -------------------------
+    for model_name, file_path in model_files.items():
+        df = load_predictions_auto(file_path)
+        dataframes[model_name] = df
+
+        prob_cols = [c for c in df.columns if c not in ["y_true", "y_pred"]]
+        probs = df[prob_cols].values
+
+        uncertainties[model_name] = normalized_entropy(probs)
+
+    # -------------------------
+    # Check lengths
+    # -------------------------
+    lengths = [len(df) for df in dataframes.values()]
+    if len(set(lengths)) != 1:
+        print("Warning: Models have different numbers of samples.")
+
+    # -------------------------
+    # Create comparison table
+    # -------------------------
+    first_model = list(model_files.keys())[0]
+
     comparison_df = pd.DataFrame({
-        "y_true": df_m1["y_true"],
-        "y_pred_m1": df_m1["y_pred"] if "y_pred" in df_m1.columns else None,
-        "y_pred_m2": df_m2["y_pred"] if "y_pred" in df_m2.columns else None,
-        "Uncertainty_Model_1": uncertainty_m1,
-        "Uncertainty_Model_2": uncertainty_m2
+        "y_true": dataframes[first_model]["y_true"]
     })
-    
-    # --- 5. Output results ---
-    print("\n✅ Calculated Uncertainty for both models successfully!")
-    print("\n--- Preview of Results ---")
+
+    for model_name in model_files.keys():
+        if "y_pred" in dataframes[model_name]:
+            comparison_df[f"y_pred_{model_name}"] = dataframes[model_name]["y_pred"]
+
+        comparison_df[f"Uncertainty_{model_name}"] = uncertainties[model_name]
+
+    # -------------------------
+    # Show results
+    # -------------------------
+    print("\nPreview:")
     print(comparison_df.head(10))
-    
-    # Optional: print summary metrics
-    print("\n--- Average Uncertainty ---")
-    print(f"Model 1 Average Uncertainty: {uncertainty_m1.mean():.4f}")
-    print(f"Model 2 Average Uncertainty: {uncertainty_m2.mean():.4f}")
-    
+
+    print("\nAverage Uncertainty")
+    for model_name in model_files.keys():
+        print(f"{model_name}: {uncertainties[model_name].mean():.4f}")
+
     # Copy to clipboard
     try:
         comparison_df.to_clipboard(index=False)
-        print("\n📋 Results copied to clipboard! You can paste them into Excel.")
-    except Exception as e:
-        print("\nCould not copy to clipboard. (Are you running in a headless environment?)")
-
+        print("\nResults copied to clipboard.")
+    except:
+        print("\nCould not copy to clipboard.")
 if __name__ == "__main__":
     main()

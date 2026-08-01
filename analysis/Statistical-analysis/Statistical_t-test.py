@@ -8,7 +8,8 @@ df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     # r"C:\Users\Sam\Downloads\Telegram Desktop\749.xlsx",
     header=0,
-    sheet_name="predicts(ENN)",
+    # sheet_name="predicts(SMOTE-ENN)",
+    sheet_name="predicts(SMOTE-ENC)",
 )
   
 # Dynamically extract model names and predictions

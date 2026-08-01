@@ -73,7 +73,7 @@ def Morris_function(X, predictions):
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 # Load dataset
-df = pd.read_excel(DATA_PATH, sheet_name="Data_after_KFold_ETC").dropna()
+df = pd.read_excel(DATA_PATH, sheet_name="Selected_Data_RFE").dropna()
 
 # Automatically select the last column as target
 target_column = df.columns[-1]

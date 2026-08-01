@@ -11,7 +11,7 @@ excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 print("Running KNN Classifier...")
 
 # Load data
-sheet_name_knn = "Data_after_KFold_KNNC"
+sheet_name_knn = "Data_after_KFold_MLR(SMOTE-ENC)"
 df_knn = pd.read_excel(excel_path, sheet_name=sheet_name_knn)
 
 # Prepare features and target
@@ -25,7 +25,9 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize KNNC model ---
-model = KNeighborsClassifier(n_neighbors=122)
+# model = KNeighborsClassifier(n_neighbors=500)
+# model = KNeighborsClassifier(n_neighbors=50)
+model = KNeighborsClassifier(n_neighbors=200)
 model.fit(X_train, y_train)
 
 # --- Predictions ---

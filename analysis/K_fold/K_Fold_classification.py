@@ -30,7 +30,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "DATA_Shuffled_ENN" 
+sheet_name = "Balanced_SMOTE-ENC" 
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -45,13 +45,7 @@ from sklearn.ensemble import ExtraTreesClassifier   # <-- changed import
 from sklearn.linear_model import LogisticRegression
 
 models = {
-"MLR": LogisticRegression(
-    multi_class='multinomial',
-    # solver='lbfgs',
-    max_iter=10,
-    C=0.043,
-    random_state=42
-)
+"MLR": KNeighborsClassifier(n_neighbors=500)
 }
 # =============== K-Fold Execution ==================
 n_splits = 5
@@ -118,8 +112,8 @@ close_excel_file(filepath)
 
 with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     for model_name in models:
-        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(ENN)", index=False)
-        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(ENN)", index=False)
+        metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(SMOTE-ENC)", index=False)
+        df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(SMOTE-ENC)", index=False)
     # summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(RFE)", index=False)
 
 open_excel_file(filepath)

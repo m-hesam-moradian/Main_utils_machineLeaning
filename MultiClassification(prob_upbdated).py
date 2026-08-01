@@ -14,10 +14,11 @@ params = {
 }
 
 ShowProbs = True  # False → hide probability columns & ROC table
-# model_name = "MLR"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "ETC(CHI2)"  # model name for title (e.g., "Extra Trees Classifier")
-model_name = "ETC(RFE)"  # model name for title (e.g., "Extra Trees Classifier")
-Accuracy_target=0.97546
+
+# model_name = "KNN"  # model name for title (e.g., "Extra Trees Classifier")
+# model_name = "MLR(ENN)"  # model name for title (e.g., "Extra Trees Classifier")
+model_name = "MLR(SMOTE-ENC)"  # model name for title (e.g., "Extra Trees Classifier")
+Accuracy_target=0.0
 
 optimizer_name = ""  # no optimizer
 # optimizer_name = "SEOA"  # optimi
@@ -25,7 +26,7 @@ optimizer_name = "POA"  # optimi
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Recall"
+Convergence_metric = "Precision"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

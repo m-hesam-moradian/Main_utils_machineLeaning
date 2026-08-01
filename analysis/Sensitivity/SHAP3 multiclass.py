@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 
 # -------------------- 1. Load dataset --------------------
 
-sheet_name = "Data_after_KFold_MLR(ENN)"
+sheet_name = "Data_after_KFold_MLR(SMOTE-ENC)"
 file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(file_path, sheet_name=sheet_name)
 
@@ -36,6 +36,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # -------------------- 3. Train model --------------------
 # Note: max_depth=1000 is very large for XGBoost (default is 6), 
 # but kept as-is to match your original script.
+# model = XGBClassifier(
+#     n_estimators=1000,       
+#     max_depth=1000,      
+#     random_state=42
+# )
 model = XGBClassifier(
     n_estimators=1000,       
     max_depth=1000,      

@@ -3,7 +3,7 @@ from imblearn.under_sampling import EditedNearestNeighbours
 
 # --- Load data ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Encoded_Data"
+sheet_name = "Selected_Data_RFE"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
