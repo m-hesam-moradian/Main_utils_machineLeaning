@@ -19,17 +19,17 @@ params = {
 
 
 optimizer_name = " "  # no optimizer
-# optimizer_name = "MAOA"  # no optimizer
-optimizer_name = "BOA"  # no optimizer
+# optimizer_name = "GOA"  # no optimizer
+optimizer_name = "DSOA"  # no optimizer
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
-model_name = "KRR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-# model_name = "HR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+# model_name = "ENR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "SVC"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.921245
+R2_target = 0.98564
 
 min_error = -56000.54
 max_error = 55000.43
@@ -52,21 +52,29 @@ from sklearn.metrics import mean_squared_error, r2_score
 def build_metrics_table(y_real, y_pred):
 
     def mare(y_true, y_hat):
+        # FIXED: returns a fraction (0-1), no longer *100.
+        # Previously this was identical to MAPE and AARD (same formula, same
+        # *100 scaling, three names for one number). MAPE below is now the
+        # only place *100 happens -- report ONE of MARE/MAPE, not both,
+        # they carry the same information at different scales.
         y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
-        # avoid division by zero
         non_zero = y_true != 0
         return np.mean(
             np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])
-        ) * 100
+        )
 
     def cov_metric(y_true, y_hat):
-        # COV = RMSE / mean(y_true)
-        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
-        mean_y = np.mean(y_true)
-        return rmse / mean_y if mean_y != 0 else np.nan
+        # FIXED: true covariance between y_true and y_hat (was RMSE/mean(y_true),
+        # i.e. literally the same formula as SI -- that is why COV == SI in your table)
+        y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
+        return np.mean((y_true - np.mean(y_true)) * (y_hat - np.mean(y_hat)))
 
     def U95_metric(y_true, y_hat):
-        return np.percentile(np.abs(y_true - y_hat), 95)
+        # FIXED: matches manuscript Eq. 4 (U95 = 1.96 * RMSE).
+        # Previously this was the empirical 95th percentile of |error| --
+        # a different, valid metric, but not the one the paper claims to report.
+        rmse = np.sqrt(mean_squared_error(y_true, y_hat))
+        return 1.96 * rmse
 
     def rae_metric(y_true, y_hat):
         numerator = np.sum(np.abs(y_true - y_hat))
@@ -88,13 +96,12 @@ def build_metrics_table(y_real, y_pred):
         # === NEW: MAE ===
         mae = np.mean(np.abs(y_true - y_hat))
 
-        # === NEW: AARD ===
-        # Average Absolute Relative Deviation (Percentage)
-        non_zero = y_true != 0
-        if np.any(non_zero):
-            aard = np.mean(np.abs((y_true[non_zero] - y_hat[non_zero]) / y_true[non_zero])) * 100
-        else:
-            aard = np.nan
+        # === AARD ===
+        # FIXED: this was identical to MARE/MAPE (same formula). Rather than
+        # carry a third copy of the same number under a third name, alias it
+        # explicitly so it is clear it is not independent information.
+        non_zero = y_true != 0  # still needed below for MAPE
+        aard = mare_val * 100  # == MAPE, kept only for naming compatibility
 
         # SI
         mean_y = np.mean(y_true)
@@ -129,6 +136,10 @@ def build_metrics_table(y_real, y_pred):
             mape = np.nan
 
         # COM
+        # NOTE: this is algebraically just -MBE / mean(y_true), so it will
+        # always be near zero for any reasonably calibrated model regardless
+        # of R2/RMSE -- it cannot discriminate model quality. Not a bug to fix,
+        # just don't expect it to ever separate a good model from a bad one.
         sum_y = np.sum(y_true)
         com = (
             (sum_y - np.sum(y_hat)) / sum_y

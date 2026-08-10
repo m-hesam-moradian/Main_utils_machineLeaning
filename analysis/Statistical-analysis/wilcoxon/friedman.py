@@ -2,85 +2,282 @@ import pandas as pd
 import numpy as np
 from scipy.stats import friedmanchisquare
 from itertools import combinations
+import mpmath as mp
 
+
+# ============================================================
+# High-precision settings
+# ============================================================
+
+mp.mp.dps = 100  # Number of decimal digits of precision
+
+
+# ============================================================
+# Function to format very small p-values
+# ============================================================
+
+def format_p_value(p_value):
+    """
+    Format p-values in scientific notation.
+
+    Very small p-values that would normally become 0.0
+    are represented using high-precision scientific notation.
+    """
+
+    if p_value is None or pd.isna(p_value):
+        return "NaN"
+
+    # Convert scipy float to high precision
+    p_mp = mp.mpf(str(p_value))
+
+    if p_mp == 0:
+        return "0"
+
+    # Scientific notation
+    exponent = int(mp.floor(mp.log10(p_mp)))
+    mantissa = p_mp / mp.power(10, exponent)
+
+    return f"{float(mantissa):.3f}E{exponent:+d}"
+
+
+# ============================================================
+# High-precision Friedman p-value for 3 models
+# ============================================================
+
+def high_precision_friedman_pvalue(statistic, num_models=3):
+    """
+    Calculate Friedman test p-value with high precision.
+
+    For 3 models:
+        df = k - 1 = 2
+
+    For chi-square distribution with df=2:
+        p = exp(-statistic / 2)
+
+    This avoids scipy's floating-point underflow to 0.
+    """
+
+    df = num_models - 1
+
+    statistic_mp = mp.mpf(str(statistic))
+
+    # For df = 2, survival function has a simple closed form
+    if df == 2:
+        p_value = mp.exp(-statistic_mp / 2)
+
+    else:
+        # General case using regularized upper incomplete gamma
+        p_value = mp.gammainc(
+            mp.mpf(df) / 2,
+            statistic_mp / 2,
+            mp.inf,
+            regularized=True
+        )
+
+    return p_value
+
+
+# ============================================================
 # Load structured data from Excel
+# ============================================================
+
 df = pd.read_excel(
     r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
     header=0,
-    sheet_name="Wilcoxon test Data",
+    sheet_name="predicts",
 )
-  
+
+
+# ============================================================
 # Dynamically extract model names and predictions
+# ============================================================
+
 columns = df.columns.tolist()
-structured_data =[]
+
+structured_data = []
 
 for i in range(0, len(columns), 2):
-    name = columns[i].strip()
-    y_real = df.iloc[:, i].tolist()
-    # Drop NaNs so the Friedman test doesn't crash
+
+    name = str(columns[i]).strip()
+
+    y_real = df.iloc[:, i].dropna().tolist()
+
     y_predict = df.iloc[:, i + 1].dropna().tolist()
-    structured_data.append({"name": name, "y_real": y_real, "y_predict": y_predict})
 
-# Build prediction dictionary 
-predictions = {entry["name"]: np.array(entry["y_predict"]) for entry in structured_data}
+    structured_data.append({
+        "name": name,
+        "y_real": y_real,
+        "y_predict": y_predict
+    })
 
-# Ensure all prediction arrays have the same length (Friedman is strict about this)
-min_length = min([len(v) for v in predictions.values()])
+
+# ============================================================
+# Build prediction dictionary
+# ============================================================
+
+predictions = {
+    entry["name"]: np.array(entry["y_predict"], dtype=float)
+    for entry in structured_data
+}
+
+
+# ============================================================
+# Ensure all prediction arrays have the same length
+# ============================================================
+
+min_length = min(
+    len(values)
+    for values in predictions.values()
+)
+
 for name in predictions:
     predictions[name] = predictions[name][:min_length]
 
-# Initialize results dictionary
+
+# ============================================================
+# Initialize results
+# ============================================================
+
 results = {
     "stats": {},
     "p_values": {},
 }
 
-# Perform Friedman test for combinations of 3 models to fix the error!
-for model_a, model_b, model_c in combinations(predictions.keys(), 3):
-    comparison_name = f"{model_a} vs {model_b} vs {model_c}"
+
+# ============================================================
+# Friedman 3-way comparisons
+# ============================================================
+
+print("\nRunning Friedman 3-Way Comparisons...")
+print("=" * 70)
+
+for model_a, model_b, model_c in combinations(
+    predictions.keys(), 3
+):
+
+    comparison_name = (
+        f"{model_a} vs {model_b} vs {model_c}"
+    )
+
     try:
-        # Pass 3 models to friedmanchisquare
-        stat, p_value = friedmanchisquare(
-            predictions[model_a], 
-            predictions[model_b], 
+
+        # ----------------------------------------------------
+        # Friedman test
+        # ----------------------------------------------------
+
+        statistic, scipy_p_value = friedmanchisquare(
+            predictions[model_a],
+            predictions[model_b],
             predictions[model_c]
         )
-        results["stats"][comparison_name] = stat
-        results["p_values"][comparison_name] = p_value
-    except Exception as e:
-        results["stats"][comparison_name] = np.nan
-        results["p_values"][comparison_name] = np.nan
-        print(f"Error comparing {comparison_name}: {e}")
 
-# Print summary
-for key, value in results.items():
-    print(f"\n{key}:")
-    for sub_key, sub_value in value.items():
-        print(
-            f"  {sub_key}: {sub_value:.5f}"
-            if not pd.isna(sub_value)
-            else f"  {sub_key}: NaN"
+        # ----------------------------------------------------
+        # High-precision p-value
+        # ----------------------------------------------------
+
+        high_precision_p = high_precision_friedman_pvalue(
+            statistic,
+            num_models=3
         )
 
-# Convert results to DataFrame
-df_stats = pd.DataFrame(results["stats"].items(), columns=["Comparison", "Statistic"])
-df_p_values = pd.DataFrame(
-    results["p_values"].items(), columns=["Comparison", "P-Value"]
+        results["stats"][comparison_name] = statistic
+
+        # Store high precision value as mpmath object
+        results["p_values"][comparison_name] = high_precision_p
+
+    except Exception as e:
+
+        results["stats"][comparison_name] = np.nan
+        results["p_values"][comparison_name] = None
+
+        print(
+            f"Error comparing {comparison_name}: {e}"
+        )
+
+
+# ============================================================
+# Create results DataFrame
+# ============================================================
+
+result_rows = []
+
+for comparison in results["stats"]:
+
+    statistic = results["stats"][comparison]
+    p_value = results["p_values"][comparison]
+
+    if p_value is not None:
+        formatted_p = format_p_value(p_value)
+    else:
+        formatted_p = "NaN"
+
+    result_rows.append({
+        "Comparison": comparison,
+        "Statistic": statistic,
+        "P-Value": formatted_p
+    })
+
+
+df_results = pd.DataFrame(result_rows)
+
+
+# ============================================================
+# Format statistic
+# ============================================================
+
+df_results["Statistic"] = df_results["Statistic"].apply(
+    lambda x: f"{x:.5f}" if pd.notna(x) else "NaN"
 )
-df_results = pd.merge(df_stats, df_p_values, on="Comparison")
 
-# Display final merged results
-print("\nFriedman 3-Way Comparison Results:")
-print(df_results)
 
-# Optional: significance check for one group
+# ============================================================
+# Display results
+# ============================================================
+
+print("\n")
+print("=" * 100)
+print("FRIEDMAN 3-WAY COMPARISON RESULTS")
+print("=" * 100)
+
+print(
+    df_results.to_string(index=False)
+)
+
+
+# ============================================================
+# Significance check
+# ============================================================
+
 alpha = 0.05
-first_group = list(results["p_values"].keys())[0]
-if results["p_values"][first_group] < alpha:
-    print(f"\n{first_group} shows a significant difference.")
-else:
-    print(f"\nNo significant difference between {first_group}.")
 
-# Copies the 3-way comparisons to your clipboard automatically!
+print("\n")
+print("=" * 70)
+print("SIGNIFICANCE RESULTS")
+print("=" * 70)
+
+for comparison, p_value in results["p_values"].items():
+
+    if p_value is not None:
+
+        if p_value < alpha:
+            print(
+                f"✓ Significant: {comparison}"
+            )
+        else:
+            print(
+                f"✗ Not significant: {comparison}"
+            )
+
+
+
+
+# ============================================================
+# Copy results to clipboard
+# ============================================================
+
 df_results.to_clipboard(index=False)
-print("\n[ Success: The Friedman results have been copied to your clipboard! ]")
+
+print("\n")
+print("=" * 70)
+print("✓ Results copied to clipboard")
+print("=" * 70)

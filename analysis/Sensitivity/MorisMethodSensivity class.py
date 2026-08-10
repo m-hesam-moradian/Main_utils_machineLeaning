@@ -90,7 +90,7 @@ DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 
 df = pd.read_excel(
     DATA_PATH,
-    sheet_name="Selected_Data_RFE"
+    sheet_name="Balanced_SMOTE_ENN"
 ).dropna()
 
 target_column = df.columns[-1]
