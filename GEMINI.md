@@ -101,7 +101,13 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
 - **Metrics Verification**:
   - Ensure all requested metrics are computed: Accuracy, Precision, Recall, F1-Score, Kappa, Class-Wise Error, MCC, AUC, Brier Score, and Run Time. Do NOT remove existing metrics.
 
-### Step 6: Advanced Statistical, Sensitivity & Uncertainty Analyses
+### Step 6: Probability Data Catching & Brier Score Decomposition
+- **Data Catcher with Probability**:
+  - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to extract `y_real`, `y_pred`, and `prob_0`, `prob_1`, ... from all evaluated model sheets (`{Model}`, `{Model} + {Optimizer}`) into a single side-by-side probability matrix sheet named `Probs(SMOTE)` in `task/Data.xlsx`.
+- **Brier Score & Decomposition Report**:
+  - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to consume `Probs(SMOTE)`, calculate multi-class Brier score, reliability, resolution, and uncertainty decomposition for every model variant, and save the final report sheet named `Brier_Decomposition(SMOTE)` in `task/Data.xlsx`.
+
+### Step 7: Advanced Statistical, Sensitivity & Uncertainty Analyses
 - **Statistical t-Test**: Conduct pairwise or baseline statistical t-tests on model performance metrics across iterations.
 - **Sensitivity Analysis**: Execute Morris method (or specified method) to analyze feature sensitivity.
 - **Uncertainty Analysis**: Perform Entropy-based uncertainty analysis across model predictions.

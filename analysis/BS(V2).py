@@ -406,75 +406,61 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
 # -------------------------
 # CLI / Excel Example run
 # -------------------------
+import os
+import win32com.client
+
+def close_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("Saved and Closed Excel file:", filepath)
+                break
+    except Exception:
+        pass
+
 def main():
-
     excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+    close_excel_file(excel_path)
 
-
-    print("Loading Excel probability sheet...")
-
+    xl = pd.ExcelFile(excel_path)
+    sheet_name = "Probs(SMOTE)" if "Probs(SMOTE)" in xl.sheet_names else "Probs"
+    
+    print(f"Loading Excel probability sheet '{sheet_name}'...")
 
     models = load_models_from_excel(
         excel_path,
-        sheet_name="Probs(ENN)"
+        sheet_name=sheet_name
     )
 
-
     print("\nDetected models:")
-
     for model in models:
         print(" -", model)
 
-
-
     all_reports = []
 
-
     for model_name, df_model in models.items():
-
-        print(
-            f"\nProcessing {model_name}"
-        )
-
-
-        report = build_column_report(
-            df_model
-        )
-
+        print(f"\nProcessing {model_name}")
+        report = build_column_report(df_model)
 
         # Add model name column
-        report.insert(
-            0,
-            "Model",
-            model_name
-        )
+        report.insert(0, "Model", model_name)
+        all_reports.append(report)
 
+    final_report = pd.concat(all_reports, ignore_index=True)
 
-        all_reports.append(
-            report
-        )
+    print("\nBrier Score & Decomposition Report:")
+    print(final_report.to_string(index=False))
 
+    # Save to Excel sheet 'Brier_Decomposition(SMOTE)'
+    close_excel_file(excel_path)
+    out_sheet = "Brier_Decomposition(SMOTE)"
+    with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+        final_report.to_excel(writer, sheet_name=out_sheet, index=False)
 
-    final_report = pd.concat(
-        all_reports,
-        ignore_index=True
-    )
-
-
-    final_report.to_clipboard(
-        index=False
-    )
-
-
-    print(
-        "\n✅ All model reports copied to clipboard."
-    )
-
-
-    print(
-        final_report.to_string(index=False)
-    )
-
+    print(f"\nSaved Brier Decomposition report to sheet '{out_sheet}' in {excel_path}")
 
 if __name__ == "__main__":
     main()

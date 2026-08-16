@@ -43,4 +43,7 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
      - Point `dataPath` to corresponding `.npt` file (`data/model1.npt` to `data/model6.npt`).
      - Set `Convergence_metric` per task prompt (e.g. `"Recall"`).
      - Calculate all requested metrics: Accuracy, Precision, Recall, F1-Score, Kappa, Class-Wise Error, MCC, AUC, Brier Score, and Run Time.
-  6. Evaluated Outputs -> Statistical t-test, Morris Sensitivity Analysis, Entropy Uncertainty Analysis.
+  6. Data Catcher & Brier Score Analysis:
+     - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to save `Probs(SMOTE)` sheet in `task/Data.xlsx`.
+     - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to save `Brier_Decomposition(SMOTE)` sheet in `task/Data.xlsx`.
+  7. Evaluated Outputs -> Statistical t-test, Morris Sensitivity Analysis, Entropy Uncertainty Analysis.
