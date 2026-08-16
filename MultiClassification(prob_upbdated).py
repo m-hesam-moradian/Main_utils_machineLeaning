@@ -10,23 +10,21 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 params = {
-"n_estimators":100,
+    "solver": "lsqr",
+    "shrinkage": 0.92,
+    "tol": 1e-2,
 }
 
 ShowProbs = True  # False → hide probability columns & ROC table
 
-# model_name = "KNN"  # model name for title (e.g., "Extra Trees Classifier")
-# model_name = "MLR(ENN)"  # model name for title (e.g., "Extra Trees Classifier")
-model_name = "MLR(SMOTE-ENC)"  # model name for title (e.g., "Extra Trees Classifier")
-Accuracy_target=0.0
+model_name = "GPC"
+Accuracy_target = 0.0
 
-optimizer_name = ""  # no optimizer
-# optimizer_name = "SEOA"  # optimi
-optimizer_name = "POA"  # optimi
+optimizer_name = "HOA"
 
-dataPath = r"data\Data_err.npt"
+dataPath = r"data/model6.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Precision"
+Convergence_metric = "Recall"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -130,27 +128,25 @@ def write_table(df, startrow, startcol, style_key, worksheet, writer, header_sty
             worksheet.cell(row=startrow + 2 + row_num, column=startcol + col_num + 1).value = value
 
 def close_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        try:
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
                 wb.Save()
                 wb.Close(SaveChanges=False)
-                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                print("Saved and Closed Excel file:", filepath)
                 break
-        except Exception:
-            pass
-    excel.Quit()
+    except Exception as e:
+        print(f"Note: Could not close Excel via COM: {e}")
 
 def open_excel_file(filepath):
-    import os
-    import win32com.client
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("Opened Excel file:", filepath)
+    except Exception as e:
+        print(f"Note: Could not open Excel automatically: {e}")
 
 def make_style(color):
     return {
@@ -164,7 +160,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
         accuracy_score, recall_score, f1_score,
         precision_score, matthews_corrcoef,
         confusion_matrix, roc_curve, auc,
-        cohen_kappa_score
+        cohen_kappa_score, brier_score_loss
     )
     import numpy as np
     import pandas as pd
@@ -186,7 +182,19 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
             markedness_per_class = np.nan_to_num(ppv) + np.array(npvs) - 1
             return np.mean(markedness_per_class)
 
-    def get_metrics(y_true, y_pred):
+    def calculate_brier_score(y_true, y_prob):
+        try:
+            classes_loc = np.unique(y_true)
+            brier_list = []
+            for i, cls in enumerate(classes_loc):
+                y_bin = (np.array(y_true) == cls).astype(int)
+                if i < y_prob.shape[1]:
+                    brier_list.append(brier_score_loss(y_bin, y_prob[:, i]))
+            return np.mean(brier_list) if brier_list else 0.0
+        except Exception:
+            return 0.0
+
+    def get_metrics(y_true, y_pred, y_prob):
         acc = accuracy_score(y_true, y_pred)
         return {
             "Accuracy": acc,
@@ -196,19 +204,21 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
             "MCC": matthews_corrcoef(y_true, y_pred),
             "Kappa": cohen_kappa_score(y_true, y_pred),
             "Class-Wise Error": 1 - acc,
-            "Markedness": calculate_markedness(y_true, y_pred)
+            "Markedness": calculate_markedness(y_true, y_pred),
+            "Brier Score": calculate_brier_score(y_true, y_prob)
         }
 
     split = int(len(y_real) * 0.8)
     y_real_train, y_real_test = y_real[:split], y_real[split:]
     y_pred_train, y_pred_test = y_pred[:split], y_pred[split:]
+    y_prob_train, y_prob_test = y_pred_prob[:split], y_pred_prob[split:]
 
-    cols = ["Set", "Accuracy", "Precision", "Recall", "F1", "MCC", "Kappa", "Class-Wise Error", "Markedness"]
+    cols = ["Set", "Accuracy", "Precision", "Recall", "F1", "MCC", "Kappa", "Class-Wise Error", "Markedness", "Brier Score"]
 
     df_main = pd.DataFrame([
-        ["All", *get_metrics(y_real, y_pred).values()],
-        ["Train", *get_metrics(y_real_train, y_pred_train).values()],
-        ["Test", *get_metrics(y_real_test, y_pred_test).values()],
+        ["All", *get_metrics(y_real, y_pred, y_pred_prob).values()],
+        ["Train", *get_metrics(y_real_train, y_pred_train, y_prob_train).values()],
+        ["Test", *get_metrics(y_real_test, y_pred_test, y_prob_test).values()],
     ], columns=cols)
 
     precision_pc = precision_score(y_real, y_pred, average=None, labels=classes, zero_division=0)
@@ -232,12 +242,17 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
         y_pred_bin = (np.array(y_pred) == cls).astype(int)
         kappa_pc.append(cohen_kappa_score(y_real_bin, y_pred_bin))
 
-    acc_pc, err_pc = [], []
-    for cls in classes:
+    acc_pc, err_pc, brier_pc = [], [], []
+    for i, cls in enumerate(classes):
         idx = np.array(y_real) == cls
         acc = accuracy_score(np.array(y_real)[idx], np.array(y_pred)[idx])
         acc_pc.append(acc)
         err_pc.append(1 - acc)
+        y_real_bin = (np.array(y_real) == cls).astype(int)
+        if i < y_pred_prob.shape[1]:
+            brier_pc.append(brier_score_loss(y_real_bin, y_pred_prob[:, i]))
+        else:
+            brier_pc.append("")
 
     df_class = pd.DataFrame({
         "Set": [f"Class {c}" for c in classes],
@@ -248,7 +263,8 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
         "MCC": ["" for _ in classes],
         "Kappa": kappa_pc,
         "Class-Wise Error": err_pc,
-        "Markedness": markedness_pc
+        "Markedness": markedness_pc,
+        "Brier Score": brier_pc
     })
 
     df_combined = pd.concat([df_main, df_class], ignore_index=True)
@@ -354,9 +370,10 @@ if not os.path.exists(outputPath):
     wb = Workbook()
     wb.save(outputPath)
 
+close_excel_file(outputPath)
 book = load_workbook(outputPath)
 
-with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="new") as writer:
+with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
     total_len = len(data)
     idx_1 = int(total_len * 0.80)
     idx_2 = idx_1 + int(total_len * 0.10)
@@ -373,6 +390,9 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
         title = model_name
         merge_end_col = 15
         include_convergence = False
+
+    if title in writer.book.sheetnames:
+        writer.book.remove(writer.book[title])
 
     worksheet = writer.book.create_sheet(title)
     writer.sheets[title] = worksheet
@@ -465,4 +485,4 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="ne
     )
     
 open_excel_file(outputPath)
-print("✅ Structured Excel file saved successfully.")
+print("Structured Excel file saved successfully.")
