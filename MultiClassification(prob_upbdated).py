@@ -10,19 +10,19 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 params = {
-    "solver": "lsqr",
-    "shrinkage": 0.92,
-    "tol": 1e-2,
+    "solver": "lsqr"
 }
 
 ShowProbs = True  # False → hide probability columns & ROC table
 
-model_name = "GPC"
+model_name = "LDA"
 Accuracy_target = 0.0
 
+
+optimizer_name = ""
 optimizer_name = "HOA"
 
-dataPath = r"data/model6.npt"
+dataPath = r"data/model3.npt"
 outputPath = r"task\Data.xlsx"
 Convergence_metric = "Recall"
 convegence_direction = "up"

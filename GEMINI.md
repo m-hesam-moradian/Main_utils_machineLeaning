@@ -103,14 +103,26 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
 
 ### Step 6: Probability Data Catching & Brier Score Decomposition
 - **Data Catcher with Probability**:
-  - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to extract `y_real`, `y_pred`, and `prob_0`, `prob_1`, ... from all evaluated model sheets (`{Model}`, `{Model} + {Optimizer}`) into a single side-by-side probability matrix sheet named `Probs(SMOTE)` in `task/Data.xlsx`.
+  - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to extract `y_real`, `y_pred`, and `prob_0`, `prob_1`, ... from all evaluated model sheets (`{Model}`, `{Model} + {Optimizer}`) into a single side-by-side probability matrix sheet named `Probs({Balancing})` (e.g. `Probs(SMOTE)`) in `task/Data.xlsx`.
 - **Brier Score & Decomposition Report**:
-  - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to consume `Probs(SMOTE)`, calculate multi-class Brier score, reliability, resolution, and uncertainty decomposition for every model variant, and save the final report sheet named `Brier_Decomposition(SMOTE)` in `task/Data.xlsx`.
+  - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to consume `Probs({Balancing})`, calculate multi-class Brier score, reliability, resolution, and uncertainty decomposition for every model variant, and save the final report sheet named `Brier_Decomposition({Balancing})` in `task/Data.xlsx`.
 
-### Step 7: Advanced Statistical, Sensitivity & Uncertainty Analyses
-- **Statistical t-Test**: Conduct pairwise or baseline statistical t-tests on model performance metrics across iterations.
-- **Sensitivity Analysis**: Execute Morris method (or specified method) to analyze feature sensitivity.
-- **Uncertainty Analysis**: Perform Entropy-based uncertainty analysis across model predictions.
+### Step 7: Prediction Data Catching & Statistical t-Test Analysis
+- **Data Catcher for Predictions**:
+  - Run [DataCatcher.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher.py) to filter model report sheets (excluding non-model data sheets), extract `y_real` and `y_pred` prediction columns side-by-side into sheet `predicts({Balancing})` (e.g. `predicts(SMOTE)`) in `task/Data.xlsx`.
+- **Statistical Paired t-Test Report**:
+  - Run [Statistical_t-test.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/Statistical_t-test.py) to consume `predicts({Balancing})`, compute paired t-test statistics (`ttest_rel`) and p-values for all unique model pairs, and save the report to sheet `Statistical_t-test({Balancing})` in `task/Data.xlsx`.
+
+### Step 8: Advanced Sensitivity & Uncertainty Analyses
+- **Morris Sensitivity Analysis Report**:
+  - Run [MorisMethodSensivity class.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity%20class.py) (for classification) or [MorisMethodSensivity.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity.py) (for regression) to compute Morris elementary effects (`mu`, `mu_star`, `sigma`, `mu_star_conf`) across all features and model variants, and save the report sheet named `Morris_Sensitivity({Balancing})` in `task/Data.xlsx`.
+- **Entropy Uncertainty Analysis Report**:
+  - Run [Entrophy(v2).py](file:///c:/Users/Sam/Desktop/ML/analysis/Uncertainty/Entrophy(v2).py) to consume `Probs({Balancing})`, calculate normalized Shannon entropy prediction uncertainty ($H(p) = \frac{-\sum p_i \log p_i}{\log K}$) for every model variant, and save the uncertainty matrix and summary sheets named `Entropy_Uncertainty({Balancing})` and `Entropy_Summary({Balancing})` in `task/Data.xlsx`.
+
+---
+
+## 🚫 Git Management Rules
+- **No Autonomous Git Push**: NEVER execute `git push` autonomously. Only commit or push to remote repositories when the user explicitly requests it.
 
 ---
 

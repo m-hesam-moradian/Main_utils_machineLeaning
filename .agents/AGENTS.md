@@ -44,6 +44,14 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
      - Set `Convergence_metric` per task prompt (e.g. `"Recall"`).
      - Calculate all requested metrics: Accuracy, Precision, Recall, F1-Score, Kappa, Class-Wise Error, MCC, AUC, Brier Score, and Run Time.
   6. Data Catcher & Brier Score Analysis:
-     - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to save `Probs(SMOTE)` sheet in `task/Data.xlsx`.
-     - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to save `Brier_Decomposition(SMOTE)` sheet in `task/Data.xlsx`.
-  7. Evaluated Outputs -> Statistical t-test, Morris Sensitivity Analysis, Entropy Uncertainty Analysis.
+     - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to save `Probs({Balancing})` sheet in `task/Data.xlsx`.
+     - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to save `Brier_Decomposition({Balancing})` sheet in `task/Data.xlsx`.
+  7. Prediction Catching & Statistical t-test Analysis:
+     - Run [DataCatcher.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher.py) to save `predicts({Balancing})` sheet in `task/Data.xlsx`.
+     - Run [Statistical_t-test.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/Statistical_t-test.py) to save `Statistical_t-test({Balancing})` sheet in `task/Data.xlsx`.
+  8. Sensitivity & Uncertainty Analyses:
+     - Run [MorisMethodSensivity class.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity%20class.py) to save `Morris_Sensitivity({Balancing})` sheet in `task/Data.xlsx`.
+     - Run [Entrophy(v2).py](file:///c:/Users/Sam/Desktop/ML/analysis/Uncertainty/Entrophy(v2).py) to save `Entropy_Uncertainty({Balancing})` and `Entropy_Summary({Balancing})` sheets in `task/Data.xlsx`.
+
+## Git Push Rule
+- **No Autonomous Git Push**: NEVER execute `git push` autonomously. Only push when the user explicitly instructs.

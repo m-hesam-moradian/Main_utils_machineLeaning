@@ -6,10 +6,10 @@ import warnings
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.metrics import r2_score, mean_squared_error
 
-# Import only the 3 specific models you requested
-from sklearn.linear_model import ElasticNet
-from xgboost import XGBRegressor
-from sklearn.ensemble import ExtraTreesRegressor
+# Import models for Nested CV
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel, Matern, RationalQuadratic, DotProduct
 
 # Suppress minor warnings for a clean console
 warnings.filterwarnings('ignore')
@@ -39,7 +39,7 @@ def open_excel_file(filepath):
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Selected_Data"  # Change this to your actual sheet name if different
+sheet_name = "Normalize"  # Change this to your actual sheet name if different
 
 print(f"Loading data from sheet: '{sheet_name}'...")
 df = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -48,38 +48,31 @@ X_full = df.drop(columns=[target_column])
 y = df[target_column]
 
 # ================== Models & Hyperparameter Grids (For Nested CV) ==================
-from lightgbm import LGBMRegressor
-from sklearn.linear_model import QuantileRegressor
-from sklearn.kernel_ridge import KernelRidge
-
 models_and_params = {
-    "LGBR": {
-        "model": LGBMRegressor(random_state=42),
+    "RFR": {
+        "model": RandomForestRegressor(random_state=42),
         "params": {
             "n_estimators": [50, 100, 200],
-            "max_depth": [3, 5, 7],
-            "learning_rate": [0.01, 0.1, 0.2]
+            "max_depth": [None, 5, 10, 20],
+            "min_samples_split": [2, 5, 10]
         }
     },
 
-    "QR": {
-        "model": QuantileRegressor(),
+    "GPR": {
+        "model": GaussianProcessRegressor(random_state=42, n_restarts_optimizer=10),
         "params": {
-            "alpha": [0.001, 0.01, 0.1, 1.0],
-            "quantile": [0.1, 0.5, 0.9]
-        }
-    },
-
-    "KRR": {
-        "model": KernelRidge(),
-        "params": {
-            "alpha": [0.01, 0.1, 1.0, 10.0],
-            "kernel": ["linear", "rbf", "polynomial"],
-            "gamma": [0.001, 0.01, 0.1]
+            "kernel": [
+                ConstantKernel(1.0) * RBF(length_scale=1.0),
+                RBF(length_scale=1.0),
+                Matern(length_scale=1.0, nu=1.5),
+                RationalQuadratic(length_scale=1.0, alpha=1.0),
+                DotProduct()
+            ],
+            "alpha": [1e-10, 1e-5, 1e-2, 1e-1]
         }
     }
 }
-print("✅ Models ready for Nested Cross-Validation (ENR, XGBR, ETR)")
+print("✅ Models ready for Nested Cross-Validation (RFR, GPR)")
 
 # ================== Nested K-Fold Execution ==================
 # Outer CV: Tests the model on 5 chunks sequentially (unshuffled)
