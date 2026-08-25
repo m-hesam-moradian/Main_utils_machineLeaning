@@ -1,0 +1,17 @@
+# Ignored directories
+Tasks/
+tasks/
+References/
+references/
+
+# Python cache and checkpoints
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Large datasets & archive files
+*.csv
+*.zip
+*.rar
+*.7z

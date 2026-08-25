@@ -49,7 +49,13 @@ alpha = 0.05
 # Perform Paired T-Test (ttest_rel) for all unique model pairs
 for model_a, model_b in combinations(predictions.keys(), 2):
     try:
-        t_stat, p_value = ttest_rel(predictions[model_a], predictions[model_b])
+        pred_a = np.array(predictions[model_a], dtype=float)
+        pred_b = np.array(predictions[model_b], dtype=float)
+        min_len = min(len(pred_a), len(pred_b))
+        pred_a = pred_a[:min_len]
+        pred_b = pred_b[:min_len]
+        valid = ~(np.isnan(pred_a) | np.isnan(pred_b))
+        t_stat, p_value = ttest_rel(pred_a[valid], pred_b[valid])
         results["stats"][f"{model_a} vs {model_b}"] = t_stat
         results["p_values"][f"{model_a} vs {model_b}"] = p_value
     except Exception as e:
@@ -63,19 +69,23 @@ df_p_values = pd.DataFrame(results["p_values"].items(), columns=["Comparison", "
 df_results = pd.merge(df_stats, df_p_values, on="Comparison")
 
 def check_significance(p):
-    if pd.isna(p):
+    if pd.isna(p) or str(p).lower() == "nan":
         return "NaN"
-    return "Significant" if p < alpha else "Not Significant"
+    try:
+        val = float(p)
+        return "Significant" if val < alpha else "Not Significant"
+    except Exception:
+        return "NaN"
 
 df_results["Result (alpha=0.05)"] = df_results["P-Value"].apply(check_significance)
-df_results["P-Value"] = df_results["P-Value"].apply(lambda x: f"{x:.15f}" if pd.notna(x) else "NaN")
+df_results["P-Value"] = df_results["P-Value"].apply(lambda x: f"{float(x):.15f}" if pd.notna(x) and not np.isnan(float(x)) else "NaN")
 
 print("\nPaired T-Test Comparison Results:")
 print(df_results)
 
-# Save to Excel sheet 'Statistical_t-test(SMOTE)'
+# Save to Excel sheet 'Statistical_t-test(SMOTE)' or 'Statistical_t-test'
 close_excel_file(excel_path)
-out_sheet = "Statistical_t-test(SMOTE)"
+out_sheet = "Statistical_t-test(SMOTE)" if "SMOTE_Data" in xl.sheet_names else "Statistical_t-test"
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     df_results.to_excel(writer, sheet_name=out_sheet, index=False)
 

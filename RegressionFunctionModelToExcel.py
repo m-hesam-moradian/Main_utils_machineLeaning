@@ -20,22 +20,22 @@ params = {
 
 optimizer_name = " "  # no optimizer
 # optimizer_name = "GOA"  # no optimizer
-optimizer_name = "DSOA"  # no optimizer
+optimizer_name = "BOA"  # no optimizer
 
 
 
 # model_name/sheet_name are for Excel titles only (keep your style)
 # model_name = "ENR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "SVC"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "RFR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
-R2_target = 0.98564
+R2_target = 0.91248742
 
 min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "U95"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"

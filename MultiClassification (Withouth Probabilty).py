@@ -14,11 +14,11 @@ params = {
 }
 
 ShowProbs = False  # Strictly False
-model_name = "XGBC"
-# optimizer_name = "HEOA"  # no optimizer
+model_name = "Ensemble"
+optimizer_name = ""  # no optimizer
 # optimizer_name = "LOA"  # no optimizer
-optimizer_name = "BOA"  # no optimizer
-Accuracy_target = 0.95113165 # if you want to force prediction adjustments
+# optimizer_name = "BOA"  # no optimizer
+Accuracy_target = 0.0 # if you want to force prediction adjustments
 
 dataPath = r"data\Data_err.npt"
 outputPath = r"task\Data.xlsx"

@@ -15,14 +15,14 @@ params = {
 
 ShowProbs = True  # False → hide probability columns & ROC table
 
-model_name = "LDA"
+model_name = "Ensemble"
 Accuracy_target = 0.0
 
 
 optimizer_name = ""
-optimizer_name = "HOA"
+# optimizer_name = "HOA"
 
-dataPath = r"data/model3.npt"
+dataPath = r"data/Data_err.npt"
 outputPath = r"task\Data.xlsx"
 Convergence_metric = "Recall"
 convegence_direction = "up"
@@ -127,26 +127,26 @@ def write_table(df, startrow, startcol, style_key, worksheet, writer, header_sty
         for col_num, value in enumerate(row_data):
             worksheet.cell(row=startrow + 2 + row_num, column=startcol + col_num + 1).value = value
 
-def close_excel_file(filepath):
-    try:
-        excel = win32com.client.GetActiveObject("Excel.Application")
-        for wb in excel.Workbooks:
-            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-                wb.Save()
-                wb.Close(SaveChanges=False)
-                print("Saved and Closed Excel file:", filepath)
-                break
-    except Exception as e:
-        print(f"Note: Could not close Excel via COM: {e}")
+# def close_excel_file(filepath):
+#     try:
+#         excel = win32com.client.GetActiveObject("Excel.Application")
+#         for wb in excel.Workbooks:
+#             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+#                 wb.Save()
+#                 wb.Close(SaveChanges=False)
+#                 print("Saved and Closed Excel file:", filepath)
+#                 break
+#     except Exception as e:
+#         print(f"Note: Could not close Excel via COM: {e}")
 
-def open_excel_file(filepath):
-    try:
-        excel = win32com.client.GetActiveObject("Excel.Application")
-        excel.Visible = True
-        excel.Workbooks.Open(os.path.abspath(filepath))
-        print("Opened Excel file:", filepath)
-    except Exception as e:
-        print(f"Note: Could not open Excel automatically: {e}")
+# def open_excel_file(filepath):
+#     try:
+#         excel = win32com.client.GetActiveObject("Excel.Application")
+#         excel.Visible = True
+#         excel.Workbooks.Open(os.path.abspath(filepath))
+#         print("Opened Excel file:", filepath)
+#     except Exception as e:
+#         print(f"Note: Could not open Excel automatically: {e}")
 
 def make_style(color):
     return {
@@ -363,14 +363,14 @@ df_convergence = generate_fake_convergence(df_combined, y_real, y_pred_fake, con
 print("Convergence data created successfully.")
 
 # Step I: Export to Excel 
-close_excel_file(outputPath)
+# close_excel_file(outputPath)
 
 if not os.path.exists(outputPath):
     from openpyxl import Workbook
     wb = Workbook()
     wb.save(outputPath)
 
-close_excel_file(outputPath)
+# close_excel_file(outputPath)
 book = load_workbook(outputPath)
 
 with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
@@ -484,5 +484,5 @@ with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="re
             sheet_name=title,
     )
     
-open_excel_file(outputPath)
+# open_excel_file(outputPath)
 print("Structured Excel file saved successfully.")

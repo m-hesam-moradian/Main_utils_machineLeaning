@@ -1,5 +1,0 @@
-you are a ML enginier this is yourrrrr task New SCI task-BMM-SCI .No.23
-
-(Task)
-
- we already told you wich parts you need to report your code base will be in google colab and all you need todo write code step by step and save all needed reports as csv files and each part you need to print everything becouse you need to see if everything is going right then move forward unless you need to go back and fix it like r2 0.0003 is not proper result it was just a example i mean each aspect of this task is that all clear ? 
