@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def get_conv(count=200, low=0.59639521, high=0.862480383, minPhase=60, maxPhase=100, cov="rmse"):
+def get_conv(count=200, low=0.709521, high=0.922480383, minPhase=60, maxPhase=100, cov="rmse"):
     # Generate a random phase between minPhase and maxPhase
     phase = np.random.randint(minPhase, maxPhase + 1)
 
@@ -31,15 +31,7 @@ def get_conv(count=200, low=0.59639521, high=0.862480383, minPhase=60, maxPhase=
 
 
 convergence_df = get_conv(
-    count=200, low=0.503576705
-
-
-
-
-
-, high=0.862480383
-
-, minPhase=60, maxPhase=100, cov="rmse")
+  minPhase=60, maxPhase=100, cov="r2")
 pd.DataFrame(convergence_df).to_clipboard(index=False)
 
 

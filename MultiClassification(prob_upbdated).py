@@ -71,36 +71,50 @@ def fake_accuracy_prediction(y_true, y_pred, y_prob, target_accuracy, classes):
 
     return y_pred, y_prob
 
-def get_conv(count=200, target=0.9, direction="up"):
-    target = float(np.clip(target, 0.0, 1.0))
-    direction = str(direction).lower()
+def get_conv(
+    count=200, high=0.2, minPhase=24, maxPhase=32, convegence_direction="higher", tail_repeats=10
+):
+    """
+    high = target metric (the final convergence value you want)
+    convegence_direction:
+      - "higher" / "up": curve increases toward target (ends at high)
+      - "lower" / "down": curve decreases toward target (ends at high)
+    tail_repeats: how many last points are forced to exactly equal target
+    """
+    high = float(high)  # ensure scalar
+    factor = np.random.uniform(1.2, 1.5)
 
-    if direction == "up":
-        max_gap = min(0.5, target)
-        start = max(0.0, target - np.random.uniform(0.05, max(0.2, max_gap)))
+    direction = str(convegence_direction).lower()
+    is_increasing = direction in ["higher", "up", "high", "max", "maximize"]
+
+    if is_increasing:
+        # start lower than target, move up toward target
+        low = high / factor if factor != 0 else high * 0.7
+        lo, hi = min(low, high), max(low, high)
     else:
-        max_gap = min(0.5, 1.0 - target)
-        start = min(1.0, target + np.random.uniform(0.05, max(0.2, max_gap)))
+        # start higher than target, move down toward target
+        start_high = high * factor
+        lo, hi = min(high, start_high), max(high, start_high)
 
-    base = np.linspace(start, target, count)
+    phase = np.random.randint(minPhase, maxPhase + 1)
+    convergence = []
 
-    noise_scale = max(1e-6, abs(target - start) * 0.25)
-    decay = np.linspace(1.0, 0.05, count)
-    noise = np.random.normal(scale=noise_scale, size=count) * decay
+    for _ in range(phase):
+        repeated_count = np.random.randint(1, 6)
+        random_number = np.random.uniform(lo, hi)
+        convergence.extend([random_number] * repeated_count)
 
-    seq = base + noise
+    convergence = np.resize(convergence, count)
 
-    if direction == "up":
-        seq = np.maximum.accumulate(seq)
+    if is_increasing:
+        convergence = np.sort(convergence)          # goes up
     else:
-        seq = -np.maximum.accumulate(-seq)
+        convergence = np.sort(convergence)[::-1]    # goes down
 
-    seq = np.clip(seq, 0.0, 1.0)
+    tail_repeats = int(min(tail_repeats, count))
+    convergence[-tail_repeats:] = high
 
-    inject_len = np.random.randint(6, 24)
-    seq[-inject_len:] = target
-
-    return seq
+    return np.array(convergence)
     
 def write_table(df, startrow, startcol, style_key, worksheet, writer, header_styles, sheet_name):
     header_styles = {
@@ -296,7 +310,7 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
     print(df_combined)
     return df_combined, roc_df, cm_df
 
-def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="down" ,Convergence_metric=Convergence_metric):
+def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direction="higher", Convergence_metric=Convergence_metric):
     if "Train" in df_combined["Set"].values:
         Target_metric_train = df_combined.loc[df_combined["Set"] == "Train", Convergence_metric].values[0]
         if np.isnan(Target_metric_train):
@@ -304,7 +318,13 @@ def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direc
     else:
         Target_metric_train = accuracy_score(y_real, y_pred_fake)
 
-    convergence_array = get_conv(count=200, target=float(Target_metric_train), direction=convegence_direction)
+    convergence_array = get_conv(
+        count=200,
+        high=abs(float(Target_metric_train)),
+        minPhase=24,
+        maxPhase=32,
+        convegence_direction=convegence_direction,
+    )
     df_convergence = pd.DataFrame({"Convergence": convergence_array})
     print("Fake convergence table created.")
     return df_convergence
