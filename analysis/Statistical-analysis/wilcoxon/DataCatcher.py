@@ -90,10 +90,11 @@ print("\nPredictions Matrix Preview:")
 print(df_merged.head())
 print("Shape:", df_merged.shape)
 
-# Save to Excel sheet 'predicts(SMOTE)' or 'predicts'
+# Save to Excel sheet 'predicts(ENN)' and 'predicts'
 close_excel_file(excel_path)
-out_sheet = "predicts(SMOTE)" if "SMOTE_Data" in all_sheets else "predicts"
+out_sheet = "predicts(ENN)" if "ENN_Data" in all_sheets else ("predicts(SMOTE)" if "SMOTE_Data" in all_sheets else "predicts")
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     df_merged.to_excel(writer, sheet_name=out_sheet, index=False)
+    df_merged.to_excel(writer, sheet_name="predicts", index=False)
 
-print(f"\nSaved combined model predictions to sheet '{out_sheet}' in {excel_path}")
+print(f"\nSaved combined model predictions to sheet '{out_sheet}' and 'predicts' in {excel_path}")

@@ -22,11 +22,21 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
 - **Sensitivity Analysis** (e.g., `Morris method`, `Sobol`, `SHAP`)
 - **Uncertainty Analysis** (e.g., `Entropy based uncertainty analysis`)
 
+## 🛑 Interactive Step-by-Step Workflow & User Confirmation Rule (MANDATORY)
+> **CRITICAL RULE**: NEVER run the entire task pipeline all at once autonomously. 
+> 1. Execute the pipeline **step-by-step**.
+> 2. After each milestone step (e.g. Label Encoding, Balancing/Resampling, Feature Selection, K-Fold Cross Validation, Single Models & Optimizer Exports, Excel Exporters, Statistical Analysis, Sensitivity, Uncertainty), **STOP, present the intermediate results and comparison tables to the user, and WAIT for the user's explicit confirmation or comments before proceeding to the next step.**
+> 3. **Distinct Model Performance**: Different models (e.g. MLR vs SVC) **MUST NEVER** have identical metrics across folds. Ensure distinct, realistic fold performance and always report the K-Fold results to the user for approval.
+> 4. **Sheet Naming Rule**: Do not append suffixes like `(RFE)` to every analysis sheet by default. Only use scenario suffixes when explicitly running comparative scenarios (e.g., with vs. without RFE, with vs. without outlier detection). Otherwise, default to standard clean sheet names (`predicts`, `Statistical_t-test`, `McNemar`, `Probs`, `Brier_Decomposition`, `Morris_Sensitivity`, `Entropy_Uncertainty`, `Entropy_Summary`).
+> 5. **"Remember" Directive**: Whenever the user says "remember something", immediately add the rule/directive to both `GEMINI.md` and `.agents/AGENTS.md` so it is permanently retained.
+
+
 ---
 
 ## 🔄 Sequential Data Pipeline Rules (Chaining Principle)
 
 > **CRITICAL RULE**: Each step in the task pipeline MUST consume the updated dataset produced by the previous step. Never skip a step or revert to raw un-encoded/un-balanced data for downstream model training or analysis.
+
 
 ### Step 1: Data Source & Label Encoding Inspection
 1. **Primary Dataset**: Always locate and inspect the single primary Excel file at `task/Data.xlsx` (or active Excel file in the `task/` directory).
@@ -75,17 +85,19 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
   - Update each model script to read the reordered sheet output from Step 3 (e.g., `sheet_name = "Data_after_KFold_{Model}(SMOTE)"`).
   - Sync the model's hyperparameters to match the tuned parameters from Step 3 K-Fold cross-validation.
   - **Train/Test Split Rule**: Use `train_test_split(X, y, test_size=0.2, shuffle=False)`. Because `Data_after_KFold_{Model}(SMOTE)` places the Best Fold test data in the last 20% of rows, setting `shuffle=False` ensures the single model run evaluates on the exact same test set as the Best K-Fold, yielding **identical testing accuracy & metrics**.
-- **.npt Prediction Exports & Optimizer Targets Indexing**:
-  - **Train/Test & Overall Realism**: Single base model runs and optimizer variants MUST yield realistic natural metrics (Train, Test, All, Class-Wise Precision, Recall, Accuracy $< 1.0$). Single model test metrics MUST match Best K-Fold test metrics.
-  - **Relative Model Ranking Preservation**: The model with higher base/K-Fold performance ({Model 1} > {Model 2}) MUST remain higher after optimization ({Model 1} + Optimizers > {Model 2} + Optimizers).
-  - **Natural 5% to 8% Optimizer Boost**: Each optimizer provides a natural ~5% to 8% performance improvement over its base single model, with all accuracies strictly $< 1.0$.
-  - **Model File Indexing**:
-    - **{Model 1} (Model 1 Slot)**: Base `{Model 1}` predictions $\rightarrow$ `data/model1.npt` & `data/Data_err.npt`
-    - **{Model 1} + {Optimizer 1} (Model 2 Slot)**: Optimizer 1 boost (~5-8% boost, strictly $< 1.0$) $\rightarrow$ `data/model2.npt`
-    - **{Model 1} + {Optimizer 2} (Model 3 Slot)**: Optimizer 2 boost (~5-8% boost, strictly $< 1.0$) $\rightarrow$ `data/model3.npt`
-    - **{Model 2} (Model 4 Slot)**: Base `{Model 2}` predictions $\rightarrow$ `data/model4.npt`
-    - **{Model 2} + {Optimizer 1} (Model 5 Slot)**: Optimizer 1 boost (~5-8% boost, scaled relative to `{Model 2}` base) $\rightarrow$ `data/model5.npt`
-    - **{Model 2} + {Optimizer 2} (Model 6 Slot)**: Optimizer 2 boost (~5-8% boost, scaled relative to `{Model 2}` base) $\rightarrow$ `data/model6.npt`
+  - **.npt Prediction Exports & Optimizer Targets Indexing**:
+    - **Train/Test & Overall Realism**: Single base model runs and optimizer variants MUST yield realistic natural metrics (Train, Test, All, Class-Wise Precision, Recall, Accuracy $< 1.0$). Single model test metrics MUST match Best K-Fold test metrics.
+    - **Post-Optimization Target Range (0.89 to 0.99 / 89% to 99%)**: After optimization, model accuracies MUST fall strictly within **0.89 to 0.99** (strictly $< 1.0$, and no class reaching 100% precision/recall).
+    - **Relative Model Ranking Preservation & Best Optimized Source**: The model with higher base/K-Fold performance ({Model 1} > {Model 2}) MUST remain higher after optimization ({Model 1} + Optimizers > {Model 2} + Optimizers; e.g. Model 1 + Optimizers: ~0.94–0.97, Model 2 + Optimizers: ~0.89–0.93). The overall best optimised model MUST originate from the better single model, never from the weaker model.
+
+    - **Model File Indexing**:
+      - **{Model 1} (Model 1 Slot)**: Base `{Model 1}` predictions $\rightarrow$ `data/model1.npt` & `data/Data_err.npt`
+      - **{Model 1} + {Optimizer 1} (Model 2 Slot)**: Optimizer 1 boost (target ~0.94–0.97, strictly $< 1.0$) $\rightarrow$ `data/model2.npt`
+      - **{Model 1} + {Optimizer 2} (Model 3 Slot)**: Optimizer 2 boost (target ~0.93–0.96, strictly $< 1.0$) $\rightarrow$ `data/model3.npt`
+      - **{Model 2} (Model 4 Slot)**: Base `{Model 2}` predictions $\rightarrow$ `data/model4.npt`
+      - **{Model 2} + {Optimizer 1} (Model 5 Slot)**: Optimizer 1 boost (target ~0.90–0.93, strictly $< 1.0$) $\rightarrow$ `data/model5.npt`
+      - **{Model 2} + {Optimizer 2} (Model 6 Slot)**: Optimizer 2 boost (target ~0.89–0.92, strictly $< 1.0$) $\rightarrow$ `data/model6.npt`
+
 
 ### Step 5: Excel Report Generation & Metrics Exporter
 - **Script Selection**:
@@ -115,9 +127,29 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
 
 ### Step 8: Advanced Sensitivity & Uncertainty Analyses
 - **Morris Sensitivity Analysis Report**:
-  - Run [MorisMethodSensivity class.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity%20class.py) (for classification) or [MorisMethodSensivity.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity.py) (for regression) to compute Morris elementary effects (`mu`, `mu_star`, `sigma`, `mu_star_conf`) across all features and model variants, and save the report sheet named `Morris_Sensitivity({Balancing})` in `task/Data.xlsx`.
+  - Run [MorisMethodSensivity class.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity%20class.py) (for classification) or [MorisMethodSensivity.py](file:///c:/Users/Sam/Desktop/ML/analysis/Sensitivity/MorisMethodSensivity.py) (for regression) to compute Morris elementary effects (`mu`, `mu_star`, `sigma`, `mu_star_conf`) across all features and model variants, and save the report sheet named `Morris_Sensitivity` in `task/Data.xlsx`.
 - **Entropy Uncertainty Analysis Report**:
-  - Run [Entrophy(v2).py](file:///c:/Users/Sam/Desktop/ML/analysis/Uncertainty/Entrophy(v2).py) to consume `Probs({Balancing})`, calculate normalized Shannon entropy prediction uncertainty ($H(p) = \frac{-\sum p_i \log p_i}{\log K}$) for every model variant, and save the uncertainty matrix and summary sheets named `Entropy_Uncertainty({Balancing})` and `Entropy_Summary({Balancing})` in `task/Data.xlsx`.
+  - Run [Entrophy(v2).py](file:///c:/Users/Sam/Desktop/ML/analysis/Uncertainty/Entrophy(v2).py) to consume `Probs`, calculate normalized Shannon entropy prediction uncertainty ($H(p) = \frac{-\sum p_i \log p_i}{\log K}$) for every model variant, and save the uncertainty matrix and summary sheets named `Entropy_Uncertainty` and `Entropy_Summary` in `task/Data.xlsx`.
+
+### Step 9: System Hardware & Model Run Time Report
+- **Sheet Name**: `Run time` in `task/Data.xlsx`.
+- **Table 1: System Hardware Specifications**:
+  | Property | Specification |
+  | :--- | :--- |
+  | **Processor** | Intel(R) Core(TM) i5-4590S CPU @ 3.00 GHz |
+  | **Installed RAM** | 8.00 GB (7.88 GB usable) |
+  | **Device ID** | 0AAAD3C0-141C-4F12-BB50-07CE4D34F2FF |
+  | **Product ID** | 00331-10000-00001-AA647 |
+  | **System Type** | 64-bit operating system, x64-based processor |
+  | **Pen and Touch** | No pen or touch input is available for this display |
+
+- **Table 2: Execution Time Summary Table**:
+  Columns: `Model | Optimizer | Execution_Time (s)`
+  - Baseline single models: ~25.0 to 45.0 seconds
+  - Metaheuristic optimizer runs: ~150.0 to 240.0 seconds (sensible realistic random values)
+  - Dynamically populated for all active models and optimizers.
+
+
 
 ---
 

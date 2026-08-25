@@ -426,7 +426,19 @@ def main():
     close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    sheet_name = "Probs(SMOTE)" if "Probs(SMOTE)" in xl.sheet_names else "Probs"
+    if "Probs(RFE)" in xl.sheet_names:
+        sheet_name = "Probs(RFE)"
+        out_sheet = "Brier_Decomposition(RFE)"
+    elif "Probs(ENN)" in xl.sheet_names:
+        sheet_name = "Probs(ENN)"
+        out_sheet = "Brier_Decomposition(ENN)"
+    elif "Probs(SMOTE)" in xl.sheet_names:
+        sheet_name = "Probs(SMOTE)"
+        out_sheet = "Brier_Decomposition(SMOTE)"
+    else:
+        sheet_name = "Probs"
+        out_sheet = "Brier_Decomposition(RFE)"
+
     
     print(f"Loading Excel probability sheet '{sheet_name}'...")
 
@@ -454,13 +466,14 @@ def main():
     print("\nBrier Score & Decomposition Report:")
     print(final_report.to_string(index=False))
 
-    # Save to Excel sheet 'Brier_Decomposition(SMOTE)'
+    # Save to Excel sheet 'Brier_Decomposition(ENN)'
     close_excel_file(excel_path)
-    out_sheet = "Brier_Decomposition(SMOTE)"
     with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
         final_report.to_excel(writer, sheet_name=out_sheet, index=False)
+        final_report.to_excel(writer, sheet_name="Brier_Decomposition", index=False)
 
     print(f"\nSaved Brier Decomposition report to sheet '{out_sheet}' in {excel_path}")
+
 
 if __name__ == "__main__":
     main()

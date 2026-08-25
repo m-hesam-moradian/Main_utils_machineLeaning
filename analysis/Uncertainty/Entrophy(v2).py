@@ -81,7 +81,19 @@ def main():
     close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    sheet_name = "Probs(SMOTE)" if "Probs(SMOTE)" in xl.sheet_names else "Probs"
+    if "Probs(RFE)" in xl.sheet_names:
+        sheet_name = "Probs(RFE)"
+        out_sheet = "Entropy_Uncertainty"
+        sum_sheet = "Entropy_Summary"
+    elif "Probs(ENN)" in xl.sheet_names:
+        sheet_name = "Probs(ENN)"
+        out_sheet = "Entropy_Uncertainty"
+        sum_sheet = "Entropy_Summary"
+    else:
+        sheet_name = "Probs"
+        out_sheet = "Entropy_Uncertainty"
+        sum_sheet = "Entropy_Summary"
+
 
     print(f"Loading probability sheet '{sheet_name}'...")
     models = load_models_from_excel(excel_path, sheet_name=sheet_name)
@@ -118,13 +130,13 @@ def main():
     print("\nAverage Entropy Uncertainty Summary:")
     print(df_avg.to_string(index=False))
 
-    # Save results to Excel sheet 'Entropy_Uncertainty(SMOTE)'
+    # Save results to Excel sheet 'Entropy_Uncertainty(ENN)' and 'Entropy_Summary(ENN)'
     close_excel_file(excel_path)
-    out_sheet = "Entropy_Uncertainty(SMOTE)"
-    sum_sheet = "Entropy_Summary(SMOTE)"
     with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
         df_avg.to_excel(writer, sheet_name=sum_sheet, index=False)
         comparison_df.to_excel(writer, sheet_name=out_sheet, index=False)
+        df_avg.to_excel(writer, sheet_name="Entropy_Summary", index=False)
+        comparison_df.to_excel(writer, sheet_name="Entropy_Uncertainty", index=False)
 
     print(f"\nSaved Entropy Uncertainty report to sheet '{out_sheet}' and '{sum_sheet}' in {excel_path}")
 

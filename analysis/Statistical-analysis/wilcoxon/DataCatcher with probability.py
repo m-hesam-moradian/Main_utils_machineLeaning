@@ -21,10 +21,10 @@ xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
 # Exclude non-model data sheets
-ignore_sheets = ["Data", "Encoded_Data", "SMOTE_Data", "Model_Comparison_Summary(SMOTE)"]
+ignore_sheets = ["Data", "Encoded_Data", "RFE_Report", "Selected_Data_RFE", "ENN_Data", "SMOTE_Data", "Model_Comparison_Summary(ENN)", "Model_Comparison_Summary(SMOTE)"]
 sheet_names = [
     s for s in all_sheets
-    if s not in ignore_sheets and not s.endswith("(SMOTE)")
+    if s not in ignore_sheets and not s.endswith("(SMOTE)") and not s.endswith("(ENN)") and not s.endswith("(RFE)")
 ]
 
 print("Matching model sheets for DataCatcher:")
@@ -74,9 +74,10 @@ print("\nDataCatcher Probability Matrix:")
 print(df_merged.head())
 print("Shape:", df_merged.shape)
 
-# Save to Excel sheet 'Probs(SMOTE)'
+# Save to Excel sheet 'Probs(RFE)' and 'Probs'
 close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_merged.to_excel(writer, sheet_name="Probs(SMOTE)", index=False)
+    df_merged.to_excel(writer, sheet_name="Probs(RFE)", index=False)
+    df_merged.to_excel(writer, sheet_name="Probs", index=False)
 
-print(f"\nSaved combined model predictions and probabilities to sheet 'Probs(SMOTE)' in {excel_path}")
+print(f"\nSaved combined model predictions and probabilities to sheet 'Probs(RFE)' and 'Probs' in {excel_path}")

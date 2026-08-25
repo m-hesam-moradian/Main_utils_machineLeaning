@@ -4,12 +4,13 @@ import os
 import win32com.client
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 # ================== Execution Controls ==================
-SAVE_TO_EXCEL = True  # Set to True when ready to export results to task/Data.xlsx
+SAVE_TO_EXCEL = True  # Set to True to export results to task/Data.xlsx
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -19,30 +20,36 @@ def close_excel_file(filepath):
             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
                 wb.Save()
                 wb.Close(SaveChanges=False)
-                print("Saved and Closed Excel file:", filepath)
+                print("[*] Saved and Closed Excel file:", filepath)
                 break
-    except Exception as e:
-        print(f"Note: Excel COM skipped: {e}")
+    except Exception:
+        pass
 
 def open_excel_file(filepath):
     try:
         excel = win32com.client.GetActiveObject("Excel.Application")
         excel.Visible = True
         excel.Workbooks.Open(os.path.abspath(filepath))
-        print("Opened Excel file:", filepath)
-    except Exception as e:
-        print(f"Note: Could not auto-open Excel GUI: {e}")
+        print("[*] Opened Excel file:", filepath)
+    except Exception:
+        pass
 
 def main():
     # ================== Load Dataset ==================
     filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
     xl = pd.ExcelFile(filepath)
-    if "SMOTE_Data" in xl.sheet_names:
+    if "Selected_Data_RFE" in xl.sheet_names:
+        sheet_name = "Selected_Data_RFE"
+        suffix = "RFE"
+    elif "ENN_Data" in xl.sheet_names:
+        sheet_name = "ENN_Data"
+        suffix = "ENN"
+    elif "SMOTE_Data" in xl.sheet_names:
         sheet_name = "SMOTE_Data"
-    elif "Encoded_Data" in xl.sheet_names:
-        sheet_name = "Encoded_Data"
+        suffix = "SMOTE"
     else:
-        sheet_name = "Data"
+        sheet_name = "Encoded_Data"
+        suffix = "Encoded"
 
     print(f"Reading dataset for K-Fold from sheet: '{sheet_name}'")
     df = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -52,16 +59,24 @@ def main():
 
     # ================== Target Models with 3 Hyperparameters ==================
     models = {
-        "LDA": LinearDiscriminantAnalysis(
-            solver="lsqr",
-            shrinkage=0.92,
-            tol=1e-2
+        "MLR": make_pipeline(
+            StandardScaler(),
+            LogisticRegression(
+                solver="lbfgs",
+                C=1.0,
+                max_iter=2000,
+                random_state=42
+            )
         ),
-        "GPC": GaussianProcessClassifier(
-            kernel=RBF(length_scale=1.25),
-            optimizer=None,
-            max_iter_predict=5,
-            random_state=42
+        "SVC": make_pipeline(
+            StandardScaler(),
+            SVC(
+                C=5.0,
+                kernel="rbf",
+                gamma="scale",
+                probability=True,
+                random_state=42
+            )
         )
     }
 
@@ -87,9 +102,10 @@ def main():
             y_pred = model.predict(X_test)
 
             acc = accuracy_score(y_test, y_pred)
-            prec = precision_score(y_test, y_pred, average='weighted', zero_division=0)
-            rec = recall_score(y_test, y_pred, average='weighted', zero_division=0)
-            f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+            prec = precision_score(y_test, y_pred, average='macro', zero_division=0)
+            rec = recall_score(y_test, y_pred, average='macro', zero_division=0)
+            f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
+
 
             fold_metrics_list.append({
                 "Fold": fold_index,
@@ -133,18 +149,16 @@ def main():
     print(summary_df.to_string(index=False))
     print("============================================================")
 
-    # ================== Save & Open ==================
+    # ================== Save to Excel ==================
     if SAVE_TO_EXCEL:
         close_excel_file(filepath)
         with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
             for model_name in models:
-                metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics(SMOTE)", index=False)
-                df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}(SMOTE)", index=False)
-            summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary(SMOTE)", index=False)
+                metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics({suffix})", index=False)
+                df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}({suffix})", index=False)
+            summary_df.to_excel(writer, sheet_name=f"Model_Comparison_Summary({suffix})", index=False)
         open_excel_file(filepath)
-        print("\nAll models processed and saved to Excel.")
-    else:
-        print("\nSAVE_TO_EXCEL is False. Metrics computed for validation without Excel export.")
+        print(f"\n[+] All models processed and saved to Excel with ({suffix}) sheets.")
 
 if __name__ == "__main__":
     main()

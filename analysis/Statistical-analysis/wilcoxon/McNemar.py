@@ -69,7 +69,10 @@ for col1, col2 in combinations(preds.columns, 2):
 # Save results
 results_df = pd.DataFrame(results)
 
-results_df.to_clipboard(index=False)
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    results_df.to_excel(writer, sheet_name="McNemar(ENN)", index=False)
+    results_df.to_excel(writer, sheet_name="McNemar", index=False)
 
 print(results_df)
-print("\n✅ Success! Results copied to clipboard with clean model names.")
+print("\n[+] Success! McNemar test results saved to 'McNemar(ENN)' and 'McNemar' in Data.xlsx")

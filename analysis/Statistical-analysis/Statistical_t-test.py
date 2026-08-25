@@ -21,7 +21,16 @@ excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
-sheet_name = "predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts"
+if "predicts(ENN)" in xl.sheet_names:
+    sheet_name = "predicts(ENN)"
+    out_sheet = "Statistical_t-test(ENN)"
+elif "predicts(SMOTE)" in xl.sheet_names:
+    sheet_name = "predicts(SMOTE)"
+    out_sheet = "Statistical_t-test(SMOTE)"
+else:
+    sheet_name = "predicts"
+    out_sheet = "Statistical_t-test(ENN)"
+
 print(f"Loading predictions sheet '{sheet_name}'...")
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name, header=0)
@@ -77,16 +86,30 @@ def check_significance(p):
     except Exception:
         return "NaN"
 
+def format_p_value(p):
+    if pd.isna(p) or str(p).lower() == "nan":
+        return "NaN"
+    try:
+        val = float(p)
+        if val < 0.001:
+            return f"{val:.6e}"
+        else:
+            return f"{val:.6f}"
+    except Exception:
+        return "NaN"
+
 df_results["Result (alpha=0.05)"] = df_results["P-Value"].apply(check_significance)
-df_results["P-Value"] = df_results["P-Value"].apply(lambda x: f"{float(x):.15f}" if pd.notna(x) and not np.isnan(float(x)) else "NaN")
+df_results["P-Value"] = df_results["P-Value"].apply(format_p_value)
+
 
 print("\nPaired T-Test Comparison Results:")
 print(df_results)
 
-# Save to Excel sheet 'Statistical_t-test(SMOTE)' or 'Statistical_t-test'
+
+# Save to Excel sheet 'Statistical_t-test(ENN)' and 'Statistical_t-test'
 close_excel_file(excel_path)
-out_sheet = "Statistical_t-test(SMOTE)" if "SMOTE_Data" in xl.sheet_names else "Statistical_t-test"
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     df_results.to_excel(writer, sheet_name=out_sheet, index=False)
+    df_results.to_excel(writer, sheet_name="Statistical_t-test", index=False)
 
-print(f"\nSaved Paired T-Test results to sheet '{out_sheet}' in {excel_path}")
+print(f"\nSaved Paired T-Test results to sheet '{out_sheet}' and 'Statistical_t-test' in {excel_path}")

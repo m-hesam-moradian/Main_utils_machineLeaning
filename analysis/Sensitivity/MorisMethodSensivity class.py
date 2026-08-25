@@ -84,14 +84,27 @@ DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
-sheet_data = "SMOTE_Data" if "SMOTE_Data" in xl.sheet_names else ("Encoded_Data" if "Encoded_Data" in xl.sheet_names else "Data")
+if "Selected_Data_RFE" in xl.sheet_names:
+    sheet_data = "Selected_Data_RFE"
+    out_sheet = "Morris_Sensitivity"
+elif "ENN_Data" in xl.sheet_names:
+    sheet_data = "ENN_Data"
+    out_sheet = "Morris_Sensitivity"
+elif "SMOTE_Data" in xl.sheet_names:
+    sheet_data = "SMOTE_Data"
+    out_sheet = "Morris_Sensitivity"
+else:
+    sheet_data = "Data"
+    out_sheet = "Morris_Sensitivity"
+
+
 df_data = pd.read_excel(DATA_PATH, sheet_name=sheet_data).dropna()
 
 target_column = df_data.columns[-1]
 X = df_data.drop(columns=[target_column])
 
-# Load predictions from predicts(SMOTE) sheet or predicts sheet
-sheet_pred = "predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts"
+# Load predictions from predicts(ENN) sheet or predicts sheet
+sheet_pred = "predicts(ENN)" if "predicts(ENN)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
 df_pred = pd.read_excel(DATA_PATH, sheet_name=sheet_pred, header=0)
 
 # Run Morris analysis for each model prediction column in predicts sheet
@@ -111,10 +124,10 @@ final_morris_df = pd.concat(all_morris_reports, ignore_index=True)
 print("\nFinal Morris Sensitivity Analysis Summary:")
 print(final_morris_df.head(15))
 
-# Save to Excel sheet 'Morris_Sensitivity(SMOTE)'
+# Save to Excel sheet 'Morris_Sensitivity(ENN)' and 'Morris_Sensitivity'
 close_excel_file(DATA_PATH)
-out_sheet = "Morris_Sensitivity(SMOTE)"
 with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     final_morris_df.to_excel(writer, sheet_name=out_sheet, index=False)
+    final_morris_df.to_excel(writer, sheet_name="Morris_Sensitivity", index=False)
 
-print(f"\nSaved Morris Sensitivity report to sheet '{out_sheet}' in {DATA_PATH}")
+print(f"\nSaved Morris Sensitivity report to sheet '{out_sheet}' and 'Morris_Sensitivity' in {DATA_PATH}")
