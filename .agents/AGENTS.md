@@ -12,6 +12,15 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
 - **Sheet Naming Rule**: Do not append suffixes like `(RFE)` to every analysis sheet by default. Only use scenario suffixes when explicitly running comparative scenarios (e.g., with vs. without RFE, with vs. without outlier detection). Otherwise, default to standard clean sheet names (`predicts`, `Statistical_t-test`, `McNemar`, `Probs`, `Brier_Decomposition`, `Morris_Sensitivity`, `Entropy_Uncertainty`, `Entropy_Summary`).
 - **"Remember" Directive**: Whenever the user says "remember something", immediately add the rule/instruction to both `GEMINI.md` and `.agents/AGENTS.md` to permanently retain it.
 
+## 0.2. 📁 File Creation & Coding Style Rules (MANDATORY)
+- **Never use task-specific names in filenames**: Do NOT create files with names like `BMM195`, `BMM-EI`, task IDs, or project codes in the filename. Use generic, descriptive names only (e.g. `K_Fold_nested_bayes.py`, not `Nested_Bayesian_CV_BMM195.py`).
+- **Same method → use/update the existing script directly.** Only create a new file when the task requires a **different method** that does not already exist in the workspace. When creating a new file, base it on the closest existing script's style and save it under a new generic name alongside the original.
+- **Never delete or remove the original files.** The original files must always be preserved for other tasks.
+- **Match the user's existing coding style exactly**:
+  - Flat script structure with inline execution at module level (no `def main()` wrapper unless the original uses it).
+  - Use `win32com.client` for Excel COM helpers (`close_excel_file` / `open_excel_file`) in the same pattern as existing scripts.
+  - Use the same import order, variable naming, and comment style as the original files.
+  - Do NOT use `argparse`, `logging`, or other patterns not present in existing scripts.
 
 ## 1. Always Read Primary Data File First
 
