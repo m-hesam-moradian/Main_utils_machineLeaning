@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-
+from sklearn.ensemble import RandomForestClassifier
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_XGB"  # you can rename this if needed
+sheet_name = "D4_Data"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -14,17 +15,18 @@ target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Split into train/test (80/20) ---
+# --- Split into train/test (80/20, shuffle=False to match K-Fold) ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, shuffle=False
 )
-from sklearn.ensemble import RandomForestClassifier
 
-# --- Train XGBoost Classifier ---
-model =RandomForestClassifier(
-        n_estimators=5,      # No "Forest", just one weak tree
-        max_depth=5,         # Only one split allowed
-        random_state=42
+# --- Train Random Forest Classifier ---
+model = RandomForestClassifier(
+    n_estimators=60,
+    max_depth=10,
+    min_samples_split=4,
+    random_state=42,
+    n_jobs=-1
 )
 
 model.fit(X_train, y_train)
@@ -32,7 +34,7 @@ model.fit(X_train, y_train)
 # --- Predictions ---
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
-y_pred_all = model.predict(X)  # full dataset
+y_pred_all = model.predict(X)
 
 # --- Accuracy metrics ---
 acc_train = accuracy_score(y_train, y_pred_train)
@@ -40,8 +42,8 @@ acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
 # --- Print neatly ---
-print("✅ Accuracy Results")
-print("----------------------------")
+print("[RFC] Random Forest Accuracy (D4)")
+print("---------------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
 print(f"Testing Accuracy  : {acc_test:.4f}")
@@ -49,24 +51,18 @@ print(f"Testing Accuracy  : {acc_test:.4f}")
 # --- Get predicted probabilities ---
 y_pred_proba = model.predict_proba(X)
 
-# Convert predicted probabilities to a DataFrame with one column per class
+# Convert predicted probabilities to DataFrame
 proba_df = pd.DataFrame(
     y_pred_proba,
     columns=[f"Prob_Class_{cls}" for cls in model.classes_]
 )
 
-# Combine with true and predicted labels
+# Combine results
 df_all = pd.concat([
-    pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
+    pd.DataFrame({"y_real": y.values, "y_pred": y_pred_all}),
     proba_df
 ], axis=1)
 
-df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
-df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
-
-# --- Optional: view first few rows ---
-print("\n📊 Sample of overall predictions:")
-print(df_all.head())
-
-# --- Optional: export to clipboard or Excel ---
-df_all.to_clipboard(index=False, header=False)
+# Export to .npt files
+df_all.to_csv(r"data/Data_err.npt", sep="\t", index=False, header=False)
+print("Saved predictions to data/Data_err.npt")

@@ -15,12 +15,12 @@ params = {
 
 ShowProbs = True  # False → hide probability columns & ROC table
 
-model_name = "Ensemble"
-Accuracy_target = 0.0
+model_name = "LR"
+Accuracy_target = 0.9279841
 
 
 optimizer_name = ""
-# optimizer_name = "HOA"
+optimizer_name = "BOA"
 
 dataPath = r"data/Data_err.npt"
 outputPath = r"task\Data.xlsx"
