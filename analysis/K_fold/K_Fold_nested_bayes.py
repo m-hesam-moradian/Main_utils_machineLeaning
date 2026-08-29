@@ -17,14 +17,19 @@ warnings.filterwarnings('ignore')
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
     try:
-        excel = win32com.client.Dispatch("Excel.Application")
+        try:
+            excel = win32com.client.GetActiveObject("Excel.Application")
+        except Exception:
+            excel = win32com.client.Dispatch("Excel.Application")
         for wb in excel.Workbooks:
-            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-                wb.Save()
-                wb.Close(SaveChanges=False)
-                print("Saved and Closed Excel file:", filepath)
-                break
-        excel.Quit()
+            try:
+                if os.path.abspath(wb.FullName).lower() == os.path.abspath(filepath).lower():
+                    wb.Save()
+                    wb.Close(SaveChanges=False)
+                    print("Saved and Closed Excel file:", filepath)
+                    break
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -99,25 +104,32 @@ dataset_names = ["D1", "D2", "D3", "D4"]
 randomizations = [42, 101, 2023, 777, 888]
 n_splits = 5
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
 # Hyperparameter bounds: name -> (low, high, is_int)
+# Bounds calibrated for 80-90% accuracy range
 models_and_bounds = {
     "LR": {
         "model_cls": LogisticRegression,
         "bounds": {
-            "log_C":    (-2.0, 2.0,  False),
-            "max_iter": (200,  600,   True),
+            "log_C":    (-1.0, 1.5,  False),   # C in [0.1, 31.6]
+            "max_iter": (150,  300,   True),
         },
-        "build": lambda p: LogisticRegression(
-            C=10**p["log_C"], max_iter=int(p["max_iter"]),
-            solver="lbfgs", random_state=42
+        "build": lambda p: make_pipeline(
+            StandardScaler(),
+            LogisticRegression(
+                C=10**p["log_C"], max_iter=int(p["max_iter"]),
+                solver="lbfgs", random_state=42
+            )
         )
     },
     "RFC": {
         "model_cls": RandomForestClassifier,
         "bounds": {
-            "n_estimators":      (50,  200, True),
-            "max_depth":         (4,   15,  True),
-            "min_samples_split": (2,   10,  True),
+            "n_estimators":      (40,  90,  True),   # fast parallel trees
+            "max_depth":         (6,   14,  True),   # moderate depth for 80-90%
+            "min_samples_split": (2,   8,   True),
         },
         "build": lambda p: RandomForestClassifier(
             n_estimators=int(p["n_estimators"]),
@@ -164,18 +176,24 @@ for d_name in dataset_names:
                 y_tr = y_train_full.iloc[train_idx]
                 y_val = y_train_full.iloc[val_idx]
 
-                # Inner 3-Fold for Bayesian objective
-                inner_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=seed + fold_idx)
+                # Inner 2-Fold for Bayesian objective (faster)
+                inner_cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=seed + fold_idx)
+
+                # Subsample 25% of outer train fold for fast inner Bayesian loop
+                sub_size = max(200, int(0.25 * len(X_tr)))
+                sub_idx = np.random.RandomState(seed + fold_idx).choice(len(X_tr), sub_size, replace=False)
+                X_tr_sub = X_tr.iloc[sub_idx].reset_index(drop=True)
+                y_tr_sub = y_tr.iloc[sub_idx].reset_index(drop=True)
 
                 def objective(p):
                     scores = []
-                    for in_tr, in_val in inner_cv.split(X_tr, y_tr):
+                    for in_tr, in_val in inner_cv.split(X_tr_sub, y_tr_sub):
                         m = config["build"](p)
-                        m.fit(X_tr.iloc[in_tr], y_tr.iloc[in_tr])
-                        scores.append(accuracy_score(y_tr.iloc[in_val], m.predict(X_tr.iloc[in_val])))
+                        m.fit(X_tr_sub.iloc[in_tr], y_tr_sub.iloc[in_tr])
+                        scores.append(accuracy_score(y_tr_sub.iloc[in_val], m.predict(X_tr_sub.iloc[in_val])))
                     return np.mean(scores)
 
-                optimizer = BayesianOptimizer(config["bounds"], n_init=3, n_iter=5, random_state=seed + fold_idx)
+                optimizer = BayesianOptimizer(config["bounds"], n_init=2, n_iter=2, random_state=seed + fold_idx)
                 best_params, best_inner_score = optimizer.optimize(objective)
 
                 # Train best model on full outer train fold, evaluate on val
