@@ -1,76 +1,71 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+import numpy as np
 from imblearn.combine import SMOTEENN
 from imblearn.over_sampling import SMOTE
-
-# -------------------- 1. Load the data --------------------
-file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name="Selected_Data_RFE")
-
-# Prepare Features (X) and Target (y)
-target_column = df.columns[-1]
-X = df.drop(columns=[target_column]).copy()
-y = df[target_column].copy()
-
-# -------------------- 2. Encode Target (if necessary) --------------------
-le = LabelEncoder()
-
-if y.dtype == "object" or y.dtype.name == "category":
-    y_encoded = le.fit_transform(y)
-else:
-    y_encoded = y
-
-# -------------------- 3. Hybrid Balancing (SMOTE-ENN) --------------------
-from imblearn.combine import SMOTEENN
 from imblearn.under_sampling import EditedNearestNeighbours
-from imblearn.over_sampling import SMOTE
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.preprocessing import StandardScaler
+import win32com.client
 
+def close_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("[*] Saved and Closed Excel file:", filepath)
+                break
+    except Exception:
+        pass
+
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+close_excel_file(excel_path)
+
+df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
+target_column = df.columns[-1]
+X = df.drop(columns=[target_column])
+y = df[target_column]
+
+print("Original Class Distribution:")
+print(y.value_counts())
+
+# Step A: SMOTE-ENN
 smote_enn = SMOTEENN(
-    smote=SMOTE(random_state=42),
-    enn=EditedNearestNeighbours(
-        n_neighbors=3,
-        kind_sel="mode"
-    ),
+    smote=SMOTE(k_neighbors=5, random_state=42),
+    enn=EditedNearestNeighbours(n_neighbors=3, kind_sel="mode"),
     random_state=42
 )
+X_res, y_res = smote_enn.fit_resample(X, y)
+print("\nAfter SMOTE-ENN Shape:", X_res.shape)
+print("After SMOTE-ENN Class Distribution:\n", pd.Series(y_res).value_counts())
 
-X_res, y_res_encoded = smote_enn.fit_resample(X, y_encoded)
+# Step B: Local Outlier Factor (LOF) filtering
+scaler = StandardScaler()
+X_res_sc = scaler.fit_transform(X_res)
 
-# -------------------- 4. Reconstruct DataFrame --------------------
-df_balanced = pd.DataFrame(X_res, columns=X.columns)
+lof = LocalOutlierFactor(n_neighbors=20, contamination=0.02)
+outlier_mask = lof.fit_predict(X_res_sc)
+inliers = (outlier_mask == 1)
 
-if y.dtype == "object" or y.dtype.name == "category":
-    df_balanced[target_column] = le.inverse_transform(y_res_encoded)
-else:
-    df_balanced[target_column] = y_res_encoded
+X_clean = X_res[inliers]
+y_clean = y_res[inliers]
+
+print(f"\nLOF Filtered Outliers: {np.sum(~inliers)} | Remaining Inliers: {len(X_clean)}")
+
+df_balanced = pd.DataFrame(X_clean, columns=X.columns)
+df_balanced[target_column] = y_clean
 
 # Shuffle dataset
-df_balanced = (
-    df_balanced
-    .sample(frac=1, random_state=42)
-    .reset_index(drop=True)
-)
+df_balanced = df_balanced.sample(frac=1.0, random_state=42).reset_index(drop=True)
 
-print("Original class distribution:")
-print(pd.Series(y).value_counts())
+print("\nFinal Balanced Dataset Shape:", df_balanced.shape)
+print("Final Class Distribution:\n", df_balanced[target_column].value_counts())
 
-print("\nClass distribution after SMOTE-ENN:")
-print(df_balanced[target_column].value_counts())
+# Save to Data.xlsx
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    df_balanced.to_excel(writer, sheet_name="Balanced_Data", index=False)
+    df_balanced.to_excel(writer, sheet_name="SMOTE_ENN_LOF_Data", index=False)
+    df_balanced.to_excel(writer, sheet_name="SMOTE_Data", index=False)
 
-print(f"\nOriginal dataset size : {len(df)}")
-print(f"Balanced dataset size : {len(df_balanced)}")
-
-# -------------------- 5. Save to Excel --------------------
-with pd.ExcelWriter(
-    file_path,
-    mode="a",
-    engine="openpyxl",
-    if_sheet_exists="replace"
-) as writer:
-    df_balanced.to_excel(
-        writer,
-        sheet_name="Balanced_SMOTE_ENN",
-        index=False
-    )
-
-print("\nBalanced dataset saved successfully to sheet 'Balanced_SMOTE_ENN'.")
+print("\n[+] Balanced dataset successfully saved to sheets 'Balanced_Data', 'SMOTE_ENN_LOF_Data', and 'SMOTE_Data' in Data.xlsx")

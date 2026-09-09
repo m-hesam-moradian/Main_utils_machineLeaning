@@ -28,9 +28,11 @@ def close_excel_file(filepath):
                         print("[EXCEL] Saved and Closed Excel file:", filepath)
                 except Exception:
                     pass
+            if len(excel.Workbooks) == 0:
+                excel.Quit()
         except Exception:
             pass
-        time.sleep(0.5)
+        time.sleep(1.0)
     except Exception as e:
         print("Note: Excel COM:", e)
 
@@ -71,29 +73,35 @@ models_shap = {
 all_summaries_list = []
 all_details_list = []
 
+print("Loading Excel workbook into memory...", flush=True)
+excel_file = pd.ExcelFile(file_path)
+
 for d_name, sheet_name in datasets:
-    print(f"\n{'='*70}")
-    print(f"  Computing Multi-Class SHAP for Dataset: {d_name} (Sheet: {sheet_name})")
-    print(f"{'='*70}")
+    print(f"\n{'='*70}", flush=True)
+    print(f"  Computing Multi-Class SHAP for Dataset: {d_name} (Sheet: {sheet_name})", flush=True)
+    print(f"{'='*70}", flush=True)
     
-    df = pd.read_excel(file_path, sheet_name=sheet_name)
+    df = pd.read_excel(excel_file, sheet_name=sheet_name)
     target_column = df.columns[-1]
     X = df.drop(columns=[target_column])
     y = df[target_column]
     classes = np.unique(y)
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    # Lightweight representative evaluation sample for ultra-fast SHAP estimation
+    eval_sample_size = min(len(X_test), 200)
+    X_test_eval = X_test.sample(n=eval_sample_size, random_state=42)
     
     for m_key, m_info in models_shap.items():
         m_name = m_info["title"]
         model = m_info["model"]
-        print(f"\n--- Model: {m_name} on {d_name} ---")
+        print(f"\n--- Model: {m_name} on {d_name} ---", flush=True)
         
         model.fit(X_train, y_train)
         
         if m_info["use_tree"]:
             explainer = shap.TreeExplainer(model)
-            shap_vals_raw = explainer.shap_values(X_test)
+            shap_vals_raw = explainer.shap_values(X_test_eval, check_additivity=False)
             if isinstance(shap_vals_raw, list):
                 shap_matrix = np.stack(shap_vals_raw, axis=-1)  # (n_samples, n_features, n_classes)
             elif len(shap_vals_raw.shape) == 3:
@@ -101,9 +109,9 @@ for d_name, sheet_name in datasets:
             else:
                 shap_matrix = shap_vals_raw[:, :, np.newaxis]
         else:
-            masker = shap.maskers.Independent(data=X_train)
+            masker = shap.maskers.Independent(data=X_train.sample(n=min(len(X_train), 100), random_state=42))
             explainer = shap.LinearExplainer(model, masker=masker)
-            shap_obj = explainer(X_test)
+            shap_obj = explainer(X_test_eval)
             shap_matrix = shap_obj.values
             if len(shap_matrix.shape) == 2:
                 shap_matrix = shap_matrix[:, :, np.newaxis]
@@ -121,7 +129,7 @@ for d_name, sheet_name in datasets:
                 mean_abs = np.mean(np.abs(shap_c[:, f_idx]))
                 max_s = np.max(shap_c[:, f_idx])
                 min_s = np.min(shap_c[:, f_idx])
-                f_vals = X_test[feat].values
+                f_vals = X_test_eval[feat].values
                 corr = np.corrcoef(f_vals, shap_c[:, f_idx])[0, 1] if np.std(f_vals) > 0 and np.std(shap_c[:, f_idx]) > 0 else 0.0
 
                 all_class_metrics.append({
@@ -147,23 +155,23 @@ for d_name, sheet_name in datasets:
         }).sort_values(by="Mean_Abs_SHAP_Overall", ascending=False).reset_index(drop=True)
         all_summaries_list.append(overall_summary)
 
-        print(f"\n--- {m_name} SHAP Importance Summary ({d_name}) ---")
-        print(overall_summary.to_string(index=False))
+        print(f"\n--- {m_name} SHAP Importance Summary ({d_name}) ---", flush=True)
+        print(overall_summary.head(10).to_string(index=False), flush=True)
 
         # Generate summary plot
         try:
             plt.figure(figsize=(10, 6))
             if m_info["use_tree"]:
-                shap.summary_plot(shap_vals_raw if isinstance(shap_vals_raw, list) else shap_matrix, X_test, show=False)
+                shap.summary_plot(shap_vals_raw if isinstance(shap_vals_raw, list) else shap_matrix, X_test_eval, show=False)
             else:
-                shap.summary_plot(shap_obj, X_test, show=False)
+                shap.summary_plot(shap_obj, X_test_eval, show=False)
             plt.title(f"SHAP Multi-Class Feature Summary - {m_name} ({d_name})", pad=20, fontsize=13, fontweight='bold')
             plot_path = os.path.join(output_dir, f"SHAP_Summary_{m_key}_{d_name}.png")
             plt.savefig(plot_path, bbox_inches='tight', dpi=300)
             plt.close()
-            print(f"Saved SHAP plot to: {plot_path}")
+            print(f"[+] Saved SHAP plot: {plot_path}", flush=True)
         except Exception as e:
-            print(f"Note: Plot saving skipped for {m_name} ({d_name}): {e}")
+            print(f"Note: Plot saving skipped for {m_name} ({d_name}): {e}", flush=True)
 
 # Save to Excel
 close_excel_file(file_path)
@@ -175,8 +183,8 @@ try:
         all_summaries.to_excel(writer, sheet_name="SHAP_Summary", index=False)
         all_details.to_excel(writer, sheet_name="SHAP_Class_Details", index=False)
     open_excel_file(file_path)
-    print(f"\n[+] Saved SHAP analysis to sheets 'SHAP_Summary' and 'SHAP_Class_Details' in {file_path}")
+    print(f"\n[+] Successfully saved SHAP analysis to sheets 'SHAP_Summary' and 'SHAP_Class_Details' in {file_path}", flush=True)
 except PermissionError:
-    print(f"[!] Note: task/Data.xlsx is currently open in Excel. SHAP summary and class details will be saved when workbook is released.")
+    print(f"[!] Note: task/Data.xlsx is currently open in Excel. Summary table will be saved when file is released.", flush=True)
 except Exception as e:
-    print(f"Note: Excel write: {e}")
+    print(f"Note: Excel write: {e}", flush=True)

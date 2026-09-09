@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
 import os
-from sklearn.svm import LinearSVC
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import RFE
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, recall_score
 
 # --- Excel helpers ---
 def close_excel_file(filepath):
@@ -32,12 +32,27 @@ def open_excel_file(filepath):
         pass
 
 # =========================================================
-# LOAD DATA (From ENN_Data)
+# LOAD DATA (From Encoded_Data)
 # =========================================================
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="ENN_Data")
+xl = pd.ExcelFile(excel_path)
+if "Selected_Data_RFE" in xl.sheet_names:
+    pass # for downstream
+if "ENN_Data" in xl.sheet_names:
+    sheet_name = "ENN_Data"
+elif "SMOTE_Data" in xl.sheet_names:
+    sheet_name = "SMOTE_Data"
+elif "Balanced_Data" in xl.sheet_names:
+    sheet_name = "Balanced_Data"
+elif "Encoded_Data" in xl.sheet_names:
+    sheet_name = "Encoded_Data"
+else:
+    sheet_name = "Data"
+
+print(f"Reading dataset for RFE from sheet: '{sheet_name}'")
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
@@ -47,29 +62,17 @@ col_names = X.columns
 X_np = np.array(X)
 y_np = np.array(y)
 
-# Standardize features for accurate linear ranking
+# Standardize features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_np)
 
 # =========================================================
-# TRAIN TEST SPLIT
+# FEATURE SELECTION (RFE)
 # =========================================================
-x_train, x_test, y_train, y_test = train_test_split(
-    X_scaled,
-    y_np,
-    test_size=0.2,
-    shuffle=True,
+estimator = ExtraTreesClassifier(
+    n_estimators=100,
     random_state=42,
-    stratify=y_np
-)
-
-# =========================================================
-# FEATURE SELECTION (Lighter, 1-by-1 step)
-# =========================================================
-estimator = LinearSVC(
-    random_state=42,
-    max_iter=10000,
-    C=1.0
+    n_jobs=-1
 )
 
 selector = RFE(
@@ -78,7 +81,7 @@ selector = RFE(
     step=1
 )
 
-selector.fit(x_train, y_train)
+selector.fit(X_scaled, y_np)
 feature_ranking = selector.ranking_
 
 ranking_df = pd.DataFrame({
@@ -86,7 +89,6 @@ ranking_df = pd.DataFrame({
     "Rank": feature_ranking
 }).sort_values("Rank").reset_index(drop=True)
 
-# Lighter cutoff: Retain top 18 features (out of 43)
 TOP_K = 18
 
 selected_features = ranking_df[
@@ -102,41 +104,36 @@ ranking_df["Status"] = ranking_df["Rank"].apply(
 )
 
 # =========================================================
-# EVALUATE SUBSETS (Progressive curve)
+# EVALUATE SUBSETS (Progressive curve with 5-Fold CV)
 # =========================================================
 report_rows = []
-
-# Order features by rank
 sorted_feature_indices = np.argsort(selector.ranking_)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 for input_count in range(1, X_scaled.shape[1] + 1):
     sub_indices = sorted_feature_indices[:input_count]
     X_subset = X_scaled[:, sub_indices]
 
-    X_tr, X_te, Y_tr, Y_te = train_test_split(
-        X_subset,
-        y_np,
-        test_size=0.2,
-        shuffle=True,
-        random_state=42,
-        stratify=y_np
-    )
+    fold_accs, fold_f1s, fold_recs = [], [], []
+    for tr, te in skf.split(X_subset, y_np):
+        model = ExtraTreesClassifier(
+            n_estimators=50,
+            max_depth=15,
+            random_state=42,
+            n_jobs=-1
+        )
+        model.fit(X_subset[tr], y_np[tr])
+        pred = model.predict(X_subset[te])
 
-    model = LinearSVC(
-        random_state=42,
-        max_iter=10000,
-        C=1.0
-    )
-    model.fit(X_tr, Y_tr)
-    pred = model.predict(X_te)
-
-    acc = accuracy_score(Y_te, pred)
-    f1 = f1_score(Y_te, pred, average="weighted")
+        fold_accs.append(accuracy_score(y_np[te], pred))
+        fold_f1s.append(f1_score(y_np[te], pred, average="macro", zero_division=0))
+        fold_recs.append(recall_score(y_np[te], pred, average="macro", zero_division=0))
 
     report_rows.append({
         "Features used": input_count,
-        "Accuracy": acc,
-        "F1-Score": f1
+        "Accuracy": np.mean(fold_accs),
+        "F1-Score": np.mean(fold_f1s),
+        "Recall": np.mean(fold_recs)
     })
 
 report_df = pd.DataFrame(report_rows)

@@ -35,9 +35,13 @@ sheet_names = [
     if s.strip() not in [x.strip() for x in ignore_sheets]
     and not s.endswith("_Metrics")
     and not s.endswith("_Metrics(SMOTE)")
+    and not s.endswith("_Metrics(RFE)")
     and not s.startswith("Data_after_KFold_")
+    and not s.startswith("Probs")
+    and not s.startswith("Brier")
     and not s.endswith("(SMOTE)")
     and not s.endswith("(ENN)")
+    and not s.endswith("(RFE)")
 ]
 
 print("Matching model sheets for DataCatcher predictions:")

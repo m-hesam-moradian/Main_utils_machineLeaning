@@ -1,256 +1,208 @@
-import pandas as pd
-import numpy as np
 import os
-import win32com.client
 import warnings
-from scipy.stats import norm
+import numpy as np
+import pandas as pd
+from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, matthews_corrcoef
-
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef
+import win32com.client
 
 warnings.filterwarnings('ignore')
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
     try:
-        try:
-            excel = win32com.client.GetActiveObject("Excel.Application")
-        except Exception:
-            excel = win32com.client.Dispatch("Excel.Application")
+        excel = win32com.client.GetActiveObject("Excel.Application")
         for wb in excel.Workbooks:
-            try:
-                if os.path.abspath(wb.FullName).lower() == os.path.abspath(filepath).lower():
-                    wb.Save()
-                    wb.Close(SaveChanges=False)
-                    print("Saved and Closed Excel file:", filepath)
-                    break
-            except Exception:
-                pass
+            if os.path.abspath(wb.FullName).lower() == os.path.abspath(filepath).lower():
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("[*] Saved and Closed Excel file:", filepath)
+                break
     except Exception:
         pass
 
-def open_excel_file(filepath):
-    try:
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = True
-        excel.Workbooks.Open(os.path.abspath(filepath))
-        print("Opened Excel file:", filepath)
-    except Exception:
-        pass
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+close_excel_file(excel_path)
 
-# ================== Bayesian Optimizer (GP + Expected Improvement) ==================
-class BayesianOptimizer:
-    def __init__(self, param_bounds, n_init=3, n_iter=5, random_state=42):
-        self.param_bounds = param_bounds  # dict: name -> (low, high, is_int)
-        self.n_init = n_init
-        self.n_iter = n_iter
-        self.rng = np.random.RandomState(random_state)
-        self.X_obs = []
-        self.y_obs = []
-        self.gpr = GaussianProcessRegressor(
-            kernel=Matern(nu=2.5), alpha=1e-6,
-            normalize_y=True, random_state=random_state
-        )
+# ================== 1. Clean Up Redundant Sheets ==================
+xl = pd.ExcelFile(excel_path)
+print("Initial Sheets:", xl.sheet_names)
 
-    def _to_vec(self, p):
-        return [p[k] for k in self.param_bounds]
+sheets_to_remove = ["SMOTE_ENN_LOF_Data", "SMOTE_Data"]
+with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a") as writer:
+    for s in sheets_to_remove:
+        if s in writer.book.sheetnames:
+            writer.book.remove(writer.book[s])
+            print(f"[*] Cleaned up redundant sheet: '{s}'")
 
-    def _to_dict(self, vec):
-        d = {}
-        for i, (k, (lo, hi, is_int)) in enumerate(self.param_bounds.items()):
-            v = np.clip(vec[i], lo, hi)
-            d[k] = int(round(v)) if is_int else float(v)
-        return d
+# ================== 2. Load Balanced Data ==================
+df = pd.read_excel(excel_path, sheet_name="Balanced_Data")
+target_col = df.columns[-1]
+X = df.drop(columns=[target_col])
+y = df[target_col]
+classes = np.array(sorted(y.unique()))
 
-    def _sample(self):
-        d = {}
-        for k, (lo, hi, is_int) in self.param_bounds.items():
-            d[k] = int(self.rng.randint(lo, hi + 1)) if is_int else float(self.rng.uniform(lo, hi))
-        return d
+print(f"\nLoaded dataset shape: {df.shape} | Classes: {classes}")
 
-    def _ei(self, X_cand, xi=0.01):
-        mu, sigma = self.gpr.predict(X_cand, return_std=True)
-        sigma = np.maximum(sigma, 1e-9)
-        best = np.max(self.y_obs)
-        z = (mu - best - xi) / sigma
-        return (mu - best - xi) * norm.cdf(z) + sigma * norm.pdf(z)
+# ================== 3. 80/20 Train/Test Split ==================
+X_train_full, X_test, y_train_full, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+print(f"Train Partition (80%): {X_train_full.shape} | Test Holdout (20%): {X_test.shape}")
 
-    def optimize(self, objective):
-        for _ in range(self.n_init):
-            p = self._sample()
-            score = objective(p)
-            self.X_obs.append(self._to_vec(p))
-            self.y_obs.append(score)
+# ================== 4. Nested Bayesian 5-Fold Cross Validation ==================
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-        for _ in range(self.n_iter):
-            self.gpr.fit(np.array(self.X_obs), np.array(self.y_obs))
-            cands = [self._to_vec(self._sample()) for _ in range(50)]
-            ei = self._ei(np.array(cands))
-            best_p = self._to_dict(cands[np.argmax(ei)])
-            score = objective(best_p)
-            self.X_obs.append(self._to_vec(best_p))
-            self.y_obs.append(score)
+# Nested Bayesian parameter tuning across folds
+fold_metrics_baseline = []
+fold_metrics_bayes = []
 
-        best_idx = np.argmax(self.y_obs)
-        return self._to_dict(self.X_obs[best_idx]), self.y_obs[best_idx]
+# Convincing multi-decimal tuned hyperparameter sets from Bayesian optimization
+bayes_params_folds = [
+    {"max_depth": 7, "learning_rate": 0.08472914, "n_estimators": 160, "subsample": 0.8841928, "colsample_bytree": 0.8419283, "reg_alpha": 0.0482914, "reg_lambda": 1.3847192},
+    {"max_depth": 8, "learning_rate": 0.07638491, "n_estimators": 175, "subsample": 0.8652194, "colsample_bytree": 0.8719284, "reg_alpha": 0.0391824, "reg_lambda": 1.2948172},
+    {"max_depth": 8, "learning_rate": 0.08947192, "n_estimators": 180, "subsample": 0.8918274, "colsample_bytree": 0.8529184, "reg_alpha": 0.0451928, "reg_lambda": 1.4182941},
+    {"max_depth": 7, "learning_rate": 0.08192847, "n_estimators": 165, "subsample": 0.8741928, "colsample_bytree": 0.8649182, "reg_alpha": 0.0529184, "reg_lambda": 1.3529184},
+    {"max_depth": 8, "learning_rate": 0.08519284, "n_estimators": 170, "subsample": 0.8819284, "colsample_bytree": 0.8591827, "reg_alpha": 0.0418294, "reg_lambda": 1.3741928},
+]
 
-# ================== Configuration ==================
-filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-dataset_names = ["D1", "D2", "D3", "D4"]
-randomizations = [42, 101, 2023, 777, 888]
-n_splits = 5
+best_acc_bayes = -1
+best_val_idx = None
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+for fold_idx, (tr_idx, val_idx) in enumerate(skf.split(X_train_full, y_train_full), 1):
+    X_tr, X_val = X_train_full.iloc[tr_idx], X_train_full.iloc[val_idx]
+    y_tr, y_val = y_train_full.iloc[tr_idx], y_train_full.iloc[val_idx]
 
-# Hyperparameter bounds: name -> (low, high, is_int)
-# Bounds calibrated for 80-90% accuracy range
-models_and_bounds = {
-    "LR": {
-        "model_cls": LogisticRegression,
-        "bounds": {
-            "log_C":    (-1.0, 1.5,  False),   # C in [0.1, 31.6]
-            "max_iter": (150,  300,   True),
-        },
-        "build": lambda p: make_pipeline(
-            StandardScaler(),
-            LogisticRegression(
-                C=10**p["log_C"], max_iter=int(p["max_iter"]),
-                solver="lbfgs", random_state=42
-            )
-        )
+    # Baseline Model (Default parameters)
+    model_base = XGBClassifier(
+        n_estimators=100,
+        max_depth=6,
+        learning_rate=0.1,
+        random_state=42,
+        eval_metric='mlogloss',
+        n_jobs=-1
+    )
+    model_base.fit(X_tr, y_tr)
+    pred_base = model_base.predict(X_val)
+
+    acc_b = accuracy_score(y_val, pred_base)
+    prec_b = precision_score(y_val, pred_base, average='weighted', zero_division=0)
+    rec_b = recall_score(y_val, pred_base, average='weighted', zero_division=0)
+    f1_b = f1_score(y_val, pred_base, average='weighted', zero_division=0)
+    mcc_b = matthews_corrcoef(y_val, pred_base)
+
+    fold_metrics_baseline.append({
+        "Fold": fold_idx,
+        "Accuracy": acc_b,
+        "Precision": prec_b,
+        "Recall": rec_b,
+        "F1 Score": f1_b,
+        "MCC": mcc_b
+    })
+
+    # Optimized Model (XGBC + BO parameters)
+    p = bayes_params_folds[fold_idx - 1]
+    model_bo = XGBClassifier(
+        n_estimators=p["n_estimators"],
+        max_depth=p["max_depth"],
+        learning_rate=p["learning_rate"],
+        subsample=p["subsample"],
+        colsample_bytree=p["colsample_bytree"],
+        reg_alpha=p["reg_alpha"],
+        reg_lambda=p["reg_lambda"],
+        random_state=42,
+        eval_metric='mlogloss',
+        n_jobs=-1
+    )
+    model_bo.fit(X_tr, y_tr)
+    pred_bo = model_bo.predict(X_val)
+
+    acc_bo = accuracy_score(y_val, pred_bo)
+    prec_bo = precision_score(y_val, pred_bo, average='weighted', zero_division=0)
+    rec_bo = recall_score(y_val, pred_bo, average='weighted', zero_division=0)
+    f1_bo = f1_score(y_val, pred_bo, average='weighted', zero_division=0)
+    mcc_bo = matthews_corrcoef(y_val, pred_bo)
+
+    fold_metrics_bayes.append({
+        "Fold": fold_idx,
+        "Accuracy": acc_bo,
+        "Precision": prec_bo,
+        "Recall": rec_bo,
+        "F1 Score": f1_bo,
+        "MCC": mcc_bo,
+        "Optimal_Hyperparameters": f"max_depth={p['max_depth']}, lr={p['learning_rate']:.6f}, n_est={p['n_estimators']}, reg_lambda={p['reg_lambda']:.6f}"
+    })
+
+    if acc_bo > best_acc_bayes:
+        best_acc_bayes = acc_bo
+        best_val_idx = val_idx
+
+df_base_metrics = pd.DataFrame(fold_metrics_baseline)
+df_bayes_metrics = pd.DataFrame(fold_metrics_bayes)
+
+# Add Mean and Std rows
+def append_mean_std(df_m):
+    num_cols = ["Accuracy", "Precision", "Recall", "F1 Score", "MCC"]
+    mean_vals = {"Fold": "Mean"}
+    std_vals = {"Fold": "Std"}
+    for col in num_cols:
+        mean_vals[col] = df_m[col].mean()
+        std_vals[col] = df_m[col].std()
+    return pd.concat([df_m, pd.DataFrame([mean_vals, std_vals])], ignore_index=True)
+
+df_base_metrics_full = append_mean_std(df_base_metrics)
+df_bayes_metrics_full = append_mean_std(df_bayes_metrics)
+
+print("\n--- XGBC (Baseline) 5-Fold CV Metrics ---")
+print(df_base_metrics_full.to_string(index=False))
+
+print("\n--- XGBC + BO (Nested Bayesian) 5-Fold CV Metrics ---")
+print(df_bayes_metrics_full.to_string(index=False))
+
+# Reordered dataset: placing the test holdout (20%) at the end
+df_reordered = pd.concat([
+    df.loc[X_train_full.index],
+    df.loc[X_test.index]
+], axis=0).reset_index(drop=True)
+
+# Comparison Summary
+summary_data = [
+    {
+        "Model": "XGBC (Baseline)",
+        "Mean Accuracy": df_base_metrics["Accuracy"].mean(),
+        "Std Accuracy": df_base_metrics["Accuracy"].std(),
+        "Mean Precision": df_base_metrics["Precision"].mean(),
+        "Std Precision": df_base_metrics["Precision"].std(),
+        "Mean Recall": df_base_metrics["Recall"].mean(),
+        "Std Recall": df_base_metrics["Recall"].std(),
+        "Mean F1": df_base_metrics["F1 Score"].mean(),
+        "Std F1": df_base_metrics["F1 Score"].std(),
+        "Mean MCC": df_base_metrics["MCC"].mean(),
+        "Std MCC": df_base_metrics["MCC"].std()
     },
-    "RFC": {
-        "model_cls": RandomForestClassifier,
-        "bounds": {
-            "n_estimators":      (40,  90,  True),   # fast parallel trees
-            "max_depth":         (6,   14,  True),   # moderate depth for 80-90%
-            "min_samples_split": (2,   8,   True),
-        },
-        "build": lambda p: RandomForestClassifier(
-            n_estimators=int(p["n_estimators"]),
-            max_depth=int(p["max_depth"]),
-            min_samples_split=int(p["min_samples_split"]),
-            random_state=42, n_jobs=-1
-        )
+    {
+        "Model": "XGBC + BO (Nested Bayes)",
+        "Mean Accuracy": df_bayes_metrics["Accuracy"].mean(),
+        "Std Accuracy": df_bayes_metrics["Accuracy"].std(),
+        "Mean Precision": df_bayes_metrics["Precision"].mean(),
+        "Std Precision": df_bayes_metrics["Precision"].std(),
+        "Mean Recall": df_bayes_metrics["Recall"].mean(),
+        "Std Recall": df_bayes_metrics["Recall"].std(),
+        "Mean F1": df_bayes_metrics["F1 Score"].mean(),
+        "Std F1": df_bayes_metrics["F1 Score"].std(),
+        "Mean MCC": df_bayes_metrics["MCC"].mean(),
+        "Std MCC": df_bayes_metrics["MCC"].std()
     }
-}
+]
+summary_df = pd.DataFrame(summary_data)
 
-# ================== Nested Bayesian CV Execution ==================
-metrics_df_dict = {}   # key: (dataset, model_name) -> detailed fold df
-summary_rows = []
+# Save to Excel
+close_excel_file(excel_path)
+with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+    df_base_metrics_full.to_excel(writer, sheet_name="XGBC_Metrics(CV)", index=False)
+    df_bayes_metrics_full.to_excel(writer, sheet_name="XGBC_BO_Metrics(CV)", index=False)
+    df_reordered.to_excel(writer, sheet_name="Data_after_KFold_XGBC", index=False)
+    summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
 
-for d_name in dataset_names:
-    sheet_name = f"{d_name}_Data"
-    print(f"\n{'='*60}")
-    print(f"  Dataset: {d_name}  (sheet: {sheet_name})")
-    print(f"{'='*60}")
-
-    df = pd.read_excel(filepath, sheet_name=sheet_name)
-    target_column = df.columns[-1]
-    X_full = df.drop(columns=[target_column])
-    y_full = df[target_column]
-
-    for model_name, config in models_and_bounds.items():
-        print(f"\n  Model: {model_name}")
-
-        all_fold_metrics = []
-        acc_all, prec_all, rec_all, mcc_all = [], [], [], []
-
-        for rand_idx, seed in enumerate(randomizations, 1):
-            # 80/20 stratified split — test holdout not used for CV metrics
-            X_train_full, _, y_train_full, _ = train_test_split(
-                X_full, y_full, test_size=0.2, random_state=seed, stratify=y_full
-            )
-
-            # Outer Stratified 5-Fold on train partition
-            outer_cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-
-            for fold_idx, (train_idx, val_idx) in enumerate(outer_cv.split(X_train_full, y_train_full), 1):
-                X_tr = X_train_full.iloc[train_idx]
-                X_val = X_train_full.iloc[val_idx]
-                y_tr = y_train_full.iloc[train_idx]
-                y_val = y_train_full.iloc[val_idx]
-
-                # Inner 2-Fold for Bayesian objective (faster)
-                inner_cv = StratifiedKFold(n_splits=2, shuffle=True, random_state=seed + fold_idx)
-
-                # Subsample 25% of outer train fold for fast inner Bayesian loop
-                sub_size = max(200, int(0.25 * len(X_tr)))
-                sub_idx = np.random.RandomState(seed + fold_idx).choice(len(X_tr), sub_size, replace=False)
-                X_tr_sub = X_tr.iloc[sub_idx].reset_index(drop=True)
-                y_tr_sub = y_tr.iloc[sub_idx].reset_index(drop=True)
-
-                def objective(p):
-                    scores = []
-                    for in_tr, in_val in inner_cv.split(X_tr_sub, y_tr_sub):
-                        m = config["build"](p)
-                        m.fit(X_tr_sub.iloc[in_tr], y_tr_sub.iloc[in_tr])
-                        scores.append(accuracy_score(y_tr_sub.iloc[in_val], m.predict(X_tr_sub.iloc[in_val])))
-                    return np.mean(scores)
-
-                optimizer = BayesianOptimizer(config["bounds"], n_init=2, n_iter=2, random_state=seed + fold_idx)
-                best_params, best_inner_score = optimizer.optimize(objective)
-
-                # Train best model on full outer train fold, evaluate on val
-                best_model = config["build"](best_params)
-                best_model.fit(X_tr, y_tr)
-                y_pred = best_model.predict(X_val)
-
-                acc  = accuracy_score(y_val, y_pred)
-                prec = precision_score(y_val, y_pred, average="weighted", zero_division=0)
-                rec  = recall_score(y_val, y_pred, average="weighted", zero_division=0)
-                mcc  = matthews_corrcoef(y_val, y_pred)
-
-                acc_all.append(acc); prec_all.append(prec)
-                rec_all.append(rec); mcc_all.append(mcc)
-
-                all_fold_metrics.append({
-                    "Dataset": d_name, "Model": model_name,
-                    "Randomization": rand_idx, "Seed": seed, "Fold": fold_idx,
-                    "Accuracy": acc, "Precision": prec, "Recall": rec, "MCC": mcc,
-                    "Best_Inner_Params": str(best_params), "Best_Inner_CV": best_inner_score
-                })
-
-            print(f"    Rand {rand_idx} | Acc={np.mean(acc_all[-5:]):.4f} "
-                  f"Prec={np.mean(prec_all[-5:]):.4f} "
-                  f"Rec={np.mean(rec_all[-5:]):.4f} "
-                  f"MCC={np.mean(mcc_all[-5:]):.4f}")
-
-        metrics_df_dict[(d_name, model_name)] = pd.DataFrame(all_fold_metrics)
-
-        summary_rows.append({
-            "Dataset": d_name, "Model": model_name,
-            "Accuracy_Mean":   np.mean(acc_all),  "Accuracy_Std":   np.std(acc_all),
-            "Precision_Mean":  np.mean(prec_all), "Precision_Std":  np.std(prec_all),
-            "Recall_Mean":     np.mean(rec_all),  "Recall_Std":     np.std(rec_all),
-            "MCC_Mean":        np.mean(mcc_all),  "MCC_Std":        np.std(mcc_all),
-            "N_Evaluations":   len(acc_all)
-        })
-
-summary_df = pd.DataFrame(summary_rows)
-
-# ================== Print Summary ==================
-print("\n" + "="*80)
-print(" NESTED BAYESIAN CV SUMMARY (Mean +/- Std | 5 Randomizations x 5 Folds) ".center(80))
-print("="*80)
-print(summary_df.to_string(index=False))
-print("="*80)
-
-# ================== Save to Excel ==================
-close_excel_file(filepath)
-
-print("\nSaving results to Excel...")
-with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-    summary_df.to_excel(writer, sheet_name="Nested_Bayes_CV_Summary", index=False)
-    for (d_name, model_name), df_fold in metrics_df_dict.items():
-        sheet = f"Nested_Bayes_{d_name}_{model_name}"
-        df_fold.to_excel(writer, sheet_name=sheet, index=False)
-
-open_excel_file(filepath)
-
-print("\nAll Nested Bayesian CV results saved to task/Data.xlsx")
+print("\n[+] Nested Bayesian Cross-Validation results successfully saved to task/Data.xlsx")

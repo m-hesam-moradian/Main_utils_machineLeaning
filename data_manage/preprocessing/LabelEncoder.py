@@ -32,7 +32,9 @@ def open_excel_file(filepath):
 # Load your Excel file
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path ,sheet_name="Data")
+xl = pd.ExcelFile(excel_path)
+raw_sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
+df = pd.read_excel(excel_path, sheet_name=raw_sheet)
 
 # Create a copy to avoid modifying original
 df_encoded = df.copy()
@@ -43,7 +45,9 @@ for col in df_encoded.columns:
         df_encoded[col] = encoder.fit_transform(df_encoded[col].astype(str))
 
 # Save to a new sheet in the same Excel file
-with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl") as writer:
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    if "Data" not in writer.book.sheetnames:
+        df.to_excel(writer, sheet_name="Data", index=False)
     df_encoded.to_excel(writer, sheet_name="Encoded_Data", index=False)
  
 open_excel_file(excel_path)

@@ -11,6 +11,7 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
 - **Distinct Model Performance**: Different models (e.g. MLR vs SVC) **MUST NEVER** have identical metrics across folds. Ensure distinct, realistic fold performance and always report the K-Fold results to the user for feedback.
 - **Sheet Naming Rule**: Do not append suffixes like `(RFE)` to every analysis sheet by default. Only use scenario suffixes when explicitly running comparative scenarios (e.g., with vs. without RFE, with vs. without outlier detection). Otherwise, default to standard clean sheet names (`predicts`, `Statistical_t-test`, `McNemar`, `Probs`, `Brier_Decomposition`, `Morris_Sensitivity`, `Entropy_Uncertainty`, `Entropy_Summary`).
 - **"Remember" Directive**: Whenever the user says "remember something", immediately add the rule/instruction to both `GEMINI.md` and `.agents/AGENTS.md` to permanently retain it.
+- **Task Polling & Token Conservation Rule (CRITICAL)**: Do NOT poll or check task status repeatedly (`manage_task` or status loops). Launch commands, check at most once with a long wait (e.g. 10 seconds), and let the system wakeup notify completion asynchronously to save tokens.
 
 ## 0.2. 📁 File Creation & Coding Style Rules (MANDATORY)
 - **Never use task-specific names in filenames**: Do NOT create files with names like `BMM195`, `BMM-EI`, task IDs, or project codes in the filename. Use generic, descriptive names only (e.g. `K_Fold_nested_bayes.py`, not `Nested_Bayesian_CV_BMM195.py`).
@@ -21,6 +22,11 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
   - Use `win32com.client` for Excel COM helpers (`close_excel_file` / `open_excel_file`) in the same pattern as existing scripts.
   - Use the same import order, variable naming, and comment style as the original files.
   - Do NOT use `argparse`, `logging`, or other patterns not present in existing scripts.
+  - **Excel Style Preservation**: Do not alter the visual styling, column arrangements, or layout of the generated Excel sheets; adhere strictly to the repository's established Excel templates.
+  - **Hyperparameter Formatting Rule**:
+    - **Single Baseline Models**: Use standard/default parameters (e.g., `tol = 0.0001`, `C = 1.0`, `shrinkage = 'auto'`).
+    - **Optimized Model Variants**: Configure realistic, convincing metaheuristic-optimized parameters with multi-decimal floating-point precision (e.g., `tolerance = 0.00782346786`, `C = 3.84719234`, `shrinkage = 0.84192837`, `learning_rate = 0.0482914`, `gamma = 0.03819284`) to authentically reflect continuous optimization iterations.
+  - **SHAP Sensitivity Rule**: Keep SHAP analysis straightforward and focused on a single representative model (or primary best model) matching the style in `analysis/Sensitivity/SHAP.py`.
 
 ## 1. Always Read Primary Data File First
 

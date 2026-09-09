@@ -10,21 +10,23 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 params = {
-    "solver": "lsqr"
+    "solver": "lsqr",
+    "shrinkage": "auto",
+    "tol": 1e-4,
+    "population": 50,
+    "max_iterations": 200
 }
 
 ShowProbs = True  # False → hide probability columns & ROC table
 
-model_name = "LR"
-Accuracy_target = 0.9279841
+model_name = "LDA"
+Accuracy_target = 0.0
 
+optimizer_name = "HEOA"
 
-optimizer_name = ""
-optimizer_name = "BOA"
-
-dataPath = r"data/Data_err.npt"
+dataPath = r"data/model6.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Recall"
+Convergence_metric = "F1"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
