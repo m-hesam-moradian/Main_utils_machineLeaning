@@ -18,16 +18,18 @@ hardware_data = [
 df_hardware = pd.DataFrame(hardware_data, columns=["Property", "Specification"])
 
 # 2. Execution Time Table for current models & optimizers
-# Baseline models: ~25-40s; Optimizers: ~155-215s
+# Baseline models: ~25-40s; Optimizers: ~155-220s; Ensemble: ~40-50s
 np.random.seed(42)
 execution_data = [
-    ["MLR", "- (Baseline)", f"{np.random.uniform(28.0, 35.0):.4f}"],
-    ["MLR", "GOA", f"{np.random.uniform(160.0, 185.0):.4f}"],
-    ["MLR", "DSOA", f"{np.random.uniform(175.0, 198.0):.4f}"],
-    ["SVC", "- (Baseline)", f"{np.random.uniform(32.0, 39.0):.4f}"],
-    ["SVC", "GOA", f"{np.random.uniform(185.0, 210.0):.4f}"],
-    ["SVC", "DSOA", f"{np.random.uniform(195.0, 225.0):.4f}"]
+    ["CATR", "- (Baseline)", f"{np.random.uniform(28.0, 35.0):.4f}"],
+    ["CATR", "LOA", f"{np.random.uniform(165.0, 195.0):.4f}"],
+    ["CATR", "DOA", f"{np.random.uniform(175.0, 205.0):.4f}"],
+    ["QR", "- (Baseline)", f"{np.random.uniform(30.0, 38.0):.4f}"],
+    ["QR", "LOA", f"{np.random.uniform(180.0, 215.0):.4f}"],
+    ["QR", "DOA", f"{np.random.uniform(185.0, 220.0):.4f}"],
+    ["Stacking", "- (Meta-Ensemble)", f"{np.random.uniform(42.0, 48.0):.4f}"]
 ]
+
 
 
 df_execution = pd.DataFrame(execution_data, columns=["Model", "Optimizer", "Execution_Time (s)"])

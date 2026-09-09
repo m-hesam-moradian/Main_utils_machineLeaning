@@ -55,6 +55,16 @@ for entry in structured_data:
         
         mc_uncertainties.append(Uncertainty_pct)
     
+    # Deterministic metrics
+    log_real = np.log10(y_real + eps)
+    log_pred = np.log10(y_pred_original + eps)
+    Ei = log_pred - log_real
+    E = Ei.mean()
+    SDE = Ei.std(ddof=0)
+    
+    Median = np.median(y_pred_original)
+    MAD = np.mean(np.abs(y_pred_original - Median))
+    
     # Calculate Mean and Confidence Intervals from the simulations
     mean_uncertainty = np.mean(mc_uncertainties)
     ci_lower = np.percentile(mc_uncertainties, CONFIDENCE_INTERVAL[0])
@@ -63,13 +73,21 @@ for entry in structured_data:
     all_results.append({
         "Model": name, 
         "MC Mean Uncertainty (%)": round(mean_uncertainty, 3),
-        "95% CI Lower": round(ci_lower, 3),
-        "95% CI Upper": round(ci_upper, 3)
+        "95% CI Lower (%)": round(ci_lower, 3),
+        "95% CI Upper (%)": round(ci_upper, 3),
+        "E (Log Error)": round(E, 6),
+        "SDE": round(SDE, 6),
+        "Median": round(Median, 4),
+        "MAD": round(MAD, 4)
     })
 
-# Convert to DataFrame and copy to clipboard
+# Convert to DataFrame and save to Excel
 result_df = pd.DataFrame(all_results)
 print("\nMonte Carlo Uncertainty Table:\n")
 print(result_df.to_string(index=False))
+
+with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    result_df.to_excel(writer, sheet_name="Monte_Carlo_Uncertainty", index=False)
+
 result_df.to_clipboard(index=False)
-print("\n✅ Table copied to clipboard.")
+print(f"\n[+] Monte Carlo Uncertainty table saved to sheet 'Monte_Carlo_Uncertainty' in {DATA_PATH}")
