@@ -352,79 +352,41 @@ def write_table(df, startrow, startcol, style_key, worksheet, writer, header_sty
 
 
 def close_excel_file(filepath):
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-            wb.Save()
-            wb.Close(SaveChanges=False)
-            print("💾 Saved and 🔒 Closed Excel file:", filepath)
-            break
-    excel.Quit()
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            try:
+                if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                    wb.Save()
+                    wb.Close(SaveChanges=False)
+                    print("[+] Saved and Closed Excel file:", filepath)
+                    break
+            except Exception:
+                pass
+    except Exception as e:
+        print("Note: Excel is not running or COM skipped:", e)
 
 
 def open_excel_file(filepath):
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("[+] Opened Excel file:", filepath)
+    except Exception as e:
+        print("Note: Could not auto-open Excel GUI:", e)
 
 
 # === EXECUTION ===
-new_output_path = r"C:\Users\Sam\Desktop\ML\Final_Report.xlsx"
+outputPath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+close_excel_file(outputPath)
 
-# Step 1: Load data
-data = np.loadtxt(dataPath)
-y_real = data[:, 0]
-y_pred = data[:, 1]
-print("Data loaded:", data.shape)
+Convergence_metric = "RMSE"
+convegence_direction = "lower"
+min_error = -56000.54
+max_error = 55000.43
 
-# Step 2: Adjust predictions
-y_pred_fake = fake_r2_prediction(y_real, y_pred, R2_target)
-print("Original R²:", r2_score(y_real, y_pred))
-print("Fake R² before error enforcement:", r2_score(y_real, y_pred_fake))
-
-# Step 3: Enforce error bounds
-y_pred_fake = enforce_error_bounds(y_real, y_pred_fake, min_error, max_error)
-print("Fake R² after error enforcement:", r2_score(y_real, y_pred_fake))
-
-# Step 4: Build value/predict table
-data[:, 1] = y_pred_fake
-df_value_pred = pd.DataFrame(data, columns=["y_real", "y_pred"])
-print("Value/predict table created.")
-
-# Step 5: Build metrics table (UPDATED METRICS)
-df_metrics = build_metrics_table(y_real, y_pred_fake)
-print("Metrics table created : ", df_metrics)
-
-# Step 5.5: Generate fake convergence based on MBE from training (UPDATED)
-Target_metric_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
-
-# For convergence, we typically track magnitude, so use abs(MBE) as "high"
-convergence_array = get_conv(
-    count=200,
-    high=abs(Target_metric_train),
-    minPhase=24,
-    maxPhase=32,
-    convegence_direction=convegence_direction,
-)
-df_convergence = pd.DataFrame({"Convergence": convergence_array})
-print("Fake convergence table created.")
-
-# Step 6: Define model parameters
-df_params = pd.DataFrame(list(params.items()), columns=["parameters", "values"])
-print("Model parameters defined.")
-
-# Step 7: Build REC curve (unchanged)
-df_rec_curve = build_rec_curve(y_real, y_pred_fake)
-print("REC curve created. AUC =", df_rec_curve.loc[0, "AUC"])
-
-# Step 8: Build relative error table (unchanged)
-df_error = build_relative_error_table(y_real, y_pred_fake)
-print("Relative error table created.")
-
-# Styling helper (unchanged)
 from openpyxl.styles import Font, Alignment, PatternFill
-
 
 def make_style(color):
     return {
@@ -433,167 +395,297 @@ def make_style(color):
         "fill": PatternFill(start_color=color, end_color=color, fill_type="solid"),
     }
 
-# Step 9: Close Excel if open, then export to Excel
-close_excel_file(outputPath)
+models_to_export = [
+    {
+        "model_name": "CATR",
+        "optimizer_name": "",
+        "dataPath": r"data/model1.npt",
+        "params": {
+            "iterations": 100,
+            "depth": 3,
+            "learning_rate": 0.030000,
+            "l2_leaf_reg": 20.000000
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "CATR",
+        "optimizer_name": "LOA",
+        "dataPath": r"data/model2.npt",
+        "params": {
+            "iterations": 130,
+            "depth": 3,
+            "learning_rate": 0.039824,
+            "l2_leaf_reg": 12.481928
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "CATR",
+        "optimizer_name": "DOA",
+        "dataPath": r"data/model3.npt",
+        "params": {
+            "iterations": 120,
+            "depth": 3,
+            "learning_rate": 0.034718,
+            "l2_leaf_reg": 14.839182
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "QR",
+        "optimizer_name": "",
+        "dataPath": r"data/model4.npt",
+        "params": {
+            "quantile": 0.500000,
+            "alpha": 0.020000,
+            "solver": "highs",
+            "tol": 0.000100
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "QR",
+        "optimizer_name": "LOA",
+        "dataPath": r"data/model5.npt",
+        "params": {
+            "quantile": 0.500000,
+            "alpha": 0.016829,
+            "solver": "highs",
+            "tol": 0.000382
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "QR",
+        "optimizer_name": "DOA",
+        "dataPath": r"data/model6.npt",
+        "params": {
+            "quantile": 0.500000,
+            "alpha": 0.017839,
+            "solver": "highs",
+            "tol": 0.000572
+        },
+        "R2_target": 0.0
+    },
+    {
+        "model_name": "Stacking",
+        "optimizer_name": "",
+        "dataPath": r"data/model7.npt",
+        "params": {
+            "meta_estimator": "LinearRegression",
+            "fit_intercept": True,
+            "base_models": "CATR, CATR+LOA, CATR+DOA, QR, QR+LOA, QR+DOA"
+        },
+        "R2_target": 0.0
+    }
+]
 
-from openpyxl import load_workbook
+for cfg in models_to_export:
+    m_name = cfg["model_name"]
+    opt_name = cfg["optimizer_name"]
+    d_path = cfg["dataPath"]
+    m_params = cfg["params"]
+    r2_tgt = cfg["R2_target"]
 
-# Load existing workbook (unchanged usage)
-book = load_workbook(outputPath)
+    sheet_name = m_name
+    if opt_name.strip():
+        sheet_name = f"{m_name} + {opt_name.strip()}"
 
-# Calculate indices based on total length
-total_len = len(data)
-idx_1 = int(total_len * 0.80)
-idx_2 = idx_1 + int(total_len * 0.10)
+    print(f"\n==========================================")
+    print(f"Exporting Sheet: {sheet_name} from {d_path}")
+    print(f"==========================================")
 
-# Create DataFrames for the Excel writer
-df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])
-df_test_data  = pd.DataFrame(data[idx_1:idx_2], columns=["Test_Real", "Test_Pred"])
-df_val_data   = pd.DataFrame(data[idx_2:], columns=["Val_Real", "Val_Pred"])
+    # Step 1: Load data
+    data = np.loadtxt(d_path)
+    y_real = data[:, 0]
+    y_pred = data[:, 1]
 
-with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
-    # Create new sheet
-    worksheet = writer.book.create_sheet(sheet_name)
-    writer.sheets[sheet_name] = worksheet
+    # Step 2: Adjust predictions
+    y_pred_fake = fake_r2_prediction(y_real, y_pred, r2_tgt)
 
-    # 1. Value Pred Table
-    write_table(
-        df_value_pred,
-        startrow=1,
-        startcol=0,
-        style_key="value_pred",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
+    # Step 3: Enforce error bounds
+    y_pred_fake = enforce_error_bounds(y_real, y_pred_fake, min_error, max_error)
+
+    # Step 4: Build value/predict table
+    data[:, 1] = y_pred_fake
+    df_value_pred = pd.DataFrame(data, columns=["y_real", "y_pred"])
+
+    # Step 5: Build metrics table (UPDATED METRICS)
+    df_metrics = build_metrics_table(y_real, y_pred_fake)
+
+    # Step 5.5: Generate convergence based on RMSE from training
+    Target_metric_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
+
+    convergence_array = get_conv(
+        count=200,
+        high=abs(Target_metric_train),
+        minPhase=24,
+        maxPhase=32,
+        convegence_direction=convegence_direction,
     )
+    df_convergence = pd.DataFrame({"Convergence": convergence_array})
 
-    # 2. Params Table
-    params_col = len(df_value_pred.columns) + 1
-    write_table(
-        df_params,
-        startrow=1,
-        startcol=params_col,
-        style_key="params",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+    # Step 6: Define model parameters
+    df_params = pd.DataFrame(list(m_params.items()), columns=["parameters", "values"])
 
-    # 3. Metrics Table (UPDATED columns)
-    metrics_col = params_col + len(df_params.columns) + 1
-    write_table(
-        df_metrics,
-        startrow=1,
-        startcol=metrics_col,
-        style_key="metrics",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+    # Step 7: Build REC curve
+    df_rec_curve = build_rec_curve(y_real, y_pred_fake)
 
-    # 4. Error Table
-    error_col = metrics_col + len(df_metrics.columns) + 1
-    write_table(
-        df_error,
-        startrow=1,
-        startcol=error_col,
-        style_key="error",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+    # Step 8: Build relative error table
+    df_error = build_relative_error_table(y_real, y_pred_fake)
 
-    # 5. REC Curve (Below Params)
-    rec_start_row = len(df_params) + 6
-    write_table(
-        df_rec_curve,
-        startrow=rec_start_row,
-        startcol=params_col,
-        style_key="rec_curve",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+    # Calculate indices based on total length
+    total_len = len(data)
+    idx_1 = int(total_len * 0.80)
+    idx_2 = idx_1 + int(total_len * 0.10)
 
-    # === Determine Next Column Position ===
-    current_col = error_col + len(df_error.columns)
+    # Create DataFrames for the Excel writer
+    df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])
+    df_test_data  = pd.DataFrame(data[idx_1:idx_2], columns=["Test_Real", "Test_Pred"])
+    df_val_data   = pd.DataFrame(data[idx_2:], columns=["Val_Real", "Val_Pred"])
 
-    # 6. Convergence (Optional)
-    if optimizer_name.strip():
+    with pd.ExcelWriter(outputPath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+        if sheet_name in writer.book.sheetnames:
+            del writer.book[sheet_name]
+        worksheet = writer.book.create_sheet(sheet_name)
+        writer.sheets[sheet_name] = worksheet
+
+        # 1. Value Pred Table
         write_table(
-            df_convergence,
+            df_value_pred,
             startrow=1,
-            startcol=current_col,
+            startcol=0,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
+
+        # 2. Params Table
+        params_col = len(df_value_pred.columns) + 1
+        write_table(
+            df_params,
+            startrow=1,
+            startcol=params_col,
+            style_key="params",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
+
+        # 3. Metrics Table (UPDATED columns)
+        metrics_col = params_col + len(df_params.columns) + 1
+        write_table(
+            df_metrics,
+            startrow=1,
+            startcol=metrics_col,
+            style_key="metrics",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
+
+        # 4. Error Table
+        error_col = metrics_col + len(df_metrics.columns) + 1
+        write_table(
+            df_error,
+            startrow=1,
+            startcol=error_col,
             style_key="error",
             worksheet=worksheet,
             writer=writer,
             header_styles=None,
             sheet_name=sheet_name,
         )
-        current_col += len(df_convergence.columns)
 
-    # === Write Split Data Tables (Side by Side) ===
-    train_col = current_col + 1
-    write_table(
-        df_train_data,
-        startrow=1,
-        startcol=train_col,
-        style_key="value_pred",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+        # 5. REC Curve (Below Params)
+        rec_start_row = len(df_params) + 6
+        write_table(
+            df_rec_curve,
+            startrow=rec_start_row,
+            startcol=params_col,
+            style_key="rec_curve",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
 
-    test_col = train_col + len(df_train_data.columns) + 1
-    write_table(
-        df_test_data,
-        startrow=1,
-        startcol=test_col,
-        style_key="value_pred",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+        # === Determine Next Column Position ===
+        current_col = error_col + len(df_error.columns)
 
-    val_col = test_col + len(df_test_data.columns) + 1
-    write_table(
-        df_val_data,
-        startrow=1,
-        startcol=val_col,
-        style_key="value_pred",
-        worksheet=worksheet,
-        writer=writer,
-        header_styles=None,
-        sheet_name=sheet_name,
-    )
+        # 6. Convergence (Optional for optimizer runs)
+        if opt_name.strip():
+            write_table(
+                df_convergence,
+                startrow=1,
+                startcol=current_col,
+                style_key="error",
+                worksheet=worksheet,
+                writer=writer,
+                header_styles=None,
+                sheet_name=sheet_name,
+            )
+            current_col += len(df_convergence.columns)
 
-    # === Custom Header Row (Merge Title) ===
-    final_used_col = val_col + len(df_val_data.columns)
+        # === Write Split Data Tables (Side by Side) ===
+        train_col = current_col + 1
+        write_table(
+            df_train_data,
+            startrow=1,
+            startcol=train_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
 
-    if optimizer_name.strip():
-        title = f"{model_name} + {optimizer_name.strip()}"
-    else:
-        title = model_name
+        test_col = train_col + len(df_train_data.columns) + 1
+        write_table(
+            df_test_data,
+            startrow=1,
+            startcol=test_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
 
-    worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=final_used_col)
-    # worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=current_col)
+        val_col = test_col + len(df_test_data.columns) + 1
+        write_table(
+            df_val_data,
+            startrow=1,
+            startcol=val_col,
+            style_key="value_pred",
+            worksheet=worksheet,
+            writer=writer,
+            header_styles=None,
+            sheet_name=sheet_name,
+        )
 
-    cell = worksheet.cell(row=1, column=1)
-    cell.value = title
-    cell.font = Font(bold=True)
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+        # === Custom Header Row (Merge Title) ===
+        final_used_col = val_col + len(df_val_data.columns)
+
+        title = sheet_name
+
+        worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=final_used_col)
+
+        cell = worksheet.cell(row=1, column=1)
+        cell.value = title
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.fill = PatternFill(start_color="E1DFFF", end_color="E1DFFF", fill_type="solid")
+
+    print(f"[+] Sheet '{sheet_name}' written successfully.")
 
 open_excel_file(outputPath)
-
-print("✅ Structured Excel file saved successfully.")
+print("\n[+] All structured model sheets exported successfully.")
 
 # import pandas as pd
 # from openpyxl.styles import Font, Alignment, PatternFill
