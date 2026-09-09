@@ -108,4 +108,13 @@ for i in range(0, len(columns), 2):
     })
 
 oi_df = pd.DataFrame(results)
+print("\nOverfitting Index Table:")
+print(oi_df.to_string(index=False))
+
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    oi_df.to_excel(writer, sheet_name="Overfitting_Index", index=False)
+
 oi_df.to_clipboard(index=False)
+print(f"\n[+] Overfitting Index saved to sheet 'Overfitting_Index' in {excel_path}")
+

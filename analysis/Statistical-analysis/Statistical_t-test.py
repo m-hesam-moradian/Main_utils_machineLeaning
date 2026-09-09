@@ -21,15 +21,9 @@ excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
-if "predicts(ENN)" in xl.sheet_names:
-    sheet_name = "predicts(ENN)"
-    out_sheet = "Statistical_t-test(ENN)"
-elif "predicts(SMOTE)" in xl.sheet_names:
-    sheet_name = "predicts(SMOTE)"
-    out_sheet = "Statistical_t-test(SMOTE)"
-else:
-    sheet_name = "predicts"
-    out_sheet = "Statistical_t-test(ENN)"
+sheet_name = "predicts"
+out_sheet = "Statistical_t-test"
+
 
 print(f"Loading predictions sheet '{sheet_name}'...")
 

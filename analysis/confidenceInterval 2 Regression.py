@@ -70,6 +70,18 @@ def build_ci_regression_reports(
         return np.mean(np.log(np.cosh(y_hat - y_true)))
 
 
+    def cov_metric(y_true, y_hat):
+        y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
+        return np.mean((y_true - np.mean(y_true)) * (y_hat - np.mean(y_hat)))
+
+    def huber_loss(y_true, y_hat, delta=1.0):
+        y_true, y_hat = np.asarray(y_true), np.asarray(y_hat)
+        diff = y_hat - y_true
+        is_small = np.abs(diff) <= delta
+        sq = 0.5 * np.square(diff)
+        lin = delta * np.abs(diff) - 0.5 * np.square(delta)
+        return np.mean(np.where(is_small, sq, lin))
+
     # --------------------------------------------------------
     # Core metrics
     # --------------------------------------------------------
@@ -81,9 +93,11 @@ def build_ci_regression_reports(
         return {
             "R2": r2_score(y_t, y_p),
             "RMSE": rmse,
+            "MARE": mare(y_t, y_p),
+            "COV": cov_metric(y_t, y_p),
+            "HuberLoss": huber_loss(y_t, y_p),
             "MAE": mean_absolute_error(y_t, y_p),
             "MAPE": np.mean(np.abs((y_t - y_p) / y_t)) * 100,
-            "MARE": mare(y_t, y_p),
             "MBE": mbe(y_t, y_p),
             "SI": si(y_t, y_p),
             "RAE": rae(y_t, y_p),
@@ -153,9 +167,11 @@ def build_ci_regression_reports(
         "Set",
         "R2",
         "RMSE",
+        "MARE",
+        "COV",
+        "HuberLoss",
         "MAE",
         "MAPE",
-        "MARE",
         "MBE",
         "SI",
         "RAE",
@@ -190,8 +206,10 @@ def build_ci_regression_reports(
     ], columns=cols)
 
     return df
+
+excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 df = pd.read_excel(
-    r"C:\Users\Sam\Desktop\ML\task\Data.xlsx",
+    excel_path,
     sheet_name="predicts"
 )
 
@@ -201,8 +219,7 @@ all_reports = []
 
 for i in range(0, len(columns), 2):
 
-    raw_name = columns[i].strip()
-    model_name = raw_name.split("_")[0] if "_" in raw_name else raw_name
+    model_name = columns[i].strip()
 
     y_real = np.array(df.iloc[:, i].dropna())
     y_pred = np.array(df.iloc[:, i + 1].dropna())
@@ -220,8 +237,11 @@ for i in range(0, len(columns), 2):
 
 final_metrics_df = pd.concat(all_reports, ignore_index=True)
 
+print("\nConfidence Intervals Report:")
 print(final_metrics_df)
 
-final_metrics_df.to_clipboard(index=False)
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    final_metrics_df.to_excel(writer, sheet_name="Confidence_Intervals", index=False)
 
-print("Copied successfully.")
+final_metrics_df.to_clipboard(index=False)
+print(f"\n[+] Confidence Intervals saved to sheet 'Confidence_Intervals' in {excel_path}")
