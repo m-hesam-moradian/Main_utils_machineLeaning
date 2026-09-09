@@ -6,23 +6,28 @@ import win32com.client
 
 # --- Excel control --- (Keep your existing functions)
 def close_excel_file(filepath):
-    excel = win32com.client.Dispatch("Excel.Application")
-    for wb in excel.Workbooks:
-        try:
-            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-                wb.Save()
-                wb.Close(SaveChanges=False)
-                print("💾 Saved and 🔒 Closed Excel file:", filepath)
-                break
-        except Exception:
-            pass
-    excel.Quit()
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            try:
+                if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                    wb.Save()
+                    wb.Close(SaveChanges=False)
+                    print("[+] Saved and Closed Excel file:", filepath)
+                    break
+            except Exception:
+                pass
+    except Exception as e:
+        print("Note: Excel is not running or COM skipped:", e)
 
 def open_excel_file(filepath):
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = True
-    excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("[+] Opened Excel file:", filepath)
+    except Exception as e:
+        print("Note: Could not auto-open Excel GUI:", e)
 
 # --- Customized VIF calculation ---
 def calculate_vif_horizontal(X, threshold=5.0):
@@ -37,7 +42,7 @@ def calculate_vif_horizontal(X, threshold=5.0):
             leaky_cols.append(col)
 
     if leaky_cols:
-        print(f"🚫 حذف خودکار ستون‌های شناسایی (Leakage): {leaky_cols}")
+        print(f"[-] Dropping ID/Leakage columns: {leaky_cols}")
         # X.drop(columns=leaky_cols, inplace=True)
 
     vif_snapshots = []
@@ -73,10 +78,11 @@ def calculate_vif_horizontal(X, threshold=5.0):
 
         if max_vif > threshold:
             drop_feature = vif.loc[vif["VIF"].idxmax(), "feature"]
-            print(f"📌 حذف ویژگی '{drop_feature}' با VIF = {max_vif:.2f}")
+            print(f"[-] Step {step}: Dropping feature '{drop_feature}' with VIF = {max_vif:.2f}")
             X.drop(columns=[drop_feature], inplace=True)
             step += 1
         else:
+            print(f"[+] Multicollinearity resolved! Max remaining VIF = {max_vif:.2f} <= {threshold}")
             break
 
     # --- Formatting for Excel Output ---
@@ -107,7 +113,7 @@ def calculate_vif_horizontal(X, threshold=5.0):
 # --- Main Logic ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
-df = pd.read_excel(excel_path, sheet_name="Delete_timestamp")
+df = pd.read_excel(excel_path, sheet_name="Z-Score")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])
@@ -125,5 +131,5 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
     data_after_vif.to_excel(writer, sheet_name="data_after_vif", index=False)
 
 data_after_vif.to_clipboard(index=False)
-print("✅ Done! Dataset cleaned of IDs and Multicollinearity.")
-open_excel_file(excel_path)
+print("[+] Done! Dataset cleaned of Multicollinearity.")
+open_excel_file(excel_path)

@@ -26,7 +26,7 @@ optimizer_name = "BOA"  # no optimizer
 
 # model_name/sheet_name are for Excel titles only (keep your style)
 # model_name = "ENR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
-model_name = "RFR"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
+model_name = "ELM"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 # model_name = "Ensemble_Stacking"          # e.g., " RR(CFOA)", "ETR(OOA)", "LSSVR"
 
 R2_target = 0.91248742

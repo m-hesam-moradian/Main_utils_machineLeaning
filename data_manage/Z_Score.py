@@ -1,27 +1,50 @@
 import pandas as pd
 import numpy as np
+import os
+import win32com.client
 from scipy.stats import zscore
 
-def remove_outliers(df):
-    df_cleaned = df.copy()
-    numeric_cols = df_cleaned.select_dtypes(include=[np.number]).columns
+def close_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                break
+    except Exception as e:
+        print("Note: Excel is not running or COM skipped:", e)
+
+def open_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("📂 Opened Excel file:", filepath)
+    except Exception as e:
+        print("Note: Could not auto-open Excel GUI:", e)
+
+def remove_outliers(df, threshold=3.0):
+    df_raw = df.copy()
+    numeric_cols = df_raw.select_dtypes(include=[np.number]).columns
     
     # Calculate Z-scores
-    z_scores = df_cleaned[numeric_cols].apply(zscore)
+    z_scores = df_raw[numeric_cols].apply(zscore)
 
-    # NEW: Rename Z-score columns so we know what they are, and add them to the dataframe
+    # Rename Z-score columns so we know what they are, and add them to the full audit dataframe
     z_score_columns = z_scores.add_prefix('Z_Score_')
-    df_cleaned = pd.concat([df_cleaned, z_score_columns], axis=1)
+    df_full_details = pd.concat([df_raw, z_score_columns], axis=1)
 
-    # Create a mask for outliers (True if value is an outlier)
-    outlier_mask = (z_scores > 1.8) | (z_scores < -1.8)
+    # Create a mask for outliers (True if value is an outlier > 3 or < -3)
+    outlier_mask = (z_scores > threshold) | (z_scores < -threshold)
     
     # Find rows that have AT LEAST ONE outlier in any column
     rows_with_outliers = outlier_mask.any(axis=1)
     total_removed = rows_with_outliers.sum()
 
-    # NEW: Add a column to explicitly state why a row is kept or removed
-    df_cleaned['Outlier_Status'] = np.where(rows_with_outliers, 'Removed (Outlier)', 'Kept')
+    # Add status to full audit details
+    df_full_details['Outlier_Status'] = np.where(rows_with_outliers, 'Removed (Outlier)', 'Kept')
 
     # Create a list to store the report data
     report_data = []
@@ -32,16 +55,13 @@ def remove_outliers(df):
             print(f"{col}: triggered removal of {count} rows")
             report_data.append({"Feature / Detail": col, "Rows Triggered For Removal": count})
 
-    # NEW: Save a copy of the FULL dataset (including the ones to be removed) so you can review them
-    df_full_details = df_cleaned.copy()
-
-    # Filter dataset: Keep only rows that DO NOT have outliers
-    df_cleaned = df_cleaned[~rows_with_outliers]
+    # Filter dataset: Keep only rows that DO NOT have outliers, preserving clean original columns
+    df_cleaned = df_raw[~rows_with_outliers].reset_index(drop=True)
     
     original_len = len(df)
     remaining_len = len(df_cleaned)
 
-    print(f"\n✅ Total outlier rows removed: {total_removed} (Original: {original_len}, Remaining: {remaining_len})")
+    print(f"\n[+] Total outlier rows removed: {total_removed} (Original: {original_len}, Remaining: {remaining_len})")
     
     # Add summary statistics to the bottom of the report
     report_data.append({"Feature / Detail": "-----------------------------", "Rows Triggered For Removal": "---"})
@@ -58,17 +78,18 @@ def remove_outliers(df):
 # === CONFIGURATION ===
 input_file = r'C:\Users\Sam\Desktop\ML\task\Data.xlsx'
 input_sheet = 'Encoded_Data'
-output_sheet = 'Z-Score'                 # Will contain ONLY kept data (with Z-scores attached)
-report_sheet = 'Z-Score_Report'          # Will contain the summary
-details_sheet = 'Z-Score_Full_Details'   # NEW: Will contain ALL data (Kept + Removed) with Z-scores
+output_sheet = 'Z-Score'                 # Contains ONLY kept clean data
+report_sheet = 'Z-Score_Report'          # Contains summary table
+details_sheet = 'Z-Score_Full_Details'   # Contains ALL data with Z-scores and status
 
 # === PROCESSING ===
+close_excel_file(input_file)
 df = pd.read_excel(input_file, sheet_name=input_sheet)
-df_cleaned, report_df, df_full_details = remove_outliers(df)
+df_cleaned, report_df, df_full_details = remove_outliers(df, threshold=3.0)
 
 # === SAVE TO EXCEL ===
 with pd.ExcelWriter(input_file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
-    # Save the cleaned data (Only 'Kept' rows)
+    # Save the cleaned data (Only 'Kept' rows with original columns)
     df_cleaned.to_excel(writer, sheet_name=output_sheet, index=False)
     
     # Save the full details data (Original rows + Z-Scores + 'Kept'/'Removed' Status)
@@ -77,8 +98,11 @@ with pd.ExcelWriter(input_file, mode='a', engine='openpyxl', if_sheet_exists='re
     # Save the report
     report_df.to_excel(writer, sheet_name=report_sheet, index=False)
 
+open_excel_file(input_file)
+
 # Optional: Copy only the cleaned data to clipboard
 df_cleaned.to_clipboard(index=False)
-print(f"✅ Cleaned data saved to '{output_sheet}'")
-print(f"✅ Full audit details (with Z-scores) saved to '{details_sheet}'")
-print(f"✅ Report saved to '{report_sheet}'")
+print(f"[+] Cleaned data saved to '{output_sheet}'")
+print(f"[+] Full audit details (with Z-scores) saved to '{details_sheet}'")
+print(f"[+] Report saved to '{report_sheet}'")
+
