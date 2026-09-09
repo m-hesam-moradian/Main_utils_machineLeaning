@@ -27,7 +27,8 @@ ignore_sheets = [
     "Brier_Decomposition", "Brier_Decomposition(SMOTE)", "predicts", "predicts(SMOTE)",
     "Statistical_t-test", "Statistical_t-test(SMOTE)", "Model_Comparison_Summary",
     "Model_Comparison_Summary(SMOTE)", "McNemar", "McNemar ", "FAST", "Entropy", "Entropy ",
-    "Entropy_Uncertainty", "Entropy_Summary", "Morris_Sensitivity"
+    "Entropy_Uncertainty", "Entropy_Summary", "Morris_Sensitivity", "Z-Score",
+    "Z-Score_Report", "Z-Score_Full_Details", "Model_Summary"
 ]
 
 sheet_names = [
@@ -43,6 +44,7 @@ sheet_names = [
     and not s.endswith("(ENN)")
     and not s.endswith("(RFE)")
 ]
+
 
 print("Matching model sheets for DataCatcher predictions:")
 print(sheet_names)
