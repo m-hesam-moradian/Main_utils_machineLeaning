@@ -2,12 +2,12 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFC"
+sheet_name = "Data_after_KFold_GBC"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -25,13 +25,13 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y, test_size=0.2, shuffle=False
 )
 
-# --- Train Random Forest Classifier ---
-model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=11,
-    min_samples_split=4,
-    random_state=47,
-    n_jobs=-1
+# --- Train Gradient Boosting Classifier ---
+model = GradientBoostingClassifier(
+    n_estimators=75,
+    learning_rate=0.05,
+    max_depth=2,
+    subsample=0.8,
+    random_state=43
 )
 
 model.fit(X_train, y_train)
@@ -46,7 +46,7 @@ acc_train = accuracy_score(y_train, y_pred_train)
 acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
-print("[RFC] Random Forest Accuracy")
+print("[GBC] Gradient Boosting Accuracy")
 print("---------------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
@@ -67,5 +67,5 @@ df_all = pd.concat([
 ], axis=1)
 
 # Export to .npt files
-df_all.to_csv(r"data/model_RFC.npt", sep="\t", index=False, header=False)
-print("Saved predictions to data/model_RFC.npt")
+df_all.to_csv(r"data/model_GBC.npt", sep="\t", index=False, header=False)
+print("Saved predictions to data/model_GBC.npt")

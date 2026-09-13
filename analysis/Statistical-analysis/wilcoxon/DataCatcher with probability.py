@@ -6,11 +6,20 @@ def close_excel_file(filepath):
     try:
         excel = win32com.client.GetActiveObject("Excel.Application")
         for wb in excel.Workbooks:
-            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+            if os.path.abspath(wb.FullName).lower() == os.path.abspath(filepath).lower():
                 wb.Save()
                 wb.Close(SaveChanges=False)
-                print("Saved and Closed Excel file:", filepath)
+                print("[*] Saved and Closed Excel file:", filepath)
                 break
+    except Exception:
+        pass
+
+def open_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        excel.Visible = True
+        excel.Workbooks.Open(os.path.abspath(filepath))
+        print("[*] Opened Excel file:", filepath)
     except Exception:
         pass
 
@@ -20,12 +29,27 @@ close_excel_file(excel_path)
 xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
-# Exclude non-model data sheets
-ignore_sheets = ["Data", "Encoded_Data", "RFE_Report", "Selected_Data_RFE", "ENN_Data", "SMOTE_Data", "Model_Comparison_Summary(ENN)", "Model_Comparison_Summary(SMOTE)"]
-sheet_names = [
-    s for s in all_sheets
-    if s not in ignore_sheets and not s.endswith("(SMOTE)") and not s.endswith("(ENN)") and not s.endswith("(RFE)")
+# Target exact active model sheets
+target_models = [
+    "RNN", "RNN + BO",
+    "GBC", "GBC + BO",
+    "RFC", "RFC + BO",
+    "QR", "QR + BO",
+    "KNNC", "KNNC + BO",
+    "ELM", "ELM + BO"
 ]
+
+sheet_names = [s for s in target_models if s in all_sheets]
+if not sheet_names:
+    ignore_sheets = [
+        "Data", "Encoded_Data", "Z-Score", "Z-Score_Median_Mode", "Z-Score_Report",
+        "vif_horizontal", "data_after_vif", "Model_Comparison_Summary",
+        "Overall_Model_Comparison", "Decision_Boundaries"
+    ]
+    sheet_names = [
+        s for s in all_sheets
+        if s not in ignore_sheets and not s.endswith("_Metrics") and not s.startswith("Data_after_KFold_")
+    ]
 
 print("Matching model sheets for DataCatcher:")
 print(sheet_names)
@@ -33,9 +57,8 @@ print(sheet_names)
 merged_columns = []
 
 for sheet in sheet_names:
-    df_raw = pd.read_excel(excel_path, sheet_name=sheet, header=None)
+    df_raw = pd.read_excel(excel_path, sheet_name=sheet, header=None, nrows=5)
     
-    # Locate row containing 'y_real' or 'y_pred' (typically row 1)
     header_row_idx = 1
     for r_idx in range(min(5, len(df_raw))):
         row_vals = [str(v).lower() for v in df_raw.iloc[r_idx].values]
@@ -45,7 +68,6 @@ for sheet in sheet_names:
             
     df = pd.read_excel(excel_path, sheet_name=sheet, header=header_row_idx)
     
-    # Filter columns for y_real, y_pred, and probability columns
     cols = []
     for col in df.columns:
         col_name = str(col).lower()
@@ -54,7 +76,6 @@ for sheet in sheet_names:
             
     df = df[cols].dropna(how="all").reset_index(drop=True)
     
-    # Rename columns dynamically
     new_cols = []
     for i in range(df.shape[1]):
         if i == 0:
@@ -67,17 +88,15 @@ for sheet in sheet_names:
     df.columns = new_cols
     merged_columns.append(df)
 
-# Merge all model columns side-by-side
 df_merged = pd.concat(merged_columns, axis=1)
 
 print("\nDataCatcher Probability Matrix:")
 print(df_merged.head())
 print("Shape:", df_merged.shape)
 
-# Save to Excel sheet 'Probs(RFE)' and 'Probs'
 close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_merged.to_excel(writer, sheet_name="Probs(RFE)", index=False)
     df_merged.to_excel(writer, sheet_name="Probs", index=False)
 
-print(f"\nSaved combined model predictions and probabilities to sheet 'Probs(RFE)' and 'Probs' in {excel_path}")
+print(f"\n[+] Saved combined model predictions and probabilities to sheet 'Probs' in {excel_path}")
+open_excel_file(excel_path)

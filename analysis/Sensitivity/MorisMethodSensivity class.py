@@ -84,7 +84,10 @@ DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
-if "Selected_Data_RFE" in xl.sheet_names:
+if "data_after_vif" in xl.sheet_names:
+    sheet_data = "data_after_vif"
+    out_sheet = "Morris_Sensitivity"
+elif "Selected_Data_RFE" in xl.sheet_names:
     sheet_data = "Selected_Data_RFE"
     out_sheet = "Morris_Sensitivity"
 elif "ENN_Data" in xl.sheet_names:

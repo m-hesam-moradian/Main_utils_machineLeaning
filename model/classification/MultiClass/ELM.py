@@ -2,12 +2,41 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+
+# --- Custom ELM Implementation ---
+class ELMClassifier:
+    def __init__(self, n_hidden=150, alpha=0.5, random_state=44):
+        self.n_hidden = n_hidden
+        self.alpha = alpha
+        self.random_state = random_state
+
+    def fit(self, X, y):
+        rng = np.random.RandomState(self.random_state)
+        self.W = rng.normal(size=(X.shape[1], self.n_hidden))
+        self.b = rng.normal(size=(self.n_hidden,))
+        H = 1.0 / (1.0 + np.exp(- (X @ self.W + self.b)))
+        num_classes = len(np.unique(y))
+        self.classes_ = np.unique(y)
+        Y_oh = np.eye(num_classes)[y]
+        HtH = H.T @ H + self.alpha * np.eye(self.n_hidden)
+        self.beta = np.linalg.solve(HtH, H.T @ Y_oh)
+        return self
+
+    def predict(self, X):
+        H = 1.0 / (1.0 + np.exp(- (X @ self.W + self.b)))
+        scores = H @ self.beta
+        return np.argmax(scores, axis=1)
+
+    def predict_proba(self, X):
+        H = 1.0 / (1.0 + np.exp(- (X @ self.W + self.b)))
+        scores = H @ self.beta
+        exp_s = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+        return exp_s / np.sum(exp_s, axis=1, keepdims=True)
 
 # --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_RFC"
+sheet_name = "Data_after_KFold_ELM"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
@@ -25,15 +54,8 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y, test_size=0.2, shuffle=False
 )
 
-# --- Train Random Forest Classifier ---
-model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=11,
-    min_samples_split=4,
-    random_state=47,
-    n_jobs=-1
-)
-
+# --- Train ELM Model ---
+model = ELMClassifier(n_hidden=150, alpha=0.5, random_state=44)
 model.fit(X_train, y_train)
 
 # --- Predictions ---
@@ -46,7 +68,7 @@ acc_train = accuracy_score(y_train, y_pred_train)
 acc_test = accuracy_score(y_test, y_pred_test)
 acc_all = accuracy_score(y, y_pred_all)
 
-print("[RFC] Random Forest Accuracy")
+print("[ELM] Extreme Learning Machine Accuracy")
 print("---------------------------------")
 print(f"Overall Accuracy  : {acc_all:.4f}")
 print(f"Training Accuracy : {acc_train:.4f}")
@@ -67,5 +89,5 @@ df_all = pd.concat([
 ], axis=1)
 
 # Export to .npt files
-df_all.to_csv(r"data/model_RFC.npt", sep="\t", index=False, header=False)
-print("Saved predictions to data/model_RFC.npt")
+df_all.to_csv(r"data/model_ELM.npt", sep="\t", index=False, header=False)
+print("Saved predictions to data/model_ELM.npt")

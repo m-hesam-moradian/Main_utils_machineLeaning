@@ -1,78 +1,69 @@
 import pandas as pd
+import numpy as np
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score
+from sklearn.preprocessing import StandardScaler
 
-# --- Configuration ---
+# --- Load Excel file ---
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+sheet_name = "Data_after_KFold_KNNC"
 
-# ==========================================
-# PART 1: K-Nearest Neighbors (KNN) Classifier
-# ==========================================
-print("Running KNN Classifier...")
+df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
-# Load data
-sheet_name_knn = "Data_after_KFold_MLR(SMOTE-ENC)"
-df_knn = pd.read_excel(excel_path, sheet_name=sheet_name_knn)
+# --- Separate features and target ---
+target_column = df.columns[-1]
+X = df.drop(columns=[target_column]).values
+y = df[target_column].values
 
-# Prepare features and target
-target_column = df_knn.columns[-1]
-X = df_knn.drop(columns=[target_column])
-y = df_knn[target_column]
+# --- Standardize Features ---
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# --- Use last 20% as test set to match K-Fold logic (Sequential Split) ---
-split_idx = int(len(df_knn) * 0.8)
-X_train, X_test = X[:split_idx], X[split_idx:]
-y_train, y_test = y[:split_idx], y[split_idx:]
+# --- Split into train/test (80/20, shuffle=False to match K-Fold) ---
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, shuffle=False
+)
 
-# --- Initialize KNNC model ---
-# model = KNeighborsClassifier(n_neighbors=500)
-# model = KNeighborsClassifier(n_neighbors=50)
-model = KNeighborsClassifier(n_neighbors=200)
+# --- Train KNN Classifier ---
+model = KNeighborsClassifier(
+    n_neighbors=9,
+    weights='distance',
+    metric='manhattan'
+)
+
 model.fit(X_train, y_train)
 
 # --- Predictions ---
-y_pred_all = model.predict(X)
 y_pred_train = model.predict(X_train)
 y_pred_test = model.predict(X_test)
+y_pred_all = model.predict(X_scaled)
 
-# --- Metrics (Classification) ---
-mid = len(y_test) // 2
-sets = [
-    ("All", y, y_pred_all),
-    ("Train", y_train, y_pred_train),
-    ("Test", y_test, y_pred_test),
-    ("Value", y_test[:mid], y_pred_test[:mid]),
-    ("Test-Value", y_test[mid:], y_pred_test[mid:])
-]
+# --- Accuracy metrics ---
+acc_train = accuracy_score(y_train, y_pred_train)
+acc_test = accuracy_score(y_test, y_pred_test)
+acc_all = accuracy_score(y, y_pred_all)
 
-df_metrics = pd.DataFrame([{
-    "Set": s,
-    "Accuracy": accuracy_score(y_t, y_p),
-    "F1 Score": f1_score(y_t, y_p, average='weighted'),
-    "Precision": precision_score(y_t, y_p, average='weighted', zero_division=0)
-} for s, y_t, y_p in sets])
+print("[KNNC] K-Nearest Neighbors Accuracy")
+print("---------------------------------")
+print(f"Overall Accuracy  : {acc_all:.4f}")
+print(f"Training Accuracy : {acc_train:.4f}")
+print(f"Testing Accuracy  : {acc_test:.4f}")
 
-print("\nKNN Metrics:")
-print(df_metrics)
+# --- Get predicted probabilities ---
+y_pred_proba = model.predict_proba(X_scaled)
 
-# --- Get Probabilities & Export (Updated to match GPC style) ---
-y_pred_proba = model.predict_proba(X)
-
-# Create probability columns
 proba_df = pd.DataFrame(
     y_pred_proba,
     columns=[f"Prob_Class_{cls}" for cls in model.classes_]
 )
 
-# Combine with true and predicted labels
+# Combine results
 df_all = pd.concat([
     pd.DataFrame({"y_real": y, "y_pred": y_pred_all}),
     proba_df
 ], axis=1)
 
-print("\n📊 Sample of KNN predictions with probabilities:")
-print(df_all.head())
-
-# Export to clipboard (No header, no index)
-df_all.to_clipboard(index=False, header=False)
-print("✅ KNN Results copied to clipboard.")
+# Export to .npt files
+df_all.to_csv(r"data/model_KNNC.npt", sep="\t", index=False, header=False)
+print("Saved predictions to data/model_KNNC.npt")

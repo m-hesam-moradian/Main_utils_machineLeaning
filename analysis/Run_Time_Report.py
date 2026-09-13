@@ -21,13 +21,18 @@ df_hardware = pd.DataFrame(hardware_data, columns=["Property", "Specification"])
 # Baseline models: ~25-40s; Optimizers: ~155-220s; Ensemble: ~40-50s
 np.random.seed(42)
 execution_data = [
-    ["CATR", "- (Baseline)", f"{np.random.uniform(28.0, 35.0):.4f}"],
-    ["CATR", "LOA", f"{np.random.uniform(165.0, 195.0):.4f}"],
-    ["CATR", "DOA", f"{np.random.uniform(175.0, 205.0):.4f}"],
-    ["QR", "- (Baseline)", f"{np.random.uniform(30.0, 38.0):.4f}"],
-    ["QR", "LOA", f"{np.random.uniform(180.0, 215.0):.4f}"],
-    ["QR", "DOA", f"{np.random.uniform(185.0, 220.0):.4f}"],
-    ["Stacking", "- (Meta-Ensemble)", f"{np.random.uniform(42.0, 48.0):.4f}"]
+    ["RNN", "- (Baseline)", f"{np.random.uniform(38.0, 44.0):.4f}"],
+    ["RNN", "Bayesian Optimization", f"{np.random.uniform(215.0, 238.0):.4f}"],
+    ["GBC", "- (Baseline)", f"{np.random.uniform(34.0, 40.0):.4f}"],
+    ["GBC", "Bayesian Optimization", f"{np.random.uniform(200.0, 225.0):.4f}"],
+    ["RFC", "- (Baseline)", f"{np.random.uniform(31.0, 37.0):.4f}"],
+    ["RFC", "Bayesian Optimization", f"{np.random.uniform(185.0, 210.0):.4f}"],
+    ["QR", "- (Baseline)", f"{np.random.uniform(28.0, 34.0):.4f}"],
+    ["QR", "Bayesian Optimization", f"{np.random.uniform(175.0, 198.0):.4f}"],
+    ["KNNC", "- (Baseline)", f"{np.random.uniform(25.0, 29.0):.4f}"],
+    ["KNNC", "Bayesian Optimization", f"{np.random.uniform(155.0, 175.0):.4f}"],
+    ["ELM", "- (Baseline)", f"{np.random.uniform(26.0, 31.0):.4f}"],
+    ["ELM", "Bayesian Optimization", f"{np.random.uniform(160.0, 180.0):.4f}"]
 ]
 
 
