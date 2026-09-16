@@ -62,10 +62,31 @@ df_balanced = df_balanced.sample(frac=1.0, random_state=42).reset_index(drop=Tru
 print("\nFinal Balanced Dataset Shape:", df_balanced.shape)
 print("Final Class Distribution:\n", df_balanced[target_column].value_counts())
 
-# Save to Data.xlsx
-with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_balanced.to_excel(writer, sheet_name="Balanced_Data", index=False)
-    df_balanced.to_excel(writer, sheet_name="SMOTE_ENN_LOF_Data", index=False)
-    df_balanced.to_excel(writer, sheet_name="SMOTE_Data", index=False)
+# Build balancing report
+orig_dist = y.value_counts().sort_index()
+final_dist = df_balanced[target_column].value_counts().sort_index()
+all_classes = sorted(set(list(orig_dist.index) + list(final_dist.index)))
 
-print("\n[+] Balanced dataset successfully saved to sheets 'Balanced_Data', 'SMOTE_ENN_LOF_Data', and 'SMOTE_Data' in Data.xlsx")
+report_df = pd.DataFrame({
+    "Encoded Value": all_classes,
+    "Original Count": [orig_dist.get(c, 0) for c in all_classes],
+    "After SMOTE-ENN Count": [final_dist.get(c, 0) for c in all_classes],
+})
+report_df["Change"] = report_df["After SMOTE-ENN Count"] - report_df["Original Count"]
+report_df["Change %"] = ((report_df["Change"] / report_df["Original Count"]) * 100).round(1).astype(str) + "%"
+
+summary_df = pd.DataFrame({
+    "Metric": ["Method", "Original Samples", "After SMOTE-ENN", "LOF Outliers Removed",
+                "Final Balanced Samples", "Number of Classes", "Shuffle Applied", "Random State"],
+    "Value": ["SMOTE-ENN + LOF", str(len(X)), str(len(X_res)),
+              str(int(np.sum(~inliers))), str(len(df_balanced)),
+              str(len(all_classes)), "Yes", "42"]
+})
+
+# Save to Data.xlsx — one data sheet + one report sheet
+with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    df_balanced.to_excel(writer, sheet_name="SMOTE_Data", index=False)
+    summary_df.to_excel(writer, sheet_name="Balancing_Report", index=False, startrow=0)
+    report_df.to_excel(writer, sheet_name="Balancing_Report", index=False, startrow=len(summary_df) + 2)
+
+print("\n[+] Balanced dataset saved to 'SMOTE_Data'. Summary saved to 'Balancing_Report' in Data.xlsx")

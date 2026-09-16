@@ -81,7 +81,7 @@ def Morris_function(X, predictions, feature_names):
 # Load Data & Predictions
 # ==========================================================
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-close_excel_file(DATA_PATH)
+# close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
 if "data_after_vif" in xl.sheet_names:
@@ -101,14 +101,14 @@ else:
     out_sheet = "Morris_Sensitivity"
 
 
-df_data = pd.read_excel(DATA_PATH, sheet_name=sheet_data).dropna()
+df_data = pd.read_excel(xl, sheet_name=sheet_data).dropna()
 
 target_column = df_data.columns[-1]
 X = df_data.drop(columns=[target_column])
 
-# Load predictions from predicts(ENN) sheet or predicts sheet
-sheet_pred = "predicts(ENN)" if "predicts(ENN)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
-df_pred = pd.read_excel(DATA_PATH, sheet_name=sheet_pred, header=0)
+# Load predictions from predicts(SMOTE-ENN) sheet
+sheet_pred = "predicts(SMOTE-ENN)" if "predicts(SMOTE-ENN)" in xl.sheet_names else ("predicts(ENN)" if "predicts(ENN)" in xl.sheet_names else "predicts")
+df_pred = pd.read_excel(xl, sheet_name=sheet_pred, header=0)
 
 # Run Morris analysis for each model prediction column in predicts sheet
 all_morris_reports = []
@@ -128,7 +128,7 @@ print("\nFinal Morris Sensitivity Analysis Summary:")
 print(final_morris_df.head(15))
 
 # Save to Excel sheet 'Morris_Sensitivity(ENN)' and 'Morris_Sensitivity'
-close_excel_file(DATA_PATH)
+# close_excel_file(DATA_PATH)
 with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     final_morris_df.to_excel(writer, sheet_name=out_sheet, index=False)
     final_morris_df.to_excel(writer, sheet_name="Morris_Sensitivity", index=False)

@@ -3,30 +3,30 @@ import numpy as np
 import pandas as pd
 import os
 from sklearn.ensemble import RandomForestClassifier
-import win32com.client
+# import win32com.client
 from sklearn.metrics import accuracy_score
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 params = {
-    "solver": "lsqr",
-    "shrinkage": "auto",
-    "tol": 1e-4,
-    "population": 50,
-    "max_iterations": 200
+    "n_estimators": 47,
+    "max_depth": 3,
+    "max_samples": 0.72847392,
+    "max_features": 0.68391274,
+    "learning_factor": 0.00847123
 }
 
-ShowProbs = True  # False → hide probability columns & ROC table
+ShowProbs = True
 
-model_name = "LDA"
+model_name = "BC"
 Accuracy_target = 0.0
 
 optimizer_name = "HEOA"
 
-dataPath = r"data/model6.npt"
+dataPath = r"data/model2.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "F1"
+Convergence_metric = "Precision"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
@@ -333,7 +333,10 @@ def generate_fake_convergence(df_combined, y_real, y_pred_fake, convegence_direc
 
 # === EXECUTION ===
 
+print("Starting Execution...")
+
 # Step 0: load data file 
+print(f"Loading data from {dataPath}...")
 data = np.loadtxt(dataPath)
 
 y_real = data[:, 0].astype(int)

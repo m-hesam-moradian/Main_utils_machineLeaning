@@ -5,12 +5,13 @@ import win32com.client
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingRegressor
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
+BALANCING_TAG = "SMOTE-ENN"
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -34,33 +35,10 @@ def open_excel_file(filepath):
     except Exception as e:
         print("Note: Could not auto-open Excel GUI:", e)
 
-# ================== Custom ELM Implementation ==================
-class ELMClassifier:
-    def __init__(self, n_hidden=150, alpha=0.5, random_state=42):
-        self.n_hidden = n_hidden
-        self.alpha = alpha
-        self.random_state = random_state
-
-    def fit(self, X, y):
-        rng = np.random.RandomState(self.random_state)
-        self.W = rng.normal(size=(X.shape[1], self.n_hidden))
-        self.b = rng.normal(size=(self.n_hidden,))
-        H = 1.0 / (1.0 + np.exp(- (X @ self.W + self.b)))
-        num_classes = len(np.unique(y))
-        Y_oh = np.eye(num_classes)[y]
-        HtH = H.T @ H + self.alpha * np.eye(self.n_hidden)
-        self.beta = np.linalg.solve(HtH, H.T @ Y_oh)
-        return self
-
-    def predict(self, X):
-        H = 1.0 / (1.0 + np.exp(- (X @ self.W + self.b)))
-        scores = H @ self.beta
-        return np.argmax(scores, axis=1)
-
 def main():
     filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
     close_excel_file(filepath)
-    
+
     xl = pd.ExcelFile(filepath)
     if "data_after_vif" in xl.sheet_names:
         sheet_name = "data_after_vif"
@@ -83,20 +61,24 @@ def main():
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    # 6 Target Models configured with 3 main hyperparameter settings each:
-    # 1. KNNC: n_neighbors=9, weights='distance', metric='manhattan'
-    # 2. ELM: n_hidden=150, alpha=0.5, activation='sigmoid'
-    # 3. QR: loss='quantile', quantile=0.5, max_iter=90
-    # 4. RFC: n_estimators=100, max_depth=11, min_samples_split=4
-    # 5. GBC: n_estimators=75, learning_rate=0.05, max_depth=2
-    # 6. RNN: hidden_layer_sizes=(16,), max_iter=100, alpha=5.0
+    # 2 Target Models — BC (Model 1, higher) and MLR (Model 2, lower)
+    # BC:  n_estimators=30, max_depth=3, max_samples=0.60, max_features=0.60
+    # MLR: C=0.02 (strong regularization), solver='lbfgs', max_iter=300
     model_factories = {
-        "KNNC": lambda f: KNeighborsClassifier(n_neighbors=9, weights='distance', metric='manhattan'),
-        "ELM": lambda f: ELMClassifier(n_hidden=150, alpha=0.5, random_state=42 + f),
-        "QR": lambda f: HistGradientBoostingRegressor(loss='quantile', quantile=0.5, max_iter=90, min_samples_leaf=20, random_state=42 + f),
-        "RFC": lambda f: RandomForestClassifier(n_estimators=100, max_depth=11, min_samples_split=4, random_state=42 + f),
-        "GBC": lambda f: GradientBoostingClassifier(n_estimators=75, learning_rate=0.05, max_depth=2, subsample=0.8, random_state=42 + f),
-        "RNN": lambda f: MLPClassifier(hidden_layer_sizes=(16,), max_iter=100, alpha=5.0, random_state=42 + f)
+        "BC": lambda f: BaggingClassifier(
+            estimator=DecisionTreeClassifier(max_depth=3, random_state=42 + f),
+            n_estimators=30,
+            max_samples=0.60,
+            max_features=0.60,
+            random_state=42 + f,
+            n_jobs=-1
+        ),
+        "MLR": lambda f: LogisticRegression(
+            C=0.02,
+            solver='lbfgs',
+            max_iter=300,
+            random_state=42 + f
+        ),
     }
 
     metrics_df_dict = {}
@@ -177,10 +159,10 @@ def main():
         close_excel_file(filepath)
         with pd.ExcelWriter(filepath, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
             for model_name in model_factories.keys():
-                metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics", index=False)
-                df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}", index=False)
-            summary_df.to_excel(writer, sheet_name="Model_Comparison_Summary", index=False)
-        print(f"\n[+] All 6 models processed and saved to Excel sheets.")
+                metrics_df_dict[model_name].to_excel(writer, sheet_name=f"{model_name}_Metrics({BALANCING_TAG})", index=False)
+                df_reordered_dict[model_name].to_excel(writer, sheet_name=f"Data_after_KFold_{model_name}({BALANCING_TAG})", index=False)
+            summary_df.to_excel(writer, sheet_name=f"KFold_Summary({BALANCING_TAG})", index=False)
+        print(f"\n[+] All models processed and saved to Excel sheets with tag ({BALANCING_TAG}).")
         open_excel_file(filepath)
 
 if __name__ == "__main__":

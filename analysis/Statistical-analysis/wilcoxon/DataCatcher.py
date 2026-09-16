@@ -24,19 +24,15 @@ def open_excel_file(filepath):
         pass
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-close_excel_file(excel_path)
+# close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
 # Target exact active model sheets
 target_models = [
-    "RNN", "RNN + BO",
-    "GBC", "GBC + BO",
-    "RFC", "RFC + BO",
-    "QR", "QR + BO",
-    "KNNC", "KNNC + BO",
-    "ELM", "ELM + BO"
+    "BC", "BC + HEOA", "BC + PRO",
+    "MLR", "MLR + HEOA", "MLR + PRO"
 ]
 
 sheet_names = [s for s in target_models if s in all_sheets]
@@ -48,7 +44,7 @@ merged_columns = []
 
 for sheet in sheet_names:
     try:
-        df_raw = pd.read_excel(excel_path, sheet_name=sheet, header=None, nrows=5)
+        df_raw = pd.read_excel(xl, sheet_name=sheet, header=None, nrows=5)
     except Exception:
         continue
 
@@ -62,7 +58,7 @@ for sheet in sheet_names:
     if header_row_idx is None:
         continue
 
-    df = pd.read_excel(excel_path, sheet_name=sheet, header=header_row_idx)
+    df = pd.read_excel(xl, sheet_name=sheet, header=header_row_idx)
 
     cols = []
     for col in df.columns:
@@ -86,9 +82,9 @@ print("\nPredictions Matrix Preview:")
 print(df_merged.head())
 print("Shape:", df_merged.shape)
 
-close_excel_file(excel_path)
+# close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_merged.to_excel(writer, sheet_name="predicts", index=False)
+    df_merged.to_excel(writer, sheet_name="predicts(SMOTE-ENN)", index=False)
 
-print(f"\n[+] Saved combined model predictions to sheet 'predicts' in {excel_path}")
-open_excel_file(excel_path)
+print(f"\n[+] Saved combined model predictions to sheet 'predicts(SMOTE-ENN)' in {excel_path}")
+# open_excel_file(excel_path)

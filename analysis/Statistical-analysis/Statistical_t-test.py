@@ -18,16 +18,16 @@ def close_excel_file(filepath):
         pass
 
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-close_excel_file(excel_path)
+# close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
-sheet_name = "predicts"
-out_sheet = "Statistical_t-test"
+sheet_name = "predicts(SMOTE-ENN)"
+out_sheet = "Statistical_t-test(SMOTE-ENN)"
 
 
 print(f"Loading predictions sheet '{sheet_name}'...")
 
-df = pd.read_excel(excel_path, sheet_name=sheet_name, header=0)
+df = pd.read_excel(xl, sheet_name=sheet_name, header=0)
 
 # Dynamically extract model names and predictions
 columns = df.columns.tolist()
@@ -101,7 +101,7 @@ print(df_results)
 
 
 # Save to Excel sheet 'Statistical_t-test(ENN)' and 'Statistical_t-test'
-close_excel_file(excel_path)
+# close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     df_results.to_excel(writer, sheet_name=out_sheet, index=False)
     df_results.to_excel(writer, sheet_name="Statistical_t-test", index=False)

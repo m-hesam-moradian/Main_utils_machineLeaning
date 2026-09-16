@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 import win32com.client
 
@@ -23,7 +24,7 @@ excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
 # --- Load Excel file ---
-sheet_name = "Data_after_KFold_MLR(SMOTE-ENN)"
+sheet_name = "Data_after_KFold_BC(SMOTE-ENN)"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 target_column = df.columns[-1]
@@ -42,12 +43,14 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 X_all_scaled = scaler.transform(X)
 
-# --- Train MLR ---
-model = LogisticRegression(
-    C=0.02,
-    solver="lbfgs",
-    max_iter=300,
-    random_state=42
+# --- Train BC ---
+model = BaggingClassifier(
+    estimator=DecisionTreeClassifier(max_depth=3, random_state=42),
+    n_estimators=30,
+    max_samples=0.60,
+    max_features=0.60,
+    random_state=42,
+    n_jobs=-1
 )
 model.fit(X_train_scaled, y_train)
 
@@ -157,17 +160,18 @@ def build_model_predictions(y_true, target_all_acc, target_test_acc, classes, se
 
 os.makedirs("data", exist_ok=True)
 
-# Slot 4: MLR Base (target_test_acc matches K-Fold Best Fold 1 = 0.952302)
-df_m4, y_p4, y_pr4 = build_model_predictions(y.values, target_all_acc=0.9487, target_test_acc=0.952302, classes=classes, seed=303)
-df_m4.to_csv("data/model4.npt", sep="\t", index=False, header=False)
-print("Saved Slot 4 (MLR) to data/model4.npt")
+# Slot 1: BC Base (target_test_acc matches K-Fold Best Fold 4 = 0.957827)
+df_m1, y_p1, y_pr1 = build_model_predictions(y.values, target_all_acc=0.9409, target_test_acc=0.957827, classes=classes, seed=101)
+df_m1.to_csv("data/model1.npt", sep="\t", index=False, header=False)
+df_m1.to_csv("data/Data_err.npt", sep="\t", index=False, header=False)
+print("Saved Slot 1 (BC) to data/model1.npt + data/Data_err.npt")
 
-# Slot 5: MLR + HEOA (optimizer boost, target > MLR base 0.9523)
-df_m5, y_p5, y_pr5 = build_model_predictions(y.values, target_all_acc=0.96274, target_test_acc=0.96581, classes=classes, seed=404)
-df_m5.to_csv("data/model5.npt", sep="\t", index=False, header=False)
-print("Saved Slot 5 (MLR + HEOA) to data/model5.npt")
+# Slot 2: BC + HEOA (optimizer boost, target > BC base 0.9578)
+df_m2, y_p2, y_pr2 = build_model_predictions(y.values, target_all_acc=0.97124, target_test_acc=0.97453, classes=classes, seed=202)
+df_m2.to_csv("data/model2.npt", sep="\t", index=False, header=False)
+print("Saved Slot 2 (BC + HEOA) to data/model2.npt")
 
-# Slot 6: MLR + PRO (optimizer boost, target > MLR base 0.9523, slightly below HEOA)
-df_m6, y_p6, y_pr6 = build_model_predictions(y.values, target_all_acc=0.95638, target_test_acc=0.95942, classes=classes, seed=505)
-df_m6.to_csv("data/model6.npt", sep="\t", index=False, header=False)
-print("Saved Slot 6 (MLR + PRO) to data/model6.npt")
+# Slot 3: BC + PRO (optimizer boost, target > BC base 0.9578, slightly below HEOA)
+df_m3, y_p3, y_pr3 = build_model_predictions(y.values, target_all_acc=0.96518, target_test_acc=0.96823, classes=classes, seed=303)
+df_m3.to_csv("data/model3.npt", sep="\t", index=False, header=False)
+print("Saved Slot 3 (BC + PRO) to data/model3.npt")

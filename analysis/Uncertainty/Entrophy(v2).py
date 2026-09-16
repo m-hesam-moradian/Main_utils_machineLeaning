@@ -78,11 +78,11 @@ def normalized_entropy(probs):
 # -------------------------------------------------------
 def main():
     excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-    close_excel_file(excel_path)
+    # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(RFE)" in xl.sheet_names:
-        sheet_name = "Probs(RFE)"
+    if "Probs(SMOTE-ENN)" in xl.sheet_names:
+        sheet_name = "Probs(SMOTE-ENN)"
         out_sheet = "Entropy_Uncertainty"
         sum_sheet = "Entropy_Summary"
     elif "Probs(ENN)" in xl.sheet_names:
@@ -96,7 +96,7 @@ def main():
 
 
     print(f"Loading probability sheet '{sheet_name}'...")
-    models = load_models_from_excel(excel_path, sheet_name=sheet_name)
+    models = load_models_from_excel(xl, sheet_name=sheet_name)
 
     print("\nDetected Models:")
     for m in models:
@@ -131,7 +131,7 @@ def main():
     print(df_avg.to_string(index=False))
 
     # Save results to Excel sheet 'Entropy_Uncertainty(ENN)' and 'Entropy_Summary(ENN)'
-    close_excel_file(excel_path)
+    # close_excel_file(excel_path)
     with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
         df_avg.to_excel(writer, sheet_name=sum_sheet, index=False)
         comparison_df.to_excel(writer, sheet_name=out_sheet, index=False)

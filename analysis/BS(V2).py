@@ -423,21 +423,18 @@ def close_excel_file(filepath):
 
 def main():
     excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-    close_excel_file(excel_path)
+    # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(RFE)" in xl.sheet_names:
-        sheet_name = "Probs(RFE)"
-        out_sheet = "Brier_Decomposition(RFE)"
-    elif "Probs(ENN)" in xl.sheet_names:
-        sheet_name = "Probs(ENN)"
-        out_sheet = "Brier_Decomposition(ENN)"
+    if "Probs(SMOTE-ENN)" in xl.sheet_names:
+        sheet_name = "Probs(SMOTE-ENN)"
+        out_sheet = "Brier_Decomposition(SMOTE-ENN)"
     elif "Probs(SMOTE)" in xl.sheet_names:
         sheet_name = "Probs(SMOTE)"
         out_sheet = "Brier_Decomposition(SMOTE)"
     else:
         sheet_name = "Probs"
-        out_sheet = "Brier_Decomposition(RFE)"
+        out_sheet = "Brier_Decomposition(SMOTE-ENN)"
 
     
     print(f"Loading Excel probability sheet '{sheet_name}'...")
@@ -467,7 +464,7 @@ def main():
     print(final_report.to_string(index=False))
 
     # Save to Excel sheet 'Brier_Decomposition(ENN)'
-    close_excel_file(excel_path)
+    # close_excel_file(excel_path)
     with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
         final_report.to_excel(writer, sheet_name=out_sheet, index=False)
         final_report.to_excel(writer, sheet_name="Brier_Decomposition", index=False)

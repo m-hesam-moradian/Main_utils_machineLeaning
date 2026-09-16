@@ -2,6 +2,12 @@
 
 Whenever a new chat is started and a task specification prompt is provided (e.g. `Tag: BMM-EI No. ...`), follow these strict workflow rules:
 
+> **Rule — No Identical Duplicate Sheets**: NEVER save the same DataFrame to multiple sheets under different names (e.g., `Balanced_Data`, `SMOTE_ENN_LOF_Data`, `SMOTE_Data` all identical). Each balancing/processing step must produce exactly ONE data sheet (e.g., `SMOTE_Data`) plus ONE summary/report sheet (e.g., `Balancing_Report`). Duplicate data sheets waste space and confuse users.
+
+> **Rule — Excel File Lock Handling**: When a `PermissionError` occurs writing to an Excel file, ALWAYS ask the user to close the file in Excel first. Do NOT attempt workarounds like copying files or temp paths.
+
+> **Rule — Optimizer Must Outperform Base Model**: Every optimizer variant (e.g. `{Model} + HEOA`, `{Model} + PRO`) MUST have a strictly higher accuracy (and all other metrics) than its corresponding base model (`{Model}`). It is NEVER acceptable for an optimizer to score lower than or equal to the base. Verify this before exporting `.npt` files.
+
 ## 0. Primary Python Interpreter
 - Always use `C:/Python314/python.exe` to run all Python scripts and commands in this workspace.
 
