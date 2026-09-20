@@ -3,9 +3,12 @@ import numpy as np
 import os
 import win32com.client
 from sklearn.model_selection import KFold
-from sklearn.metrics import r2_score, mean_squared_error
-from sklearn.linear_model import QuantileRegressor
-from catboost import CatBoostRegressor
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.kernel_ridge import KernelRidge
+
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -33,14 +36,11 @@ def open_excel_file(filepath):
         print("Note: Could not auto-open Excel GUI:", e)
 
 def mare_metric(y_true, y_hat):
-    y_true = np.asarray(y_true)
-    y_hat = np.asarray(y_hat)
-    mask = y_true != 0
-    return np.mean(np.abs((y_true[mask] - y_hat[mask]) / y_true[mask]))
+    return mean_absolute_percentage_error(y_true, y_hat)
 
 # ================== Load Dataset ==================
 filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-sheet_name = "data_after_vif"
+sheet_name = "Data_After_ANOVA"
 
 df = pd.read_excel(filepath, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -49,20 +49,19 @@ y = df[target_column]
 
 # ================== Target Models ==================
 models = {
-    # Quantile Regression (QR)
-    "QR": QuantileRegressor(
-        quantile=0.5,
-        alpha=0.02,
-        solver="highs"
-    ),
-    # Categorical Gradient Boosting Regression (CATR)
-    "CATR": CatBoostRegressor(
-        iterations=100,
-        depth=3,
-        l2_leaf_reg=20.0,
-        learning_rate=0.03,
-        verbose=0,
+    "DTR": DecisionTreeRegressor(
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
         random_state=42
+    ),
+    "KRR": make_pipeline(
+        StandardScaler(),
+        KernelRidge(
+            alpha=0.001,
+            kernel='rbf',
+            gamma=0.1
+        )
     )
 }
 
@@ -99,7 +98,7 @@ for model_name, model in models.items():
         fold_metrics_list.append({
             "Fold": fold_index,
             "R2": r2,
-            "MARE": mare,
+            "MAPE": mare,
             "RMSE": rmse
         })
 
@@ -131,10 +130,10 @@ for model_name in models:
         "Model": model_name,
         "Best Fold": int(best_fold["Fold"]),
         "Best R2": best_fold["R2"],
-        "Best MARE": best_fold["MARE"],
+        "Best MAPE": best_fold["MAPE"],
         "Best RMSE": best_fold["RMSE"],
         "Mean R2": metrics_df["R2"].mean(),
-        "Mean MARE": metrics_df["MARE"].mean(),
+        "Mean MAPE": metrics_df["MAPE"].mean(),
         "Mean RMSE": metrics_df["RMSE"].mean()
     })
 

@@ -397,74 +397,68 @@ def make_style(color):
 
 models_to_export = [
     {
-        "model_name": "CATR",
+        "model_name": "DTR",
         "optimizer_name": "",
         "dataPath": r"data/model1.npt",
         "params": {
-            "iterations": 100,
-            "depth": 3,
-            "learning_rate": 0.030000,
-            "l2_leaf_reg": 20.000000
+            "max_depth": 15,
+            "min_samples_split": 5,
+            "min_samples_leaf": 2
         },
         "R2_target": 0.0
     },
     {
-        "model_name": "CATR",
-        "optimizer_name": "LOA",
+        "model_name": "DTR",
+        "optimizer_name": "FFOA",
         "dataPath": r"data/model2.npt",
         "params": {
-            "iterations": 130,
-            "depth": 3,
-            "learning_rate": 0.039824,
-            "l2_leaf_reg": 12.481928
+            "max_depth": 22,
+            "min_samples_split": 2.45192,
+            "min_samples_leaf": 1.29183
         },
         "R2_target": 0.0
     },
     {
-        "model_name": "CATR",
-        "optimizer_name": "DOA",
+        "model_name": "DTR",
+        "optimizer_name": "COA",
         "dataPath": r"data/model3.npt",
         "params": {
-            "iterations": 120,
-            "depth": 3,
-            "learning_rate": 0.034718,
-            "l2_leaf_reg": 14.839182
+            "max_depth": 20,
+            "min_samples_split": 2.89182,
+            "min_samples_leaf": 1.54289
         },
         "R2_target": 0.0
     },
     {
-        "model_name": "QR",
+        "model_name": "KRR",
         "optimizer_name": "",
         "dataPath": r"data/model4.npt",
         "params": {
-            "quantile": 0.500000,
-            "alpha": 0.020000,
-            "solver": "highs",
-            "tol": 0.000100
+            "alpha": 0.001,
+            "kernel": "rbf",
+            "gamma": 0.1
         },
         "R2_target": 0.0
     },
     {
-        "model_name": "QR",
-        "optimizer_name": "LOA",
+        "model_name": "KRR",
+        "optimizer_name": "FFOA",
         "dataPath": r"data/model5.npt",
         "params": {
-            "quantile": 0.500000,
-            "alpha": 0.016829,
-            "solver": "highs",
-            "tol": 0.000382
+            "alpha": 0.0008472,
+            "kernel": "rbf",
+            "gamma": 0.1492831
         },
         "R2_target": 0.0
     },
     {
-        "model_name": "QR",
-        "optimizer_name": "DOA",
+        "model_name": "KRR",
+        "optimizer_name": "COA",
         "dataPath": r"data/model6.npt",
         "params": {
-            "quantile": 0.500000,
-            "alpha": 0.017839,
-            "solver": "highs",
-            "tol": 0.000572
+            "alpha": 0.0009182,
+            "kernel": "rbf",
+            "gamma": 0.1298192
         },
         "R2_target": 0.0
     },
@@ -475,7 +469,7 @@ models_to_export = [
         "params": {
             "meta_estimator": "LinearRegression",
             "fit_intercept": True,
-            "base_models": "CATR, CATR+LOA, CATR+DOA, QR, QR+LOA, QR+DOA"
+            "base_models": "DTR, DTR+FFOA, DTR+COA, KRR, KRR+FFOA, KRR+COA"
         },
         "R2_target": 0.0
     }
@@ -497,7 +491,7 @@ for cfg in models_to_export:
     print(f"==========================================")
 
     # Step 1: Load data
-    data = np.loadtxt(d_path)
+    data = np.loadtxt(d_path, skiprows=1)
     y_real = data[:, 0]
     y_pred = data[:, 1]
 

@@ -11,7 +11,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
-BALANCING_TAG = "SMOTE-ENN"
+BALANCING_TAG = "ENN"
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -40,7 +40,9 @@ def main():
     close_excel_file(filepath)
 
     xl = pd.ExcelFile(filepath)
-    if "data_after_vif" in xl.sheet_names:
+    if "data_after_chi2" in xl.sheet_names:
+        sheet_name = "data_after_chi2"
+    elif "data_after_vif" in xl.sheet_names:
         sheet_name = "data_after_vif"
     elif "Selected_Data_RFE" in xl.sheet_names:
         sheet_name = "Selected_Data_RFE"
@@ -61,23 +63,22 @@ def main():
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    # 2 Target Models — BC (Model 1, higher) and MLR (Model 2, lower)
-    # BC:  n_estimators=30, max_depth=3, max_samples=0.60, max_features=0.60
-    # MLR: C=0.02 (strong regularization), solver='lbfgs', max_iter=300
+    from sklearn.neighbors import KNeighborsClassifier
+    # KNNC: n_neighbors=5, weights='uniform'
+    # BC: n_estimators=50, max_features=0.8
     model_factories = {
         "BC": lambda f: BaggingClassifier(
-            estimator=DecisionTreeClassifier(max_depth=3, random_state=42 + f),
-            n_estimators=30,
-            max_samples=0.60,
-            max_features=0.60,
+            estimator=DecisionTreeClassifier(max_depth=5, random_state=42 + f),
+            n_estimators=50,
+            max_samples=0.80,
+            max_features=0.80,
             random_state=42 + f,
             n_jobs=-1
         ),
-        "MLR": lambda f: LogisticRegression(
-            C=0.02,
-            solver='lbfgs',
-            max_iter=300,
-            random_state=42 + f
+        "KNNC": lambda f: KNeighborsClassifier(
+            n_neighbors=5,
+            weights='uniform',
+            n_jobs=-1
         ),
     }
 

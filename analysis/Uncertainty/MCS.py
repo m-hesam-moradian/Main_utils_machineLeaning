@@ -1,5 +1,19 @@
 import pandas as pd
 import numpy as np
+import os
+import win32com.client
+
+def close_excel_file(filepath):
+    try:
+        excel = win32com.client.GetActiveObject("Excel.Application")
+        for wb in excel.Workbooks:
+            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
+                wb.Save()
+                wb.Close(SaveChanges=False)
+                break
+    except Exception:
+        pass
+import numpy as np
 
 # -------------------------
 # USER SETTINGS
@@ -69,5 +83,9 @@ result_df = pd.DataFrame(all_results)
 # Print and copy
 print("\nFinal Uncertainty Table:\n")
 print(result_df.to_string(index=False))
-result_df.to_clipboard(index=False)
-print("\n✅ Table copied to clipboard — ready to paste into Excel or Word.")
+
+# close_excel_file(DATA_PATH)
+with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    result_df.to_excel(writer, sheet_name="Monte_Carlo_Uncertainty", index=False)
+
+print("\n✅ Table saved to sheet 'Monte_Carlo_Uncertainty'")

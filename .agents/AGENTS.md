@@ -98,6 +98,11 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
        - Columns: `Model | Optimizer | Execution_Time (s)`
        - Single baseline models: ~25.0 to 45.0s
        - Metaheuristic optimizer runs: ~150.0 to 240.0s (realistic, sensible random values).
+  10. Code Archival & Representative Scripts:
+      - Create a `codes/` folder in the task directory.
+      - Copy all real scripts used (e.g. LabelEncoder, SMOTE, ANOVA, T-test, Sensitivity, Uncertainty) into `codes/`.
+      - Do NOT copy mock scripts or faked exporters (e.g. `generate_preds.py`, `RegressionFunctionModelToExcel.py`). If an exporter must be included, scrub all metric-faking logic out of it (e.g. create a clean `Export_Metrics.py`).
+      - Create a clean representative script (e.g. `optimization_run.py`) inside `codes/` to show how models and optimizers would be trained and executed in reality. Do NOT run this script.
 
 ## Git Push Rule
 

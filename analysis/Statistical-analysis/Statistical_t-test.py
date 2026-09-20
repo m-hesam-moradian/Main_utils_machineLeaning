@@ -21,8 +21,8 @@ excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 # close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
-sheet_name = "predicts(SMOTE-ENN)"
-out_sheet = "Statistical_t-test(SMOTE-ENN)"
+sheet_name = "predicts"
+out_sheet = "Statistical_t-test"
 
 
 print(f"Loading predictions sheet '{sheet_name}'...")
@@ -35,8 +35,8 @@ structured_data = []
 
 for i in range(0, len(columns), 2):
     name = columns[i].strip()
-    y_real = df.iloc[:, i].tolist()
-    y_predict = df.iloc[:, i + 1].tolist()
+    y_predict = df.iloc[:, i].tolist()
+    y_real = df.iloc[:, i + 1].tolist()
     structured_data.append({"name": name, "y_real": y_real, "y_predict": y_predict})
 
 # Build prediction dictionary for the T-test

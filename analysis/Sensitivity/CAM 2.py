@@ -31,12 +31,14 @@ def close_excel_file(filepath):
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="data_after_vif")
+df = pd.read_excel(excel_path, sheet_name="Data_After_ANOVA")
 target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 feature_names = list(X.columns)
 
-y = pd.read_csv(r"C:\Users\Sam\Desktop\ML\data\predictions.txt", header=None).squeeze()
+# Use the best model (Stacking) predictions
+data = np.loadtxt(r"C:\Users\Sam\Desktop\ML\data\model7.npt", skiprows=1)
+y = pd.Series(data[:, 1])
 
 # Align lengths
 min_len = min(X.shape[0], len(y))
@@ -72,10 +74,16 @@ print("[+] Computing Sobol sensitivity indices (S1, S2, ST)...")
 Si = sobol.analyze(problem, Y_pred, calc_second_order=True)
 
 # Format S1 and ST into a DataFrame
+S1_vals = np.round(np.maximum(0, Si['S1']), 4)
+ST_vals = np.round(np.maximum(0, Si['ST']), 4)
+
+S1_vals = np.where(S1_vals == 0, 0.0001, S1_vals)
+ST_vals = np.where(ST_vals == 0, 0.0001, ST_vals)
+
 df_s1_st = pd.DataFrame({
     "Parameter": problem['names'],
-    "S1": np.round(np.maximum(0, Si['S1']), 4),
-    "ST": np.round(np.maximum(0, Si['ST']), 4)
+    "S1": S1_vals,
+    "ST": ST_vals
 }).sort_values(by="ST", ascending=False).reset_index(drop=True)
 
 # Format S2 into a DataFrame (Extracting pairwise interactions)
@@ -84,10 +92,13 @@ for i, name_i in enumerate(problem['names']):
     for j, name_j in enumerate(problem['names']):
         if i < j:
             val = Si['S2'][i, j]
+            s2_val = round(float(np.maximum(0, val)) if not np.isnan(val) else 0.0, 4)
+            if s2_val == 0.0:
+                s2_val = 0.0001
             s2_data.append({
                 "Parameter_1": name_i,
                 "Parameter_2": name_j,
-                "S2": round(float(np.maximum(0, val)) if not np.isnan(val) else 0.0, 4)
+                "S2": s2_val
             })
 df_s2 = pd.DataFrame(s2_data).sort_values(by="S2", ascending=False).reset_index(drop=True)
 

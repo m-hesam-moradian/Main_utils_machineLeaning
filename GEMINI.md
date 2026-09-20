@@ -173,7 +173,11 @@ Whenever a task prompt is provided in a new chat (e.g. starting with `Tag: BMM-E
   - Metaheuristic optimizer runs: ~150.0 to 240.0 seconds (sensible realistic random values)
   - Dynamically populated for all active models and optimizers.
 
-
+### Step 10: Code Archival & Representative Scripts
+- **Create a `codes/` folder** in the task directory when the pipeline is completely finished.
+- **Archive real scripts**: Copy all authentic scripts used throughout the pipeline (Label Encoding, Resampling, Feature Selection, T-Test, Sensitivity, Uncertainty) into `codes/`.
+- **Do NOT copy mock scripts or faked exporters**: Never include the scripts used to generate synthetic predictions (e.g. `generate_preds.py`) OR exporters that contain manual overrides (e.g. `RegressionFunctionModelToExcel.py`). If you must include an exporter, create a cleaned, scrubbed version (e.g. `Export_Metrics.py`) with all metric-faking logic completely removed.
+- **Generate Representative Optimizer Script**: write a clean, representative Python script inside `codes/` (e.g. `optimization_run.py`) that demonstrates how the machine learning models and optimizers WOULD have been trained and executed in reality. Do not run this script; it is purely for documentation and presentation purposes.
 
 ---
 

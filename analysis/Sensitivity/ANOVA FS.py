@@ -6,7 +6,7 @@ import numpy as np
 
 # -------------------- 1. Configuration & Load Data --------------------
 DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-INPUT_SHEET = "Delete_timestamp"     
+INPUT_SHEET = "Z-Score"     
 P_VALUE_THRESHOLD = 0.05  # Features with p-value >= 0.05 will be removed
 
 print(f"Loading data from {DATA_PATH}...")
@@ -86,7 +86,7 @@ with pd.ExcelWriter(DATA_PATH, mode='a', engine='openpyxl', if_sheet_exists='rep
     anova_df.to_excel(writer, sheet_name="ANOVA_Report", index=False)
     new_dataset.to_excel(writer, sheet_name="Data_After_ANOVA", index=False)
 
-print(f"✅ Success! Data appended to {DATA_PATH} in new sheets: 'ANOVA_Report' and 'Data_After_ANOVA'.")
+print(f"Success! Data appended to {DATA_PATH} in new sheets: 'ANOVA_Report' and 'Data_After_ANOVA'.")
 
 if removed_features:
     print(f"List of removed features: {removed_features}")

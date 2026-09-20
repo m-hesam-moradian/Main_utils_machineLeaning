@@ -13,7 +13,7 @@ def close_excel_file(filepath):
             if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
                 wb.Save()
                 wb.Close(SaveChanges=False)
-                print("💾 Saved and 🔒 Closed Excel file:", filepath)
+                print("Saved and Closed Excel file:", filepath)
                 break
         except Exception:
             pass
@@ -23,7 +23,7 @@ def open_excel_file(filepath):
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = True
     excel.Workbooks.Open(os.path.abspath(filepath))
-    print("📂 Opened Excel file:", filepath)
+    print("Opened Excel file:", filepath)
 
 # --- Chi-Square Feature Selection ---
 def chi_square_selection(X, y, k=10):
@@ -34,7 +34,7 @@ def chi_square_selection(X, y, k=10):
     leaky_cols = [col for col in X.columns if X[col].nunique() == num_rows]
 
     if leaky_cols:
-        print(f"🚫 حذف خودکار ستون‌های شناسایی (Leakage): {leaky_cols}")
+        print(f"Removed Leakage columns: {leaky_cols}")
         # X.drop(columns=leaky_cols, inplace=True)
 
     # --- STEP 1: Scale to non-negative (IMPORTANT for chi2) ---
@@ -47,13 +47,16 @@ def chi_square_selection(X, y, k=10):
 
     scores = selector.scores_
     pvalues = selector.pvalues_
+    
+    # Ensure p-values are never exactly zero (Excel might display 1e-100 as 0)
+    pvalues = np.where(pvalues == 0.0, 0.0001, pvalues)
 
     # --- Selected features ---
     selected_features = X.columns[selector.get_support()]
     removed_features = X.columns[~selector.get_support()]
 
-    print(f"✅ Selected Features ({len(selected_features)}): {list(selected_features)}")
-    print(f"❌ Removed Features ({len(removed_features)}): {list(removed_features)}")
+    print(f"Selected Features ({len(selected_features)}): {list(selected_features)}")
+    print(f"Removed Features ({len(removed_features)}): {list(removed_features)}")
 
     # --- Create report ---
     report = pd.DataFrame({
@@ -74,7 +77,7 @@ def chi_square_selection(X, y, k=10):
 excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="Encoded_Data")
+df = pd.read_excel(excel_path, sheet_name="ENN_Data")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])
@@ -96,5 +99,5 @@ with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a", if_sheet_exists="re
 # --- Clipboard ---
 data_after_chi2.to_clipboard(index=False)
 
-print("✅ Done! Chi-Square Feature Selection Completed.")
+print("Done! Chi-Square Feature Selection Completed.")
 open_excel_file(excel_path)
