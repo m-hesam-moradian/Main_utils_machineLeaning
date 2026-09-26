@@ -1,54 +1,79 @@
-import pandas as pd
+import numpy as np
 from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score
+import pandas as pd
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+import os
 
-# --- Load reordered data for BC (after K-Fold) ---
+# --- Toggle for Ablation Study ---
+USE_SMOTE = False
+tag = "SMOTE" if USE_SMOTE else "No_SMOTE"
+
+# --- Load Excel file ---
 excel_path = r"D:\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_BC(ENN)"
+sheet_name = f"Data_after_KFold_BC({tag})"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
-target_column = df.columns[-1]
 
-# Prepare the features and target
+# --- Separate features and target ---
+target_column = df.columns[-1]
 X = df.drop(columns=[target_column])
 y = df[target_column]
 
-# --- Use last 20% as test set to match K-Fold logic ---
-split_idx = int(len(df) * 0.8)
-X_train, X_test = X[:split_idx], X[split_idx:]
-y_train, y_test = y[:split_idx], y[split_idx:]
-
-# --- Initialize BC model ---
-model = BaggingClassifier(
-    estimator=DecisionTreeClassifier(max_depth=5),
-    n_estimators=100,
-    max_samples=0.8,
-    max_features=0.8,
-    random_state=42
+# --- Split into train/test (80/20, shuffle=False) ---
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, shuffle=False
 )
 
-# Train the model
-model.fit(X_train, y_train)
+if USE_SMOTE:
+    smote = SMOTE(random_state=42)
+    X_train_fit, y_train_fit = smote.fit_resample(X_train, y_train)
+else:
+    X_train_fit, y_train_fit = X_train, y_train
 
-# Predictions
-y_pred_all = model.predict(X)
+# --- Train BC (hyperparams synced from K-Fold CV) ---
+model = BaggingClassifier(
+    estimator=DecisionTreeClassifier(
+        max_depth=4,
+        min_samples_split=10,
+        min_samples_leaf=5,
+        random_state=42
+    ),
+    n_estimators=30,
+    max_samples=0.60,
+    max_features=0.60,
+    random_state=42,
+    n_jobs=-1
+)
+model.fit(X_train_fit, y_train_fit)
+
+# --- Predictions ---
 y_pred_train = model.predict(X_train)
-y_pred_test = model.predict(X_test)
+y_pred_test  = model.predict(X_test)
+y_pred_all   = model.predict(X)
 
-# --- Output predictions ---
-df_all = pd.DataFrame({"y_real": y, "y_pred": y_pred_all})
-df_train = pd.DataFrame({"y_real": y_train, "y_pred": y_pred_train})
-df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
+# --- Accuracy metrics ---
+acc_train = accuracy_score(y_train, y_pred_train)
+acc_test  = accuracy_score(y_test,  y_pred_test)
+acc_all   = accuracy_score(y,       y_pred_all)
 
-# Export to .npt for BC (model4, 5, 6 slots)
-# Save base model to model4
-df_all.to_csv(r"D:\ML\data\model4.npt", index=False, header=False, sep="\t")
+print(f"[+] BC Accuracy Results ({tag})")
+print("----------------------------")
+print(f"Overall Accuracy  : {acc_all:.4f}")
+print(f"Training Accuracy : {acc_train:.4f}")
+print(f"Testing Accuracy  : {acc_test:.4f}")
+print(f"Precision (test)  : {precision_score(y_test, y_pred_test, zero_division=0):.4f}")
+print(f"Recall    (test)  : {recall_score(y_test, y_pred_test, zero_division=0):.4f}")
+print(f"F1-Score  (test)  : {f1_score(y_test, y_pred_test, zero_division=0):.4f}")
+print(f"MCC       (test)  : {matthews_corrcoef(y_test, y_pred_test):.4f}")
 
-# For optimizers we just copy base predictions for now.
-# The Excel exporter script fake_accuracy_prediction function will adjust them to target accuracy.
-df_all.to_csv(r"D:\ML\data\model5.npt", index=False, header=False, sep="\t")
-df_all.to_csv(r"D:\ML\data\model6.npt", index=False, header=False, sep="\t")
+# --- Export to data/model7.npt (Model 3 Slot for single base) ---
+# LGBC = 1..3, ETC = 4..6, BC = 7..9 in the 3-model 3-optimizer scheme
+df_all = pd.DataFrame({"y_real": y.values, "y_pred": y_pred_all})
 
-print(f"Base Test Accuracy: {accuracy_score(y_test, y_pred_test):.6f}")
-print("Predictions saved to data/model4.npt, data/model5.npt, data/model6.npt")
+out_dir = rf"D:\ML\data\{tag}"
+os.makedirs(out_dir, exist_ok=True)
+np.savetxt(os.path.join(out_dir, "model7.npt"), df_all.values, fmt="%d")
+print(f"\n[+] Saved: {out_dir}/model7.npt")

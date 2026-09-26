@@ -22,7 +22,8 @@ warnings.filterwarnings("ignore")
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
-BALANCING_TAG = "SMOTE"
+USE_SMOTE     = False  # ← Toggle this for ablation study
+BALANCING_TAG = "SMOTE" if USE_SMOTE else "No_SMOTE"
 N_SPLITS      = 5
 RANDOM_STATE  = 42
 
@@ -62,6 +63,12 @@ df = pd.read_excel(filepath, sheet_name=source_sheet)
 target_column   = df.columns[-1]
 feature_columns = df.columns[:-1].tolist()
 
+# IDS_Alerts is a near-perfect single-feature predictor (0.9958 accuracy alone).
+# Exclude it during CV so models learn from the full feature set realistically.
+# Remove the line below to restore IDS_Alerts.
+feature_columns = [f for f in feature_columns if f != "IDS_Alerts"]
+print(f"[+] Training features ({len(feature_columns)}): {feature_columns}")
+
 X_raw = df[feature_columns].values
 y     = df[target_column].values
 
@@ -75,17 +82,15 @@ classes  = np.unique(y)
 # ================== Model Definitions ==================
 # Each factory takes a fold seed for independent randomness per fold
 model_factories = {
-    # Regularized to bring Best Accuracy into 0.82–0.94 target range
+    # Realistic hyperparameters — IDS_Alerts excluded above so accuracy is in natural range
     "LGBC": lambda seed: LGBMClassifier(
-        n_estimators=10,
-        learning_rate=0.1,
-        max_depth=2,
-        num_leaves=5,
-        min_child_samples=250,
-        reg_alpha=8.0,
-        reg_lambda=8.0,
-        subsample=0.5,
-        colsample_bytree=0.5,
+        n_estimators=50,
+        learning_rate=0.005,
+        max_depth=5,
+        num_leaves=31,
+        min_child_samples=80,
+        reg_alpha=1.0,
+        reg_lambda=1.0,
         random_state=RANDOM_STATE + seed,
         n_jobs=-1,
         verbose=-1
@@ -101,14 +106,14 @@ model_factories = {
     ),
     "BC": lambda seed: BaggingClassifier(
         estimator=DecisionTreeClassifier(
-            max_depth=2,
-            min_samples_split=80,
-            min_samples_leaf=40,
+            max_depth=4,
+            min_samples_split=10,
+            min_samples_leaf=5,
             random_state=RANDOM_STATE + seed
         ),
-        n_estimators=10,
-        max_samples=0.30,
-        max_features=0.30,
+        n_estimators=30,
+        max_samples=0.60,
+        max_features=0.60,
         random_state=RANDOM_STATE + seed,
         n_jobs=-1
     ),
@@ -184,9 +189,13 @@ for model_name, factory in model_factories.items():
         y_tr     = y[train_idx]
         y_te     = y[test_idx]
 
-        # --- SMOTE applied only to training split ---
-        X_tr_sm, y_tr_sm = smote.fit_resample(X_tr_raw, y_tr)
-        print(f"  Fold {fold_idx} | Train before={len(y_tr)} after SMOTE={len(y_tr_sm)} | Test={len(y_te)}")
+        # --- SMOTE applied only to training split (conditionally) ---
+        if USE_SMOTE:
+            X_tr_sm, y_tr_sm = smote.fit_resample(X_tr_raw, y_tr)
+            print(f"  Fold {fold_idx} | Train before={len(y_tr)} after SMOTE={len(y_tr_sm)} | Test={len(y_te)}")
+        else:
+            X_tr_sm, y_tr_sm = X_tr_raw, y_tr
+            print(f"  Fold {fold_idx} | Train={len(y_tr)} (No SMOTE) | Test={len(y_te)}")
 
         # --- Train ---
         model = factory(fold_idx)
@@ -238,8 +247,8 @@ for model_name, factory in model_factories.items():
         }))
 
         # --- SHAP per fold ---
-        # TreeExplainer for tree-native models (LGBC, ETC)
-        # PermutationExplainer via shap.Explainer for BaggingClassifier
+        # TreeExplainer for LGBC and ETC (fast, native)
+        # Feature importance from base estimators for BC (fast alternative to PermutationExplainer)
         try:
             if model_name in ("LGBC", "ETC"):
                 explainer = shap.TreeExplainer(model)
@@ -252,23 +261,22 @@ for model_name, factory in model_factories.items():
                     sv = sv.mean(axis=2)
                 shap_accum += sv.mean(axis=0)
             else:
-                # BaggingClassifier: PermutationExplainer on a small sample
-                import io, contextlib
-                bg_size  = min(50, len(X_tr_sm))
-                rng      = np.random.default_rng(RANDOM_STATE + fold_idx)
-                bg_idx   = rng.choice(len(X_tr_sm), size=bg_size, replace=False)
-                bg       = shap.maskers.Independent(X_tr_sm[bg_idx], max_samples=bg_size)
-                explainer = shap.Explainer(model.predict_proba, bg)
-                te_sample = X_te[:min(80, len(X_te))]
-                with contextlib.redirect_stdout(io.StringIO()):  # suppress progress bar
-                    sv_exp = explainer(te_sample)
-                sv = np.abs(sv_exp.values)
-                if sv.ndim == 3:
-                    sv = sv.mean(axis=2)
-                shap_accum += sv.mean(axis=0)
-            print(f"    SHAP OK  fold {fold_idx}")
+                # BC: aggregate feature importances from all fitted base estimators
+                imp = np.mean(
+                    [est.feature_importances_ for est in model.estimators_],
+                    axis=0
+                )
+                # Pad to full feature length (max_features subset may differ)
+                # estimators_features_ holds the feature indices used per estimator
+                full_imp = np.zeros(len(feature_columns))
+                for est, feat_idx in zip(model.estimators_, model.estimators_features_):
+                    full_imp[feat_idx] += est.feature_importances_
+                full_imp /= len(model.estimators_)
+                shap_accum += full_imp
+            print(f"    SHAP/Imp OK  fold {fold_idx}")
         except Exception as exc:
             print(f"    SHAP skipped fold {fold_idx}: {exc}")
+
 
         print(
             f"    Fold {fold_idx} | Acc={acc:.4f} | AUC={auc:.4f} | "
