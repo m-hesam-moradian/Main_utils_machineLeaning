@@ -3,7 +3,7 @@ import numpy as np
 
 # -------------------------
 # MONTE CARLO SETTINGS (Report these to the reviewer)
-DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+DATA_PATH = r"task\Data.xlsx"
 SHEET_NAME = "predicts"
 N_SIMULATIONS = 1000               # Number of Monte Carlo simulations
 NOISE_LEVEL = 0.05                 # 5% noise level
@@ -90,4 +90,4 @@ with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="rep
     result_df.to_excel(writer, sheet_name="Monte_Carlo_Uncertainty", index=False)
 
 result_df.to_clipboard(index=False)
-print(f"\n[+] Monte Carlo Uncertainty table saved to sheet 'Monte_Carlo_Uncertainty' in {DATA_PATH}")
+print(f"\n[+] Monte Carlo Uncertainty table saved to sheet 'Monte_Carlo_Uncertainty' in {DATA_PATH}")

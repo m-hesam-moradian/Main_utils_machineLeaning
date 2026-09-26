@@ -17,27 +17,26 @@ def close_excel_file(filepath):
     except Exception:
         pass
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-# close_excel_file(excel_path)
+predicts_csv = r"D:\ML\task\predicts(ENN).csv"
+out_csv      = r"D:\ML\task\Statistical_t-test(ENN).csv"
 
-xl = pd.ExcelFile(excel_path)
-sheet_name = "predicts"
-out_sheet = "Statistical_t-test"
-
-
-print(f"Loading predictions sheet '{sheet_name}'...")
-
-df = pd.read_excel(xl, sheet_name=sheet_name, header=0)
+print(f"Loading predictions from '{predicts_csv}' ...")
+df = pd.read_csv(predicts_csv)
 
 # Dynamically extract model names and predictions
 columns = df.columns.tolist()
 structured_data = []
 
-for i in range(0, len(columns), 2):
-    name = columns[i].strip()
-    y_predict = df.iloc[:, i].tolist()
-    y_real = df.iloc[:, i + 1].tolist()
-    structured_data.append({"name": name, "y_real": y_real, "y_predict": y_predict})
+# CSV columns are: {model}_y_real, {model}_y_pred, {model}_y_real, ...
+# Extract model name from _y_pred columns and use y_pred for t-test
+pred_cols = [c for c in columns if str(c).endswith("_y_pred")]
+for col in pred_cols:
+    model_name = col.replace("_y_pred", "")
+    y_pred = df[col].dropna().tolist()
+    # find matching y_real column
+    real_col = model_name + "_y_real"
+    y_real = df[real_col].dropna().tolist() if real_col in columns else y_pred
+    structured_data.append({"name": model_name, "y_real": y_real, "y_predict": y_pred})
 
 # Build prediction dictionary for the T-test
 predictions = {entry["name"]: np.array(entry["y_predict"]) for entry in structured_data}
@@ -100,10 +99,6 @@ print("\nPaired T-Test Comparison Results:")
 print(df_results)
 
 
-# Save to Excel sheet 'Statistical_t-test(ENN)' and 'Statistical_t-test'
 # close_excel_file(excel_path)
-with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_results.to_excel(writer, sheet_name=out_sheet, index=False)
-    df_results.to_excel(writer, sheet_name="Statistical_t-test", index=False)
-
-print(f"\nSaved Paired T-Test results to sheet '{out_sheet}' and 'Statistical_t-test' in {excel_path}")
+df_results.to_csv(out_csv, index=False)
+print(f"\nSaved t-test results to: {out_csv}")

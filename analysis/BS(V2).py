@@ -422,11 +422,14 @@ def close_excel_file(filepath):
         pass
 
 def main():
-    excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+    excel_path = r"D:\ML\task\Data.xlsx"
     # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(SMOTE-ENN)" in xl.sheet_names:
+    if "Probs(ENN)" in xl.sheet_names:
+        sheet_name = "Probs(ENN)"
+        out_sheet = "Brier_Decomposition(ENN)"
+    elif "Probs(SMOTE-ENN)" in xl.sheet_names:
         sheet_name = "Probs(SMOTE-ENN)"
         out_sheet = "Brier_Decomposition(SMOTE-ENN)"
     elif "Probs(SMOTE)" in xl.sheet_names:
@@ -434,7 +437,7 @@ def main():
         out_sheet = "Brier_Decomposition(SMOTE)"
     else:
         sheet_name = "Probs"
-        out_sheet = "Brier_Decomposition(SMOTE-ENN)"
+        out_sheet = "Brier_Decomposition"
 
     
     print(f"Loading Excel probability sheet '{sheet_name}'...")

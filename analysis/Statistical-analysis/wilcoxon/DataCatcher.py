@@ -23,7 +23,7 @@ def open_excel_file(filepath):
     except Exception:
         pass
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"D:\ML\task\Data.xlsx"
 # close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
@@ -31,8 +31,8 @@ all_sheets = xl.sheet_names
 
 # Target exact active model sheets
 target_models = [
-    "BC", "BC + HEOA", "BC + PRO",
-    "MLR", "MLR + HEOA", "MLR + PRO"
+    "KNNC", "KNNC + ROA", "KNNC + CFOA",
+    "BC", "BC + ROA", "BC + CFOA"
 ]
 
 sheet_names = [s for s in target_models if s in all_sheets]
@@ -84,7 +84,7 @@ print("Shape:", df_merged.shape)
 
 # close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_merged.to_excel(writer, sheet_name="predicts(SMOTE-ENN)", index=False)
+    df_merged.to_excel(writer, sheet_name="predicts(ENN)", index=False)
 
-print(f"\n[+] Saved combined model predictions to sheet 'predicts(SMOTE-ENN)' in {excel_path}")
+print(f"\n[+] Saved combined model predictions to sheet 'predicts(ENN)' in {excel_path}")
 # open_excel_file(excel_path)
