@@ -17,12 +17,12 @@ params = {
 
 ShowProbs = True
 
-model_name = "LGBC(No_SMOTE)"
-Accuracy_target = 0.918933
+model_name = "LGBC(SMOTE)"
+Accuracy_target = 0.934812
 
-optimizer_name = "LBOA"
+optimizer_name = "BOA"
 
-dataPath = r"data\No_SMOTE\model1.npt"
+dataPath = r"data\SMOTE\model1.npt"
 outputPath = r"task\Data.xlsx"
 Convergence_metric = "Accuracy"
 convegence_direction = "up"
