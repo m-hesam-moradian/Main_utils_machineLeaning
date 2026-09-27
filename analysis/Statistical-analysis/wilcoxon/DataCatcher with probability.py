@@ -29,70 +29,50 @@ excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
-# Target exact active model sheets
-target_models = [
-    "KNNC", "KNNC + ROA", "KNNC + CFOA",
-    "BC", "BC + ROA", "BC + CFOA"
-]
+tags = ["No_SMOTE", "SMOTE"]
 
-sheet_names = [s for s in target_models if s in all_sheets]
-if not sheet_names:
-    ignore_sheets = [
-        "Data", "Encoded_Data", "Z-Score", "Z-Score_Median_Mode", "Z-Score_Report",
-        "vif_horizontal", "data_after_vif", "Model_Comparison_Summary",
-        "Overall_Model_Comparison", "Decision_Boundaries"
-    ]
-    sheet_names = [
-        s for s in all_sheets
-        if s not in ignore_sheets and not s.endswith("_Metrics") and not s.startswith("Data_after_KFold_")
-    ]
-
-print("Matching model sheets for DataCatcher:")
-print(sheet_names)
-
-merged_columns = []
-
-for sheet in sheet_names:
-    df_raw = pd.read_excel(xl, sheet_name=sheet, header=None, nrows=5)
-    
-    header_row_idx = 1
-    for r_idx in range(min(5, len(df_raw))):
-        row_vals = [str(v).lower() for v in df_raw.iloc[r_idx].values]
-        if any("y_real" in v or "y_pred" in v for v in row_vals):
-            header_row_idx = r_idx
-            break
-            
-    df = pd.read_excel(xl, sheet_name=sheet, header=header_row_idx)
-    
-    cols = []
-    for col in df.columns:
-        col_name = str(col).lower()
-        if "y_real" in col_name or "y_pred" in col_name or "prob" in col_name:
-            cols.append(col)
-            
-    df = df[cols].dropna(how="all").reset_index(drop=True)
-    
-    new_cols = []
-    for i in range(df.shape[1]):
-        if i == 0:
-            new_cols.append(f"{sheet}_y_real")
-        elif i == 1:
-            new_cols.append(f"{sheet}_y_pred")
-        else:
-            new_cols.append(f"{sheet}_prob_{i-2}")
-            
-    df.columns = new_cols
-    merged_columns.append(df)
-
-df_merged = pd.concat(merged_columns, axis=1)
-
-print("\nDataCatcher Probability Matrix:")
-print(df_merged.head())
-print("Shape:", df_merged.shape)
-
-# close_excel_file(excel_path)
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_merged.to_excel(writer, sheet_name="Probs(ENN)", index=False)
+    for tag in tags:
+        target_models = [
+            f"LGBC({tag})", f"LGBC({tag}) + GOA", f"LGBC({tag}) + BOA", f"LGBC({tag}) + LBOA",
+            f"ETC({tag})", f"ETC({tag}) + GOA", f"ETC({tag}) + BOA", f"ETC({tag}) + LBOA",
+            f"BC({tag})", f"BC({tag}) + GOA", f"BC({tag}) + BOA", f"BC({tag}) + LBOA"
+        ]
+        
+        sheet_names = [s for s in target_models if s in all_sheets]
+        print(f"Matching model sheets for {tag}: {sheet_names}")
+        if not sheet_names:
+            continue
+            
+        merged_columns = []
+        for sheet in sheet_names:
+            df_raw = pd.read_excel(xl, sheet_name=sheet, header=None, nrows=5)
+            header_row_idx = 1
+            for r_idx in range(min(5, len(df_raw))):
+                row_vals = [str(v).lower() for v in df_raw.iloc[r_idx].values]
+                if any("y_real" in v or "y_pred" in v for v in row_vals):
+                    header_row_idx = r_idx
+                    break
+                    
+            df = pd.read_excel(xl, sheet_name=sheet, header=header_row_idx)
+            cols = []
+            for col in df.columns:
+                col_name = str(col).lower()
+                if "y_real" in col_name or "y_pred" in col_name or "prob" in col_name:
+                    cols.append(col)
+                    
+            df = df[cols].dropna(how="all").reset_index(drop=True)
+            
+            new_cols = []
+            for i in range(df.shape[1]):
+                if i == 0: new_cols.append(f"{sheet}_y_real")
+                elif i == 1: new_cols.append(f"{sheet}_y_pred")
+                else: new_cols.append(f"{sheet}_prob_{i-2}")
+            df.columns = new_cols
+            merged_columns.append(df)
+            
+        df_merged = pd.concat(merged_columns, axis=1)
+        df_merged.to_excel(writer, sheet_name=f"Probs({tag})", index=False)
+        print(f"[+] Saved Probs({tag})")
 
-print(f"\n[+] Saved combined model predictions and probabilities to sheet 'Probs(ENN)' in {excel_path}")
-# open_excel_file(excel_path)
+print(f"\n[+] Saved combined model predictions and probabilities to {excel_path}")

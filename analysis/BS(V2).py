@@ -409,71 +409,39 @@ def build_column_report(df: pd.DataFrame) -> pd.DataFrame:
 import os
 import win32com.client
 
-def close_excel_file(filepath):
-    try:
-        excel = win32com.client.GetActiveObject("Excel.Application")
-        for wb in excel.Workbooks:
-            if os.path.abspath(wb.FullName) == os.path.abspath(filepath):
-                wb.Save()
-                wb.Close(SaveChanges=False)
-                print("Saved and Closed Excel file:", filepath)
-                break
-    except Exception:
-        pass
-
 def main():
     excel_path = r"D:\ML\task\Data.xlsx"
-    # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(ENN)" in xl.sheet_names:
-        sheet_name = "Probs(ENN)"
-        out_sheet = "Brier_Decomposition(ENN)"
-    elif "Probs(SMOTE-ENN)" in xl.sheet_names:
-        sheet_name = "Probs(SMOTE-ENN)"
-        out_sheet = "Brier_Decomposition(SMOTE-ENN)"
-    elif "Probs(SMOTE)" in xl.sheet_names:
-        sheet_name = "Probs(SMOTE)"
-        out_sheet = "Brier_Decomposition(SMOTE)"
-    else:
-        sheet_name = "Probs"
-        out_sheet = "Brier_Decomposition"
-
+    tags = ["No_SMOTE", "SMOTE"]
     
-    print(f"Loading Excel probability sheet '{sheet_name}'...")
+    for tag in tags:
+        sheet_name = f"Probs({tag})"
+        out_sheet = f"Brier_Decomposition({tag})"
+        
+        if sheet_name not in xl.sheet_names:
+            print(f"Skipping {tag}, sheet {sheet_name} not found.")
+            continue
 
-    models = load_models_from_excel(
-        excel_path,
-        sheet_name=sheet_name
-    )
+        print(f"\nLoading Excel probability sheet '{sheet_name}'...")
+        models = load_models_from_excel(excel_path, sheet_name=sheet_name)
 
-    print("\nDetected models:")
-    for model in models:
-        print(" -", model)
+        if not models:
+            continue
 
-    all_reports = []
+        all_reports = []
+        for model_name, df_model in models.items():
+            print(f"  Processing {model_name}")
+            report = build_column_report(df_model)
+            report.insert(0, "Model", model_name)
+            all_reports.append(report)
 
-    for model_name, df_model in models.items():
-        print(f"\nProcessing {model_name}")
-        report = build_column_report(df_model)
+        final_report = pd.concat(all_reports, ignore_index=True)
 
-        # Add model name column
-        report.insert(0, "Model", model_name)
-        all_reports.append(report)
+        with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+            final_report.to_excel(writer, sheet_name=out_sheet, index=False)
 
-    final_report = pd.concat(all_reports, ignore_index=True)
-
-    print("\nBrier Score & Decomposition Report:")
-    print(final_report.to_string(index=False))
-
-    # Save to Excel sheet 'Brier_Decomposition(ENN)'
-    # close_excel_file(excel_path)
-    with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-        final_report.to_excel(writer, sheet_name=out_sheet, index=False)
-        final_report.to_excel(writer, sheet_name="Brier_Decomposition", index=False)
-
-    print(f"\nSaved Brier Decomposition report to sheet '{out_sheet}' in {excel_path}")
-
+        print(f"[+] Saved Brier Decomposition report to sheet '{out_sheet}'")
 
 if __name__ == "__main__":
     main()
