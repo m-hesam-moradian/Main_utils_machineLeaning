@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import BaggingClassifier, ExtraTreesClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score
 import numpy as np
@@ -7,7 +7,7 @@ import os
 
 # --- Load reordered data (after K-Fold) ---
 excel_path = r"D:\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_BC(SMOTE)"
+sheet_name = "Data_after_KFold_BC(No_SMOTE)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -22,16 +22,12 @@ X_train, X_test = X[:split_idx], X[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize model ---
-model = BaggingClassifier(
-    estimator=DecisionTreeClassifier(
-        max_depth=4,
-        min_samples_split=10,
-        min_samples_leaf=5,
-        random_state=42
-    ),
-    n_estimators=30,
-    max_samples=0.60,
-    max_features=0.60,
+model = ExtraTreesClassifier(
+    n_estimators=5,
+    max_depth=4,
+    min_samples_split=30,
+    min_samples_leaf=15,
+    max_features=0.4,
     random_state=42,
     n_jobs=-1
 )
@@ -75,7 +71,7 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 # --- Export to clipboard & file ---
 df_all.to_clipboard(index=False, header=False)
 
-out_dir = r"data\SMOTE"
+out_dir = r"data\No_SMOTE"
 os.makedirs(out_dir, exist_ok=True)
 np.savetxt(os.path.join(out_dir, "model7.npt"), df_all.values, fmt="%f")
 print(f"\n[+] Saved: {out_dir}\\model7.npt")

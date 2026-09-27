@@ -18,9 +18,9 @@ params = {
 ShowProbs = True
 
 model_name = "ETC(SMOTE)"
-Accuracy_target = 0.902124
+Accuracy_target = 0.926412
 
-optimizer_name = "GOA"
+optimizer_name = "LBOA"
 
 dataPath = r"data\SMOTE\model4.npt"
 outputPath = r"task\Data.xlsx"
