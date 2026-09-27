@@ -17,12 +17,12 @@ params = {
 
 ShowProbs = True
 
-model_name = "ETC(SMOTE)"
-Accuracy_target = 0.926412
+model_name = "BC(No_SMOTE)"
+Accuracy_target = 0.859211
 
-optimizer_name = "LBOA"
+optimizer_name = "GOA"
 
-dataPath = r"data\SMOTE\model4.npt"
+dataPath = r"data\No_SMOTE\model7.npt"
 outputPath = r"task\Data.xlsx"
 Convergence_metric = "Accuracy"
 convegence_direction = "up"
