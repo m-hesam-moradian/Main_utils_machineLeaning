@@ -22,8 +22,8 @@ y_train, y_test = y[:split_idx], y[split_idx:]
 
 # --- Initialize model ---
 model = ExtraTreesClassifier(
-    n_estimators=30,
-    max_depth=4,
+    n_estimators=6,
+    max_depth=3,
     min_samples_split=30,
     min_samples_leaf=15,
     max_features=0.4,
