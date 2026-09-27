@@ -6,7 +6,7 @@ import os
 
 # --- Load reordered data (after K-Fold) ---
 excel_path = r"D:\ML\task\Data.xlsx"
-sheet_name = "Data_after_KFold_LGBC(SMOTE)"
+sheet_name = "Data_after_KFold_LGBC(No_SMOTE)"
 
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 target_column = df.columns[-1]
@@ -68,7 +68,7 @@ df_test = pd.DataFrame({"y_real": y_test, "y_pred": y_pred_test})
 # --- Export to clipboard & file ---
 df_all.to_clipboard(index=False, header=False)
 
-out_dir = r"data\SMOTE"
+out_dir = r"data\No_SMOTE"
 os.makedirs(out_dir, exist_ok=True)
 np.savetxt(os.path.join(out_dir, "model1.npt"), df_all.values, fmt="%f")
 print(f"\n[+] Saved: {out_dir}\\model1.npt")
