@@ -10,23 +10,21 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
 params = {
-    "n_estimators": 47,
-    "max_depth": 3,
-    "max_samples": 0.72847392,
-    "max_features": 0.68391274,
-    "learning_factor": 0.00847123
+    "n_estimators": 100,
+    "max_depth": -1,
+    "learning_rate": 0.1
 }
 
 ShowProbs = True
 
-model_name = "BC"
-Accuracy_target = 0.0
+model_name = "LGBC(SMOTE)"
+Accuracy_target = 0.904051
 
-optimizer_name = "HEOA"
+optimizer_name = ""
 
-dataPath = r"data/model2.npt"
+dataPath = r"data\SMOTE\model1.npt"
 outputPath = r"task\Data.xlsx"
-Convergence_metric = "Precision"
+Convergence_metric = "Accuracy"
 convegence_direction = "up"
 
 # === FUNCTIONS ===
