@@ -11,18 +11,7 @@ def main():
     filepath = r"task\Data.xlsx"
 
     xl = pd.ExcelFile(filepath)
-    if "data_after_chi2" in xl.sheet_names:
-        sheet_name = "data_after_chi2"
-    elif "data_after_vif" in xl.sheet_names:
-        sheet_name = "data_after_vif"
-    elif "Selected_Data_RFE" in xl.sheet_names:
-        sheet_name = "Selected_Data_RFE"
-    elif "Z-Score" in xl.sheet_names:
-        sheet_name = "Z-Score"
-    elif "DATA_Shuffled" in xl.sheet_names:
-        sheet_name = "DATA_Shuffled"
-    else:
-        sheet_name = "Data"
+    sheet_name = "Data_after_KFold_LGBC(SMOTE)"
 
     print(f"Reading dataset for SHAP from sheet: '{sheet_name}'")
     df = pd.read_excel(filepath, sheet_name=sheet_name)
