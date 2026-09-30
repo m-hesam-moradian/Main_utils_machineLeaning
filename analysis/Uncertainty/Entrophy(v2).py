@@ -81,8 +81,8 @@ def main():
     # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(SMOTE-ENC)" in xl.sheet_names:
-        sheet_name = "Probs(SMOTE-ENC)"
+    if "Probs(Original)" in xl.sheet_names:
+        sheet_name = "Probs(Original)"
         out_sheet = "Entropy_Uncertainty"
         sum_sheet = "Entropy_Summary"
     else:

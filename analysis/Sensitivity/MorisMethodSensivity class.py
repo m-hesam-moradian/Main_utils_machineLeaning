@@ -80,7 +80,7 @@ def Morris_function(X, predictions, feature_names):
 # ==========================================================
 # Load Data & Predictions
 # ==========================================================
-DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+DATA_PATH = r"d:\ML\task\Data.xlsx"
 # close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
@@ -107,7 +107,7 @@ target_column = df_data.columns[-1]
 X = df_data.drop(columns=[target_column])
 
 # Load predictions from predicts(SMOTE-ENN) sheet
-sheet_pred = "predicts(SMOTE-ENN)" if "predicts(SMOTE-ENN)" in xl.sheet_names else ("predicts(ENN)" if "predicts(ENN)" in xl.sheet_names else "predicts")
+sheet_pred = "predicts(Original)" if "predicts(Original)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
 df_pred = pd.read_excel(xl, sheet_name=sheet_pred, header=0)
 
 # Run Morris analysis for each model prediction column in predicts sheet

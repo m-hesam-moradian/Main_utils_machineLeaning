@@ -19,7 +19,7 @@ def close_excel_file(filepath):
 
 excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
-tags = ["SMOTE-ENC"]
+tags = ["Original"]
 
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:

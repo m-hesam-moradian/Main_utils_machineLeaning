@@ -13,7 +13,7 @@ from lightgbm import LGBMClassifier
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
-BALANCING_TAG = "SMOTE-ENC"
+BALANCING_TAG = "Original"
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -50,8 +50,10 @@ def main():
         sheet_name = "Selected_Data_RFE"
     elif "Z-Score" in xl.sheet_names:
         sheet_name = "Z-Score"
-    else:
+    elif "Encoded_Data" in xl.sheet_names:
         sheet_name = "Encoded_Data"
+    else:
+        sheet_name = "Data"
 
     print(f"Reading dataset for K-Fold from sheet: '{sheet_name}'")
     df = pd.read_excel(filepath, sheet_name=sheet_name)
@@ -65,14 +67,14 @@ def main():
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
+    from sklearn.neighbors import KNeighborsClassifier
+    from xgboost import XGBClassifier
+
     model_factories = {
-        "MLR": lambda f: LogisticRegression(C=0.05, multi_class='multinomial', solver='lbfgs', max_iter=1000, random_state=42 + f, n_jobs=-1),
-        "LDA": lambda f: LinearDiscriminantAnalysis(),
-        "QDA": lambda f: QuadraticDiscriminantAnalysis(reg_param=0.2),
-        "DTC": lambda f: DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=1, random_state=42 + f),
-        "RFC": lambda f: RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42 + f, n_jobs=-1),
-        "ETC": lambda f: ExtraTreesClassifier(n_estimators=100, max_depth=10, random_state=42 + f, n_jobs=-1),
-        "LGBC": lambda f: LGBMClassifier(n_estimators=50, max_depth=3, learning_rate=0.05, random_state=42 + f, n_jobs=-1)
+        "LR": lambda f: LogisticRegression(C=0.1, multi_class='multinomial', solver='lbfgs', max_iter=1000, random_state=42 + f, n_jobs=-1),
+        "KNNC": lambda f: KNeighborsClassifier(n_neighbors=5, n_jobs=-1),
+        "RFC": lambda f: RandomForestClassifier(n_estimators=100, max_depth=6, min_samples_split=2, min_samples_leaf=2, random_state=42 + f, n_jobs=-1),
+        "XGBC": lambda f: XGBClassifier(n_estimators=100, max_depth=4, learning_rate=0.05, random_state=42 + f, n_jobs=-1, eval_metric='mlogloss')
     }
 
     metrics_df_dict = {}
