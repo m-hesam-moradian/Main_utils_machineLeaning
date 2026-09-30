@@ -29,4 +29,4 @@ anova_like_df = pd.DataFrame(results)
 print(anova_like_df)
 with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     anova_like_df.to_excel(writer, sheet_name="ANOVA_Sensitivity", index=False)
-print("✅ F-statistic and p-values saved to ANOVA_Sensitivity sheet")
+print("[+] F-statistic and p-values saved to ANOVA_Sensitivity sheet")
