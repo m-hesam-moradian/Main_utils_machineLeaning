@@ -4,8 +4,8 @@ from sklearn.preprocessing import LabelEncoder
 from imblearn.over_sampling import SMOTE
 
 # -------------------- 1. Load the data --------------------
-file_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name="Selected_Data_RFE")
+file_path = r"d:\ML\task\Data.xlsx"
+df = pd.read_excel(file_path, sheet_name="Encoded_Data")
 
 # Prepare Features (X) and Target (y)
 target_column = df.columns[-1]
@@ -45,4 +45,4 @@ print(df_balanced[target_column].value_counts())
 
 # -------------------- 5. Save to Excel --------------------
 with pd.ExcelWriter(file_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
-    df_balanced.to_excel(writer, sheet_name="Balanced_SMOTE", index=False)
+    df_balanced.to_excel(writer, sheet_name="SMOTE_ENC_Data", index=False)

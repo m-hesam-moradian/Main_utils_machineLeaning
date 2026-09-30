@@ -34,7 +34,7 @@ def open_excel_file(filepath):
 # =========================================================
 # LOAD DATA (From Encoded_Data)
 # =========================================================
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"d:\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
 xl = pd.ExcelFile(excel_path)
@@ -42,6 +42,8 @@ if "Selected_Data_RFE" in xl.sheet_names:
     pass # for downstream
 if "ENN_Data" in xl.sheet_names:
     sheet_name = "ENN_Data"
+elif "SMOTE_ENC_Data" in xl.sheet_names:
+    sheet_name = "SMOTE_ENC_Data"
 elif "SMOTE_Data" in xl.sheet_names:
     sheet_name = "SMOTE_Data"
 elif "Balanced_Data" in xl.sheet_names:

@@ -30,7 +30,7 @@ def open_excel_file(filepath):
         print("Note: Could not auto-open Excel GUI:", e)
 
 # Load your Excel file
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"d:\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 xl = pd.ExcelFile(excel_path)
 raw_sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
