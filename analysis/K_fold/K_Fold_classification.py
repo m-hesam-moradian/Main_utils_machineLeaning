@@ -6,12 +6,14 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, matthews_corrcoef
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import BaggingClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+from lightgbm import LGBMClassifier
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
-BALANCING_TAG = "ENN"
+BALANCING_TAG = "SMOTE-ENC"
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -36,7 +38,7 @@ def open_excel_file(filepath):
         print("Note: Could not auto-open Excel GUI:", e)
 
 def main():
-    filepath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+    filepath = r"d:\ML\task\Data.xlsx"
     close_excel_file(filepath)
 
     xl = pd.ExcelFile(filepath)
@@ -63,23 +65,9 @@ def main():
     n_splits = 5
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    from sklearn.neighbors import KNeighborsClassifier
-    # KNNC: n_neighbors=5, weights='uniform'
-    # BC: n_estimators=50, max_features=0.8
     model_factories = {
-        "BC": lambda f: BaggingClassifier(
-            estimator=DecisionTreeClassifier(max_depth=5, random_state=42 + f),
-            n_estimators=50,
-            max_samples=0.80,
-            max_features=0.80,
-            random_state=42 + f,
-            n_jobs=-1
-        ),
-        "KNNC": lambda f: KNeighborsClassifier(
-            n_neighbors=5,
-            weights='uniform',
-            n_jobs=-1
-        ),
+        "LDA": lambda f: LinearDiscriminantAnalysis(),
+        "ETC": lambda f: ExtraTreesClassifier(n_estimators=100, max_depth=10, random_state=42 + f, n_jobs=-1)
     }
 
     metrics_df_dict = {}

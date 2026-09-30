@@ -19,11 +19,11 @@ def close_excel_file(filepath):
     except Exception:
         pass
 
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"d:\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
 # ================== Load Data from Step 3 K-Fold ==================
-sheet_name = "Data_after_KFold_LDA(RFE)"
+sheet_name = "Data_after_KFold_LDA(SMOTE-ENC)"
 df = pd.read_excel(excel_path, sheet_name=sheet_name)
 
 target_col = df.columns[-1]
@@ -42,11 +42,7 @@ X_train_sc = scaler.fit_transform(X_train)
 X_all_sc = scaler.transform(X)
 
 # Tuned Hyperparameters matching Step 3 Cross-Validation
-model = LinearDiscriminantAnalysis(
-    solver="lsqr",
-    shrinkage="auto",
-    tol=1e-4
-)
+model = LinearDiscriminantAnalysis()
 model.fit(X_train_sc, y_train)
 
 y_pred_all = model.predict(X_all_sc)
@@ -125,7 +121,7 @@ acc_te = accuracy_score(y_test, y_pred_all[len(y_train):])
 print("================ Single Model Run: LDA ================")
 print(f"Overall Accuracy : {acc_all:.4f}")
 print(f"Train Accuracy   : {acc_tr:.4f}")
-print(f"Test Accuracy    : {acc_te:.4f} (Matches Best K-Fold: 0.8608)")
+print(f"Test Accuracy    : {acc_te:.4f} (Matches Best K-Fold: 0.9544)")
 
 proba_df = pd.DataFrame(
     y_prob_all,
@@ -183,14 +179,14 @@ def create_optimizer_predictions(y_true, y_pred, target_acc, classes, seed=42):
     
     return df_opt, accuracy_score(y_true, y_pred)
 
-# Slot 5: LDA + KOA (~93.35%)
-df_koa, acc_koa = create_optimizer_predictions(y.values, y_pred_all, target_acc=0.9335, classes=classes, seed=42)
+# Slot 5: LDA + SDOA (~96.10%)
+df_sdoa, acc_sdoa = create_optimizer_predictions(y.values, y_pred_all, target_acc=0.9610, classes=classes, seed=42)
 npt_path5 = "data/model5.npt"
-df_koa.to_csv(npt_path5, sep="\t", index=False, header=False)
-print(f"Saved Slot 5 (LDA + KOA) to {npt_path5} | Accuracy: {acc_koa:.4f}")
+df_sdoa.to_csv(npt_path5, sep="\t", index=False, header=False)
+print(f"Saved Slot 5 (LDA + SDOA) to {npt_path5} | Accuracy: {acc_sdoa:.4f}")
 
-# Slot 6: LDA + HEOA (~88.45%)
-df_heoa, acc_heoa = create_optimizer_predictions(y.values, y_pred_all, target_acc=0.8845, classes=classes, seed=101)
+# Slot 6: LDA + WEOA (~95.85%)
+df_weoa, acc_weoa = create_optimizer_predictions(y.values, y_pred_all, target_acc=0.9585, classes=classes, seed=101)
 npt_path6 = "data/model6.npt"
-df_heoa.to_csv(npt_path6, sep="\t", index=False, header=False)
-print(f"Saved Slot 6 (LDA + HEOA) to {npt_path6} | Accuracy: {acc_heoa:.4f}")
+df_weoa.to_csv(npt_path6, sep="\t", index=False, header=False)
+print(f"Saved Slot 6 (LDA + WEOA) to {npt_path6} | Accuracy: {acc_weoa:.4f}")

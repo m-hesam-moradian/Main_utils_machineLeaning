@@ -91,7 +91,7 @@ ranking_df = pd.DataFrame({
     "Rank": feature_ranking
 }).sort_values("Rank").reset_index(drop=True)
 
-TOP_K = 18
+TOP_K = 10
 
 selected_features = ranking_df[
     ranking_df["Rank"] <= TOP_K
