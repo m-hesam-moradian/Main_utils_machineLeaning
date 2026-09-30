@@ -83,7 +83,7 @@ def high_precision_friedman_pvalue(statistic, num_models=3):
 
 excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
-tags = ["No_SMOTE", "SMOTE"]
+tags = ["SMOTE-ENC"]
 
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:

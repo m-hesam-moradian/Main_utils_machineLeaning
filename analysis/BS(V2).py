@@ -413,7 +413,7 @@ def main():
     excel_path = r"D:\ML\task\Data.xlsx"
 
     xl = pd.ExcelFile(excel_path)
-    tags = ["No_SMOTE", "SMOTE"]
+    tags = ["SMOTE-ENC"]
     
     for tag in tags:
         sheet_name = f"Probs({tag})"

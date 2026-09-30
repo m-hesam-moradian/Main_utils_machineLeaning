@@ -29,14 +29,13 @@ excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
-tags = ["No_SMOTE", "SMOTE"]
+tags = ["SMOTE-ENC"]
 
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:
         target_models = [
-            f"LGBC({tag})", f"LGBC({tag}) + GOA", f"LGBC({tag}) + BOA", f"LGBC({tag}) + LBOA",
-            f"ETC({tag})", f"ETC({tag}) + GOA", f"ETC({tag}) + BOA", f"ETC({tag}) + LBOA",
-            f"BC({tag})", f"BC({tag}) + GOA", f"BC({tag}) + BOA", f"BC({tag}) + LBOA"
+            "ETC", "ETC + SDOA", "ETC + WEOA",
+            "LDA", "LDA + SDOA", "LDA + WEOA"
         ]
         
         sheet_names = [s for s in target_models if s in all_sheets]

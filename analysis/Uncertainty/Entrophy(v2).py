@@ -77,16 +77,12 @@ def normalized_entropy(probs):
 # Main
 # -------------------------------------------------------
 def main():
-    excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+    excel_path = r"D:\ML\task\Data.xlsx"
     # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(SMOTE-ENN)" in xl.sheet_names:
-        sheet_name = "Probs(SMOTE-ENN)"
-        out_sheet = "Entropy_Uncertainty"
-        sum_sheet = "Entropy_Summary"
-    elif "Probs(ENN)" in xl.sheet_names:
-        sheet_name = "Probs(ENN)"
+    if "Probs(SMOTE-ENC)" in xl.sheet_names:
+        sheet_name = "Probs(SMOTE-ENC)"
         out_sheet = "Entropy_Uncertainty"
         sum_sheet = "Entropy_Summary"
     else:

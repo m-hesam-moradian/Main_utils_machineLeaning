@@ -9,6 +9,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # === CONFIGURATION ===
+import sys
 params = {
     "n_estimators": 100,
     "max_depth": -1,
@@ -17,14 +18,12 @@ params = {
 
 ShowProbs = True
 
-model_name = "BC(SMOTE)"
-Accuracy_target = 0.901123
-
-optimizer_name = "LBOA"
-
-dataPath = r"data\SMOTE\model7.npt"
-outputPath = r"task\Data.xlsx"
-Convergence_metric = "Accuracy"
+model_name = sys.argv[1]
+Accuracy_target = float(sys.argv[2])
+optimizer_name = sys.argv[3] if sys.argv[3] != "NONE" else ""
+dataPath = sys.argv[4]
+outputPath = r"d:\ML\task\Data.xlsx"
+Convergence_metric = "Precision"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

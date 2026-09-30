@@ -2,8 +2,8 @@ import pandas as pd
 import statsmodels.api as sm
 
 # -------------------- 1. Load data --------------------
-DATA_PATH = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
-df = pd.read_excel(DATA_PATH, sheet_name="shuffeled_data")  # Change sheet name as needed
+DATA_PATH = r"D:\ML\task\Data.xlsx"
+df = pd.read_excel(DATA_PATH, sheet_name="Selected_Data_RFE")
 target_column = df.columns[-1]
 
 # -------------------- 2. Separate features and target --------------------
@@ -27,5 +27,6 @@ anova_like_df = pd.DataFrame(results)
 
 # -------------------- 4. Display and copy --------------------
 print(anova_like_df)
-anova_like_df.to_clipboard(index=False)
-print("✅ F-statistic and p-values copied to clipboard")
+with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
+    anova_like_df.to_excel(writer, sheet_name="ANOVA_Sensitivity", index=False)
+print("✅ F-statistic and p-values saved to ANOVA_Sensitivity sheet")

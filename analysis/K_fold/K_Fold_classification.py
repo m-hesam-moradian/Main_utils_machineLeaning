@@ -66,8 +66,13 @@ def main():
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     model_factories = {
+        "MLR": lambda f: LogisticRegression(C=0.05, multi_class='multinomial', solver='lbfgs', max_iter=1000, random_state=42 + f, n_jobs=-1),
         "LDA": lambda f: LinearDiscriminantAnalysis(),
-        "ETC": lambda f: ExtraTreesClassifier(n_estimators=100, max_depth=10, random_state=42 + f, n_jobs=-1)
+        "QDA": lambda f: QuadraticDiscriminantAnalysis(reg_param=0.2),
+        "DTC": lambda f: DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=1, random_state=42 + f),
+        "RFC": lambda f: RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42 + f, n_jobs=-1),
+        "ETC": lambda f: ExtraTreesClassifier(n_estimators=100, max_depth=10, random_state=42 + f, n_jobs=-1),
+        "LGBC": lambda f: LGBMClassifier(n_estimators=50, max_depth=3, learning_rate=0.05, random_state=42 + f, n_jobs=-1)
     }
 
     metrics_df_dict = {}
