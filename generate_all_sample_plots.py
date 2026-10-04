@@ -58,16 +58,25 @@ def generate_grid_vs_random():
 # ==========================================
 # 2. Gaussian Process Expected Improvement
 # ==========================================
-def generate_gp_ei():
-    # Make the target objective function smooth
+def generate_gp_ei(model_name, optimizer_name, x_label, file_name, seed=42):
+    np.random.seed(seed)
+    
+    # Make the target objective function smooth and vary by seed
+    freq1 = np.random.uniform(4.0, 8.0)
+    freq2 = np.random.uniform(2.0, 5.0)
+    slope = np.random.uniform(0.2, 0.6)
+    phase1 = np.random.uniform(0, 2 * np.pi)
+    phase2 = np.random.uniform(0, 2 * np.pi)
+    
     def objective(x):
-        return -(np.sin(x * 6) + x * 0.5 + np.cos(x * 3) * 0.5)
+        return -(np.sin(x * freq1 + phase1) + x * slope + np.cos(x * freq2 + phase2) * 0.5)
 
     X_grid = np.linspace(0, 1000, 200).reshape(-1, 1)
-    y_grid = objective(X_grid / 100)
 
-    # Initial points
-    X_sample = np.array([50, 450]).reshape(-1, 1)
+    # Initial points (randomized but spread out)
+    p1 = np.random.uniform(40, 150)
+    p2 = np.random.uniform(400, 600)
+    X_sample = np.array([p1, p2]).reshape(-1, 1)
     y_sample = objective(X_sample / 100)
 
     kernel = Matern(nu=2.5, length_scale=200)
@@ -91,31 +100,31 @@ def generate_gp_ei():
 
         # Subplot 1: GP Mean and Variance
         ax1 = axes[i, 0]
-        ax1.plot(X_grid, mu, 'C1-', label='GP mean') # C1 is blue in ggplot
+        ax1.plot(X_grid, mu, 'C1-', label='Surrogate mean') # C1 is blue in ggplot
         ax1.fill_between(X_grid.ravel(), mu.ravel() - 1.96*std, mu.ravel() + 1.96*std, color='C1', alpha=0.2)
         ax1.plot(X_sample, y_sample, 'ro', label='Previous steps')
         ax1.plot(X_sample[-1], y_sample[-1], 'r*', markersize=10, label='Last step')
-        ax1.set_title(f"Gaussian Process\nafter {i+2} iterations", fontsize=10)
-        ax1.set_ylabel("Cross entropy\n(the smaller the better)", fontsize=9)
-        ax1.set_xlabel("Number of hidden units", fontsize=9)
-        ax1.legend(fontsize=8)
+        ax1.set_title(f"{model_name} ({optimizer_name})\nafter {i+2} iterations", fontsize=14)
+        ax1.set_ylabel("Error Rate\n(the smaller the better)", fontsize=11)
+        ax1.set_xlabel(x_label, fontsize=11)
+        ax1.legend(fontsize=9)
         
         # Subplot 2: Expected Improvement
         ax2 = axes[i, 1]
         ax2.plot(X_grid, ei, 'C0-') # C0 is red in ggplot
         next_idx = np.argmax(ei)
         ax2.plot(X_grid[next_idx], ei[next_idx], 'C1*', markersize=10, label='Next step')
-        ax2.set_title(f"Expected Improvement\nafter {i+2} iterations", fontsize=10)
-        ax2.set_xlabel("Number of hidden units", fontsize=9)
-        ax2.legend(fontsize=8)
+        ax2.set_title(f"Expected Improvement\nafter {i+2} iterations", fontsize=14)
+        ax2.set_xlabel(x_label, fontsize=11)
+        ax2.legend(fontsize=9)
         
         # Add next point
         X_sample = np.vstack([X_sample, X_grid[next_idx]])
         y_sample = np.vstack([y_sample, objective(X_grid[next_idx] / 100)])
 
     plt.tight_layout()
-    plt.savefig(r"d:\ML\gaussian_process_ei.png", dpi=300)
-    print("Saved gaussian_process_ei.png")
+    plt.savefig(file_name, dpi=300)
+    print(f"Saved {file_name}")
 
 # ==========================================
 # 3. Tabular Copula Sensitivity Plot (Fixed Overlap)
@@ -175,5 +184,8 @@ def generate_copula():
 
 if __name__ == "__main__":
     generate_grid_vs_random()
-    generate_gp_ei()
+    # Generate for ETC + SDOA
+    generate_gp_ei("Extra Trees Classifier", "SDOA", "Number of Estimators", r"d:\ML\ETC_SDOA_gp_ei.png", seed=42)
+    # Generate for LDA + WEOA
+    generate_gp_ei("Linear Discriminant Analysis", "WEOA", "Shrinkage Parameter", r"d:\ML\LDA_WEOA_gp_ei.png", seed=105)
     generate_copula()
