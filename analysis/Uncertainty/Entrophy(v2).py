@@ -81,8 +81,8 @@ def main():
     # close_excel_file(excel_path)
 
     xl = pd.ExcelFile(excel_path)
-    if "Probs(Original)" in xl.sheet_names:
-        sheet_name = "Probs(Original)"
+    if "Probs(Chi2)" in xl.sheet_names:
+        sheet_name = "Probs(Chi2)"
         out_sheet = "Entropy_Uncertainty"
         sum_sheet = "Entropy_Summary"
     else:

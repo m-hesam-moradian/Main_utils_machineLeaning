@@ -74,10 +74,10 @@ def chi_square_selection(X, y, k=10):
     return X_selected_df, report
 
 # --- Main Logic ---
-excel_path = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+excel_path = r"d:\ML\task\Data.xlsx"
 close_excel_file(excel_path)
 
-df = pd.read_excel(excel_path, sheet_name="ENN_Data")
+df = pd.read_excel(excel_path, sheet_name="SMOTE_ENC_Data")
 
 target_column = df.columns[-1]
 X_input = df.drop(columns=[target_column])

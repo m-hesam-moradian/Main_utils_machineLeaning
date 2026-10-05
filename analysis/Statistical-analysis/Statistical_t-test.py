@@ -19,7 +19,8 @@ def close_excel_file(filepath):
 
 excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
-tags = ["Original"]
+import sys
+tags = [sys.argv[1]] if len(sys.argv) > 1 else ["Chi2"]
 
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:

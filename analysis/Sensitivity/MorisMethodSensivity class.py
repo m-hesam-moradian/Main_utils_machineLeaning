@@ -84,7 +84,10 @@ DATA_PATH = r"d:\ML\task\Data.xlsx"
 # close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
-if "data_after_vif" in xl.sheet_names:
+if "data_after_chi2" in xl.sheet_names:
+    sheet_data = "data_after_chi2"
+    out_sheet = "Morris_Sensitivity"
+elif "data_after_vif" in xl.sheet_names:
     sheet_data = "data_after_vif"
     out_sheet = "Morris_Sensitivity"
 elif "Selected_Data_RFE" in xl.sheet_names:
@@ -106,8 +109,8 @@ df_data = pd.read_excel(xl, sheet_name=sheet_data).dropna()
 target_column = df_data.columns[-1]
 X = df_data.drop(columns=[target_column])
 
-# Load predictions from predicts(SMOTE-ENN) sheet
-sheet_pred = "predicts(Original)" if "predicts(Original)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
+# Load predictions from predicts sheet
+sheet_pred = "predicts(Chi2)" if "predicts(Chi2)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
 df_pred = pd.read_excel(xl, sheet_name=sheet_pred, header=0)
 
 # Run Morris analysis for each model prediction column in predicts sheet

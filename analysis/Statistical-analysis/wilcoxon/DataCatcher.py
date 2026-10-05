@@ -29,15 +29,15 @@ excel_path = r"D:\ML\task\Data.xlsx"
 xl = pd.ExcelFile(excel_path)
 all_sheets = xl.sheet_names
 
-tags = ["Original"]
+import sys
+
+tags = [sys.argv[1]] if len(sys.argv) > 1 else ["RFE"]
 
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:
         target_models = [
-            "LR", "LR + BO",
-            "KNNC", "KNNC + BO",
-            "RFC", "RFC + BO",
-            "XGBC", "XGBC + BO"
+            f"KNNC({tag})", f"KNNC({tag}) + SOA",
+            f"RFC({tag})", f"RFC({tag}) + SOA"
         ]
         
         sheet_names = [s for s in target_models if s in all_sheets]
