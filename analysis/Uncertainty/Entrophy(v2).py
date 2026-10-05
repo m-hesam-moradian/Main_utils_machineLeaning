@@ -80,11 +80,14 @@ def main():
     excel_path = r"D:\ML\task\Data.xlsx"
     # close_excel_file(excel_path)
 
+    import sys
+    tag = sys.argv[1] if len(sys.argv) > 1 else "Chi2"
+
     xl = pd.ExcelFile(excel_path)
-    if "Probs(Chi2)" in xl.sheet_names:
-        sheet_name = "Probs(Chi2)"
-        out_sheet = "Entropy_Uncertainty"
-        sum_sheet = "Entropy_Summary"
+    if f"Probs({tag})" in xl.sheet_names:
+        sheet_name = f"Probs({tag})"
+        out_sheet = f"Entropy_Uncertainty({tag})"
+        sum_sheet = f"Entropy_Summary({tag})"
     else:
         sheet_name = "Probs"
         out_sheet = "Entropy_Uncertainty"

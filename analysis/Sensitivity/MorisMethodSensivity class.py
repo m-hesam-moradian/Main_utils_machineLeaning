@@ -84,25 +84,19 @@ DATA_PATH = r"d:\ML\task\Data.xlsx"
 # close_excel_file(DATA_PATH)
 
 xl = pd.ExcelFile(DATA_PATH)
-if "data_after_chi2" in xl.sheet_names:
-    sheet_data = "data_after_chi2"
-    out_sheet = "Morris_Sensitivity"
-elif "data_after_vif" in xl.sheet_names:
-    sheet_data = "data_after_vif"
-    out_sheet = "Morris_Sensitivity"
-elif "Selected_Data_RFE" in xl.sheet_names:
-    sheet_data = "Selected_Data_RFE"
-    out_sheet = "Morris_Sensitivity"
-elif "ENN_Data" in xl.sheet_names:
-    sheet_data = "ENN_Data"
-    out_sheet = "Morris_Sensitivity"
-elif "SMOTE_Data" in xl.sheet_names:
-    sheet_data = "SMOTE_Data"
-    out_sheet = "Morris_Sensitivity"
+import sys
+tag = sys.argv[1] if len(sys.argv) > 1 else "Chi2"
+
+if f"data_after_{tag.lower()}" in xl.sheet_names:
+    sheet_data = f"data_after_{tag.lower()}"
+elif f"Selected_Data_{tag}" in xl.sheet_names:
+    sheet_data = f"Selected_Data_{tag}"
+elif f"{tag}_Data" in xl.sheet_names:
+    sheet_data = f"{tag}_Data"
 else:
     sheet_data = "Data"
-    out_sheet = "Morris_Sensitivity"
-
+    
+out_sheet = f"Morris_Sensitivity({tag})"
 
 df_data = pd.read_excel(xl, sheet_name=sheet_data).dropna()
 
@@ -110,7 +104,7 @@ target_column = df_data.columns[-1]
 X = df_data.drop(columns=[target_column])
 
 # Load predictions from predicts sheet
-sheet_pred = "predicts(Chi2)" if "predicts(Chi2)" in xl.sheet_names else ("predicts(SMOTE)" if "predicts(SMOTE)" in xl.sheet_names else "predicts")
+sheet_pred = f"predicts({tag})"
 df_pred = pd.read_excel(xl, sheet_name=sheet_pred, header=0)
 
 # Run Morris analysis for each model prediction column in predicts sheet
@@ -130,8 +124,7 @@ final_morris_df = pd.concat(all_morris_reports, ignore_index=True)
 print("\nFinal Morris Sensitivity Analysis Summary:")
 print(final_morris_df.head(15))
 
-# Save to Excel sheet 'Morris_Sensitivity(ENN)' and 'Morris_Sensitivity'
-# close_excel_file(DATA_PATH)
+# Save to Excel sheet 'Morris_Sensitivity({tag})'
 with pd.ExcelWriter(DATA_PATH, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     final_morris_df.to_excel(writer, sheet_name=out_sheet, index=False)
     final_morris_df.to_excel(writer, sheet_name="Morris_Sensitivity", index=False)
