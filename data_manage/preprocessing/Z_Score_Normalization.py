@@ -16,7 +16,7 @@ def close_excel_file(filepath):
     except Exception:
         pass
 
-def z_score_processing(df, sheet_name, threshold=3.0):
+def z_score_processing(df, sheet_name, threshold=2.5):
     df_raw = df.copy()
     id_col = df_raw['ID']
     features = df_raw.drop(columns=['ID'])
@@ -47,23 +47,14 @@ def z_score_processing(df, sheet_name, threshold=3.0):
     clean_id = id_col[~rows_with_outliers].reset_index(drop=True)
     df_cleaned = pd.concat([clean_id, clean_features], axis=1)
     
-    original_len = len(df)
-    remaining_len = len(df_cleaned)
-    
-    report_data.append({"Feature / Detail": "-----------------------------", "Rows Triggered For Removal": "---"})
-    report_data.append({"Feature / Detail": "Total Outlier Rows Removed", "Rows Triggered For Removal": total_removed})
-    report_data.append({"Feature / Detail": "Original Row Count", "Rows Triggered For Removal": original_len})
-    report_data.append({"Feature / Detail": "Remaining Row Count", "Rows Triggered For Removal": remaining_len})
-    
     report_df = pd.DataFrame(report_data)
     
     # We rename the sheets similar to Z_Score.py
     base_name = sheet_name.replace("_Encoded", "")
     out_sheet = f"{base_name}_Z-Score"
     rep_sheet = f"{base_name}_Z-Score_Report"
-    det_sheet = f"{base_name}_Z-Score_Details"
     
-    return {out_sheet: df_cleaned, rep_sheet: report_df, det_sheet: df_full_details}
+    return {out_sheet: df_cleaned, rep_sheet: report_df}
 
 # === PROCESSING ===
 excel_path = r'd:\ML\task\Data.xlsx'
