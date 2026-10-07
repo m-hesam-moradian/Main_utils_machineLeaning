@@ -142,7 +142,7 @@ notes = [
     f'Features selected: top-2 by Sensitivity (RFC)',
     f'   · {XL}', f'   · {YL}', '',
     'Classifiers: KNNC, RFC',
-    'All trained on the full RFE selected feature set.',
+    'All trained on the full Chi2 selected feature set.',
 ]
 y_pos = 0.50
 for line in notes:

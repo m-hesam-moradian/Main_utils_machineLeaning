@@ -123,7 +123,7 @@ ax_knnc = fig.add_subplot(gs[0, 1])
 draw_waterfall(ax_knnc, 'KNNC', CLASSIFIER_PALETTE['KNNC'])
 
 # fig.text(0.50, 0.02,
-#          'Source:  Morris_Sensitivity(RFE) sheet  ·  Sensitivities are normalised so the final value equals the sum of all contributions.',
+#          'Source:  Morris_Sensitivity(Chi2) sheet  ·  Sensitivities are normalised so the final value equals the sum of all contributions.',
 #          ha='center', fontsize=9, color=SLATE_2, style='italic')
 
 out = os.path.join(DOWNLOAD_DIR, 'fig4_shap_waterfall.png')

@@ -56,7 +56,7 @@ DOWNLOAD_DIR = r'd:\ML\scratch\figures'
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def load_data():
-    df = pd.read_excel(EXCEL_PATH, sheet_name='Selected_Data_RFE', engine='openpyxl')
+    df = pd.read_excel(EXCEL_PATH, sheet_name='data_after_chi2', engine='openpyxl')
     target_col = 'Execution Efficiency Class'
     feature_cols = [c for c in df.columns if c != target_col]
     X = df[feature_cols].copy()
@@ -67,14 +67,14 @@ def load_data():
 
 def load_copula():
     # Use Morris Sensitivity instead of Copula for this dataset
-    df = pd.read_excel(EXCEL_PATH, sheet_name='Morris_Sensitivity(RFE)', engine='openpyxl')
+    df = pd.read_excel(EXCEL_PATH, sheet_name='Morris_Sensitivity(Chi2)', engine='openpyxl')
     out = {'RFC': [], 'KNNC': []}
-    rfc_df = df[df['Model'] == 'RFC(RFE)']
+    rfc_df = df[df['Model'] == 'RFC(Chi2)']
     if not rfc_df.empty:
         for _, row in rfc_df.iterrows():
             out['RFC'].append((row['parameter'], float(row['mu_star'])))
     
-    knnc_df = df[df['Model'] == 'KNNC(RFE)']
+    knnc_df = df[df['Model'] == 'KNNC(Chi2)']
     if not knnc_df.empty:
         for _, row in knnc_df.iterrows():
             out['KNNC'].append((row['parameter'], float(row['mu_star'])))

@@ -57,7 +57,7 @@ DESC_FONT    = Font(name='DejaVu Sans', size=10, italic=True, color='475569')
 SECTION_FONT = Font(name='DejaVu Sans', size=13, bold=True, color='0F172A')
 
 ws['B2'] = 'BMM-EI No.219 — Improvement Figures'; ws['B2'].font = TITLE_FONT
-ws['B3'] = ('Generated from the Selected_Data_RFE and Morris_Sensitivity(RFE) sheets. '
+ws['B3'] = ('Generated from the data_after_chi2 and Morris_Sensitivity(Chi2) sheets. '
             'Binary classification target = Execution Efficiency Class (0 = Best, >0 = Other grouped).')
 ws['B3'].font = DESC_FONT
 ws['B3'].alignment = Alignment(wrap_text=True, vertical='top')
