@@ -13,7 +13,7 @@ from lightgbm import LGBMClassifier
 
 # ================== Execution Controls ==================
 SAVE_TO_EXCEL = True
-BALANCING_TAG = "Chi2"
+BALANCING_TAG = "SMOTE-ENC"
 
 # ================== Excel Helpers ==================
 def close_excel_file(filepath):
@@ -40,7 +40,7 @@ def open_excel_file(filepath):
 def main():
     filepath = r"d:\ML\task\Data.xlsx"
     close_excel_file(filepath)
-    sheet_name = "Selected_Data_RFE"
+    sheet_name = "SMOTE_ENC_Data"
 
 
     print(f"Reading dataset for K-Fold from sheet: '{sheet_name}'")
@@ -59,8 +59,8 @@ def main():
     from xgboost import XGBClassifier
 
     model_factories = {
-        "KNNC": lambda f: KNeighborsClassifier(n_neighbors=3, weights='distance', n_jobs=-1),
-        "RFC": lambda f: RandomForestClassifier(n_estimators=300, max_depth=15, min_samples_split=2, min_samples_leaf=1, random_state=42 + f, n_jobs=-1)
+        "MLR": lambda f: LogisticRegression(multi_class='multinomial', solver='lbfgs', C=1.0, max_iter=1000, random_state=42+f),
+        "QDA": lambda f: QuadraticDiscriminantAnalysis(reg_param=0.0, tol=0.0001, store_covariance=False)
     }
 
     metrics_df_dict = {}

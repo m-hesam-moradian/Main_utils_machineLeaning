@@ -36,8 +36,8 @@ tags = [sys.argv[1]] if len(sys.argv) > 1 else ["RFE"]
 with pd.ExcelWriter(excel_path, mode="a", engine="openpyxl", if_sheet_exists="replace") as writer:
     for tag in tags:
         target_models = [
-            f"KNNC({tag})", f"KNNC({tag}) + SOA",
-            f"RFC({tag})", f"RFC({tag}) + SOA"
+            f"MLR({tag})", f"MLR({tag}) + POA",
+            f"QDA({tag})", f"QDA({tag}) + POA"
         ]
         
         sheet_names = [s for s in target_models if s in all_sheets]

@@ -23,7 +23,7 @@ Accuracy_target = float(sys.argv[2])
 optimizer_name = sys.argv[3] if sys.argv[3] != "NONE" else ""
 dataPath = sys.argv[4]
 outputPath = r"d:\ML\task\Data.xlsx"
-Convergence_metric = "Precision"
+Convergence_metric = "Accuracy"
 convegence_direction = "up"
 
 # === FUNCTIONS ===

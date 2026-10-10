@@ -5,7 +5,7 @@ from imblearn.over_sampling import SMOTE
 
 # -------------------- 1. Load the data --------------------
 file_path = r"d:\ML\task\Data.xlsx"
-df = pd.read_excel(file_path, sheet_name="Encoded_Data")
+df = pd.read_excel(file_path, sheet_name="data_after_vif")
 
 # Prepare Features (X) and Target (y)
 target_column = df.columns[-1]
