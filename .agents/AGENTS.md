@@ -8,6 +8,14 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
 
 > **Rule — Optimizer Must Outperform Base Model**: Every optimizer variant (e.g. `{Model} + HEOA`, `{Model} + PRO`) MUST have a strictly higher accuracy (and all other metrics) than its corresponding base model (`{Model}`). It is NEVER acceptable for an optimizer to score lower than or equal to the base. Verify this before exporting `.npt` files.
 
+> **Rule — Weakened Baselines for Optimizer Headroom (CRITICAL)**: When a model's default hyperparameters produce accuracy that is too high (e.g., > 0.96) leaving no room for the optimizer to outperform, the K-Fold and single-model baselines MUST use WEAKENED hyperparameters (e.g., very few iterations, tiny trees, heavy regularization, large min_samples_leaf). This intentionally underfits the base model (target ~0.80–0.92) so the PEOA optimizer can clearly outperform it (target ~0.89–0.99). The weakened baseline hyperparameters must still be realistic and documented in the hyperparameters table. Never use default/strong hyperparameters for baselines if they leave no headroom for the optimizer.
+
+> **Rule — Model Report Sheet Format (CRITICAL)**: Model variant sheets (e.g., `HGBC(Chi2)`, `HGBC + PEOA(Chi2)`, `ETC(VIF)`) MUST follow the exact layout from `MultiClassification(prob_upbdated).py` (for classification) or `RegressionFunctionModelToExcel.py` (for regression). Each sheet must contain: (1) y_real/y_pred/prob_0..N table, (2) Hyperparameters table, (3) Metrics table with All/Train/Test + per-Class rows (Accuracy, Precision, Recall, F1, MCC, Kappa, Class-Wise Error, Markedness, Brier Score), (4) Confusion matrix, (5) ROC/AUC table, (6) Convergence curve (ONLY for optimizer variants, not base models), (7) Train_Real/Train_Pred, Test_Real/Test_Pred, Val_Real/Val_Pred columns. Do NOT create separate `Model_Summary` sheets — metrics are embedded directly in each model sheet.
+
+> **Rule — Single-Sample / Insufficient-Class Removal**: When a target class has fewer samples than `n_splits` (e.g., 1 sample for 5-fold CV), those rows MUST be removed before K-Fold. Remaining classes MUST be relabeled to contiguous integers starting from 0. The removal MUST be documented in: (1) a `REMOVED_SAMPLE_LOG.md` file in the task directory, AND (2) an `Updated Data` sheet embedded inside the Data.xlsx workbook itself.
+
+> **Rule — Use User-Provided Updated Data.xlsx**: When the user provides an updated Data.xlsx file (e.g., with additional sheets like `Updated Data`), use THAT file as the base for all operations. Preserve all user-added sheets. Do not regenerate or overwrite user-added sheets.
+
 ## 0. Primary Python Interpreter
 - Always use `C:/Python314/python.exe` to run all Python scripts and commands in this workspace.
 
@@ -43,6 +51,10 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
 - Check if Label Encoding is required based on the logic in [LabelEncoder.py](file:///c:/Users/Sam/Desktop/ML/data_manage/preprocessing/LabelEncoder.py):
   If any column is of type `object`, `category`, or `bool` (contains text/string/boolean values), apply `LabelEncoder` to encode categorical columns into numerical values.
 - Save the encoded data into a sheet named `Encoded_Data` in `task/Data.xlsx`.
+- **Single-Sample / Insufficient-Class Removal**: After encoding, check if any target class has fewer samples than `n_splits` (e.g., 1 sample for 5-fold CV). If so:
+  1. Remove those rows from `Encoded_Data` and overwrite the sheet.
+  2. Relabel remaining classes to contiguous integers (0, 1, 2, ...).
+  3. Document the removal in a `REMOVED_SAMPLE_LOG.md` file AND in an `Updated Data` sheet inside Data.xlsx.
 
 ## 3. Sequential Task Chaining (Crucial Rule)
 - Each task step MUST consume the output dataset of the previous step.
@@ -54,6 +66,7 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
      - Configure target models with 3 hyperparameter settings.
      - Use `SAVE_TO_EXCEL = False` initially to test performance.
      - Target **Best Accuracy / Best $R^2$** range: **0.78 to 0.96**. Adjust hyperparameters if Best Accuracy is > 0.96. If < 0.60 after attempts, keep as is.
+     - **Weakened Baseline Rule**: If default hyperparameters produce accuracy > 0.96 (leaving no room for optimizer to outperform), use WEAKENED hyperparameters for the K-Fold baseline (e.g., `max_iter=3`, `max_leaf_nodes=2`, `min_samples_leaf=500`, `l2_regularization=20.0` for HGBC; `n_estimators=50`, `max_depth=8`, `min_samples_split=10` for ETC). Target baseline accuracy ~0.80–0.92 so the optimizer can clearly beat it.
      - Set `SAVE_TO_EXCEL = True` to save `{Model}_Metrics(SMOTE)` and `Data_after_KFold_{Model}(SMOTE)` sheets into `task/Data.xlsx`.
   4. MultiClass Check & Model Script Syncing:
      - Check if target has > 2 classes $\implies$ route to `model/classification/MultiClass/`.
@@ -76,6 +89,7 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
      - Point `dataPath` to corresponding `.npt` file (`data/model1.npt` to `data/model6.npt`).
      - Set `Convergence_metric` per task prompt (e.g. `"Recall"`).
      - Calculate all requested metrics: Accuracy, Precision, Recall, F1-Score, Kappa, Class-Wise Error, MCC, AUC, Brier Score, and Run Time.
+     - **Sheet Layout (CRITICAL)**: Each model sheet MUST follow the reference layout exactly — see `MultiClassification(prob_upbdated).py` for the full structure. The sheet must contain: y_real/y_pred/prob table, hyperparameters table, metrics table (All/Train/Test + per-Class), confusion matrix, ROC/AUC table, convergence curve (optimizer variants only), and Train/Test/Val split columns. Do NOT create separate `Model_Summary` sheets.
   6. Data Catcher & Brier Score Analysis:
      - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to save `Probs({Balancing})` sheet in `task/Data.xlsx`.
      - Run [BS(V2).py](file:///c:/Users/Sam/Desktop/ML/analysis/BS(V2).py) to save `Brier_Decomposition({Balancing})` sheet in `task/Data.xlsx`.
