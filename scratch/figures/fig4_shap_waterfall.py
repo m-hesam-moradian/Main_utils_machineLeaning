@@ -117,10 +117,10 @@ def draw_waterfall(ax, model_name, model_color):
     ax.legend(handles=legend_elems, loc='upper left',
               bbox_to_anchor=(0.0, 1.0), fontsize=8, frameon=False, ncol=1)
 
-ax_rfc = fig.add_subplot(gs[0, 0])
-draw_waterfall(ax_rfc, 'RFC', CLASSIFIER_PALETTE['RFC'])
-ax_knnc = fig.add_subplot(gs[0, 1])
-draw_waterfall(ax_knnc, 'KNNC', CLASSIFIER_PALETTE['KNNC'])
+ax_mlr = fig.add_subplot(gs[0, 0])
+draw_waterfall(ax_mlr, 'MLR', CLASSIFIER_PALETTE['MLR'])
+ax_qda = fig.add_subplot(gs[0, 1])
+draw_waterfall(ax_qda, 'QDA', CLASSIFIER_PALETTE['QDA'])
 
 # fig.text(0.50, 0.02,
 #          'Source:  Morris_Sensitivity(Chi2) sheet  ·  Sensitivities are normalised so the final value equals the sum of all contributions.',

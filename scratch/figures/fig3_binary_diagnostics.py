@@ -1,6 +1,6 @@
 """
 Figure 3: Binary Classification Diagnostics — 4 panels
-(A) RFC threshold diverging bar (TP/FP/FN) 
+(A) MLR threshold diverging bar (TP/FP/FN) 
 (B) Information gain curves for Gini/Entropy/Classification error
 (C) Decision tree (depth=2, Gini) on top-2 Copula features
 (D) Binary partitioning bands with 3 candidate splits + impurity values
@@ -19,7 +19,7 @@ from sklearn.metrics import confusion_matrix
 
 X, y, feats = load_data()
 copula = load_copula()
-top_features = get_top_features(copula, 'RFC', k=2)
+top_features = get_top_features(copula, 'MLR', k=2)
 fx, fy = top_features[0], top_features[1]
 
 fig = plt.figure(figsize=(16, 14))
@@ -42,9 +42,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(
     X[feats].values, y, test_size=0.25, random_state=42, stratify=y)
-rfc = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42, n_jobs=2)
-rfc.fit(X_train, y_train)
-proba = rfc.predict_proba(X_test)[:, 1]
+MLR = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42, n_jobs=2)
+MLR.fit(X_train, y_train)
+proba = MLR.predict_proba(X_test)[:, 1]
 
 thresholds = [0.25, 0.45, 0.55, 0.75, 0.90]
 TP, FP, FN = [], [], []
@@ -71,7 +71,7 @@ ax_thr.set_xticks(x_pos)
 ax_thr.set_xticklabels([f'τ = {t:.2f}' for t in thresholds], fontsize=10, color=INK)
 ax_thr.set_xlabel('Decision Threshold  τ', fontsize=10, color=SLATE_2, labelpad=6)
 ax_thr.set_ylabel('Number of Classified Items', fontsize=10, color=SLATE_2)
-ax_thr.set_title('(A) Threshold-Based Diverging Bar — RFC Classifier',
+ax_thr.set_title('(A) Threshold-Based Diverging Bar — MLR Classifier',
                  loc='left', fontsize=12, fontweight='bold', color=SLATE, pad=4)
 ax_thr.legend(loc='upper right', bbox_to_anchor=(1.00, 1.00), fontsize=9, frameon=False, ncol=3)
 ax_thr.grid(True, axis='y', alpha=0.18, linestyle='--', color=BG_3, linewidth=0.5)

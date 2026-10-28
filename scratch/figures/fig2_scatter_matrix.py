@@ -14,7 +14,7 @@ from matplotlib.patches import Ellipse
 
 X, y, feats = load_data()
 copula = load_copula()
-top_features_rfc = get_top_features(copula, 'RFC', k=2)
+top_features_rfc = get_top_features(copula, 'MLR', k=2)
 fx, fy = top_features_rfc[0], top_features_rfc[1]
 print(f"Top features for scatter: {fx} vs {fy}")
 

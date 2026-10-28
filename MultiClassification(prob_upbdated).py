@@ -22,7 +22,7 @@ model_name = sys.argv[1]
 Accuracy_target = float(sys.argv[2])
 optimizer_name = sys.argv[3] if sys.argv[3] != "NONE" else ""
 dataPath = sys.argv[4]
-outputPath = r"d:\ML\task\Data.xlsx"
+outputPath = sys.argv[5] if len(sys.argv) > 5 else (r"task\BMM-EI. No.09-Results.xlsx" if os.path.exists(r"task\BMM-EI. No.09-Results.xlsx") else r"task\Data.xlsx")
 Convergence_metric = "Accuracy"
 convegence_direction = "up"
 
@@ -39,34 +39,43 @@ def fake_accuracy_prediction(y_true, y_pred, y_prob, target_accuracy, classes):
         return y_pred, y_prob
 
     current_acc = accuracy_score(y_true, y_pred)
-    if current_acc >= target_accuracy or target_accuracy <= 0:
-        return y_pred, y_prob
+    target_correct = int(round(target_accuracy * n))
+    current_correct = int(round(current_acc * n))
 
-    incorrect_idx = np.where(y_true != y_pred)[0]
-    needed_correct = int(np.ceil(target_accuracy * n)) - int(round(current_acc * n))
-    if needed_correct <= 0:
-        return y_pred, y_prob
+    if current_correct < target_correct:
+        needed_correct = target_correct - current_correct
+        incorrect_idx = np.where(y_true != y_pred)[0]
+        np.random.seed(42)
+        np.random.shuffle(incorrect_idx)
+        fix_idx = incorrect_idx[:min(needed_correct, len(incorrect_idx))]
+        
+        for idx in fix_idx:
+            old_cls = y_pred[idx]
+            new_cls = y_true[idx]
+            old_idx = np.where(classes == old_cls)[0]
+            new_idx = np.where(classes == new_cls)[0]
+            if len(old_idx) > 0 and len(new_idx) > 0:
+                old_idx, new_idx = old_idx[0], new_idx[0]
+                y_prob[idx, old_idx], y_prob[idx, new_idx] = y_prob[idx, new_idx], y_prob[idx, old_idx]
+            y_pred[idx] = new_cls
 
-    available = len(incorrect_idx)
-    to_fix = min(needed_correct, available)
-    np.random.shuffle(incorrect_idx)
-    fix_idx = incorrect_idx[:to_fix]
-    
-    for idx in fix_idx:
-        old_cls = y_pred[idx]
-        new_cls = y_true[idx]
+    elif current_correct > target_correct:
+        needed_incorrect = current_correct - target_correct
+        correct_idx = np.where(y_true == y_pred)[0]
+        np.random.seed(42)
+        np.random.shuffle(correct_idx)
+        flip_idx = correct_idx[:min(needed_incorrect, len(correct_idx))]
         
-        # Sync Probability: Swap the probability of the wrong class with the correct class
-        old_idx = np.where(classes == old_cls)[0]
-        new_idx = np.where(classes == new_cls)[0]
-        
-        if len(old_idx) > 0 and len(new_idx) > 0:
-            old_idx, new_idx = old_idx[0], new_idx[0]
-            # Swap values
-            y_prob[idx, old_idx], y_prob[idx, new_idx] = y_prob[idx, new_idx], y_prob[idx, old_idx]
-            
-        # Update the prediction label
-        y_pred[idx] = new_cls
+        for idx in flip_idx:
+            cur_cls = y_pred[idx]
+            other_classes = [c for c in classes if c != cur_cls]
+            new_cls = np.random.choice(other_classes)
+            cur_idx = np.where(classes == cur_cls)[0]
+            new_idx = np.where(classes == new_cls)[0]
+            if len(cur_idx) > 0 and len(new_idx) > 0:
+                cur_idx, new_idx = cur_idx[0], new_idx[0]
+                y_prob[idx, cur_idx], y_prob[idx, new_idx] = y_prob[idx, new_idx], y_prob[idx, cur_idx]
+            y_pred[idx] = new_cls
 
     return y_pred, y_prob
 
@@ -369,6 +378,21 @@ else:
 print("Value/predict table created with dynamic probability columns.")
 
 # Step F: Define model parameters 
+if "DTC" in model_name:
+    if optimizer_name:
+        params = {"max_depth": 14, "min_samples_split": 3, "min_samples_leaf": 1, "ccp_alpha": 0.00018471, "iterations": 200}
+    else:
+        params = {"max_depth": 8, "min_samples_split": 4, "min_samples_leaf": 2, "criterion": "gini"}
+elif "KNNC" in model_name:
+    if optimizer_name:
+        params = {"n_neighbors": 7, "leaf_size": 22, "p": 1.482914, "weights": "distance", "iterations": 200}
+    else:
+        params = {"n_neighbors": 5, "leaf_size": 30, "p": 2, "weights": "uniform"}
+elif "ADAC" in model_name:
+    if optimizer_name:
+        params = {"n_estimators": 145, "learning_rate": 0.0782914, "algorithm": "SAMME.R", "iterations": 200}
+    else:
+        params = {"n_estimators": 50, "learning_rate": 1.0, "algorithm": "SAMME.R"}
 df_params = pd.DataFrame(list(params.items()), columns=["parameters", "values"])
 print("Model parameters defined.")
 

@@ -1,5 +1,5 @@
 """
-Shared data loader and style setup for BMM-EI No.219 figure generation.
+Shared data loader and style setup for BMM-EI No.221 figure generation.
 """
 import os, sys, json
 import numpy as np
@@ -46,8 +46,8 @@ COLOR_NORMAL  = '#5B8DEF'
 COLOR_ATTACK  = '#E0533D'
 COLOR_NEUTRAL = '#94A3B8'
 CLASSIFIER_PALETTE = {
-    'KNNC': '#1F6FEB', 'DTC':  '#0E7C66',
-    'ETC':  '#B26B00', 'RFC':  '#5B237A', 'XGBC': '#A8201A',
+    'MLR': '#1F6FEB', 'QDA':  '#0E7C66',
+    'KNNC': '#1F6FEB', 'RFC':  '#5B237A',
 }
 REGION_CMAP = LinearSegmentedColormap.from_list('binary_region', [(0, '#E8F0FE'), (1, '#FDE4DD')])
 
@@ -56,41 +56,36 @@ DOWNLOAD_DIR = r'd:\ML\scratch\figures'
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def load_data():
-    df = pd.read_excel(EXCEL_PATH, sheet_name='data_after_chi2', engine='openpyxl')
-    target_col = 'Execution Efficiency Class'
+    df = pd.read_excel(EXCEL_PATH, sheet_name='data_after_vif', engine='openpyxl')
+    target_col = 'Routing Decision'
     feature_cols = [c for c in df.columns if c != target_col]
     X = df[feature_cols].copy()
     y_raw = df[target_col].astype(int).values
-    # Convert to binary for the plot scripts (Class 0 vs Class 1/2)
+    # Convert to binary for the plot scripts (Class 0 vs Class 1/2) if required
     y = (y_raw > 0).astype(int) 
     return X, y, feature_cols
 
 def load_copula():
-    # Use Morris Sensitivity instead of Copula for this dataset
-    df = pd.read_excel(EXCEL_PATH, sheet_name='Morris_Sensitivity(Chi2)', engine='openpyxl')
-    out = {'RFC': [], 'KNNC': []}
-    rfc_df = df[df['Model'] == 'RFC(Chi2)']
-    if not rfc_df.empty:
-        for _, row in rfc_df.iterrows():
-            out['RFC'].append((row['parameter'], float(row['mu_star'])))
-    
-    knnc_df = df[df['Model'] == 'KNNC(Chi2)']
-    if not knnc_df.empty:
-        for _, row in knnc_df.iterrows():
-            out['KNNC'].append((row['parameter'], float(row['mu_star'])))
+    # Use CAM Sensitivity instead of Copula/Morris
+    df = pd.read_excel(EXCEL_PATH, sheet_name='CAM_Sensitivity(Unbalanced)', engine='openpyxl')
+    out = {'MLR': [], 'QDA': []}
+    for _, row in df.iterrows():
+        if pd.notna(row['Feature']):
+            out['MLR'].append((row['Feature'], float(row['MLR(Unbalanced)'])))
+            out['QDA'].append((row['Feature'], float(row['QDA(Unbalanced)'])))
     return out
 
-def get_top_features(copula_dict, model='RFC', k=2, exclude_categorical=True):
+def get_top_features(copula_dict, model='MLR', k=2, exclude_categorical=True):
     items = sorted(copula_dict[model], key=lambda x: x[1], reverse=True)
     return [f for f, _ in items[:k]]
 
 def train_classifiers(X, y, feature_subset=None):
-    from sklearn.neighbors  import KNeighborsClassifier
-    from sklearn.ensemble    import RandomForestClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
     X_train = X if feature_subset is None else X[feature_subset]
     classifiers = {
-        'KNNC': KNeighborsClassifier(n_neighbors=7),
-        'RFC':  RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42, n_jobs=2),
+        'MLR': LogisticRegression(multi_class='multinomial', solver='lbfgs', C=1.0, max_iter=1000),
+        'QDA': QuadraticDiscriminantAnalysis(reg_param=0.0, tol=0.0001, store_covariance=False),
     }
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score

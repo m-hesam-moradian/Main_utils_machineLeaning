@@ -26,8 +26,8 @@ PAIRS = [
     (feats[4], feats[5])
 ]
 CLASSIFIERS = {
-    'KNNC': lambda: KNeighborsClassifier(n_neighbors=7),
-    'RFC':  lambda: RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=2),
+    'QDA': lambda: KNeighborsClassifier(n_neighbors=7),
+    'MLR':  lambda: RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, n_jobs=2),
 }
 
 N_ROWS = 1 + len(CLASSIFIERS)

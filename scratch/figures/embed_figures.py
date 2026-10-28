@@ -5,7 +5,7 @@ import openpyxl
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Font, Alignment
 
-DST_XLSX  = r'd:\ML\scratch\figures\Improvement_Figures.xlsx'
+DST_XLSX  = r'd:\ML\task\Data.xlsx'
 PNG_DIR   = r'd:\ML\scratch\figures'
 TMP_DIR   = r'd:\ML\scratch\figures\_resized'
 os.makedirs(TMP_DIR, exist_ok=True)
@@ -13,23 +13,23 @@ os.makedirs(TMP_DIR, exist_ok=True)
 FIGURES = [
     {'file': 'fig1_decision_boundary_matrix.png',
      'title': 'Figure 1 · Decision Boundary Matrix',
-     'desc':  ('3×3 matrix. Row 1 = raw data; rows 2–3 = KNNC, RFC decision regions. '
+     'desc':  ('3×3 matrix. Row 1 = raw data; rows 2–3 = MLR, QDA decision regions. '
                'Columns are dynamically chosen from top Sensitivity features. '
-               'Binary target = Execution Efficiency Class (0 = Best, >0 = Other grouped).')},
+               'Binary target = Routing Decision (0 = Best, >0 = Other grouped).')},
     {'file': 'fig2_scatter_matrix.png',
      'title': 'Figure 2 · Per-Classifier Scatter Plot Matrix',
-     'desc':  ('1×3 outer grid. One 2×2 SPLOM per classifier (KNNC, RFC) on the top-2 Sensitivity '
+     'desc':  ('1×3 outer grid. One 2×2 SPLOM per classifier (MLR, QDA) on the top-2 Sensitivity '
                'features. Each panel: main scatter + transposed scatter + 2 marginal strips, with 95% '
                'confidence ellipses per predicted class.')},
     {'file': 'fig3_binary_diagnostics.png',
      'title': 'Figure 3 · Binary Classification Diagnostics',
-     'desc':  ('Four panels. (A) RFC threshold diverging bar — TP/FP/FN across 5 thresholds. '
+     'desc':  ('Four panels. (A) MLR threshold diverging bar — TP/FP/FN across 5 thresholds. '
                '(B) Information gain vs split position for Gini / Entropy / Classification error. '
                '(C) Decision tree (depth=2, Gini) on top-2 Sensitivity features. '
                '(D) Binary partitioning of predictor — three candidate splits with impurity values.')},
     {'file': 'fig4_shap_waterfall.png',
      'title': 'Figure 4 · SHAP-style Waterfall (Sensitivity)',
-     'desc':  ('Side-by-side waterfalls for RFC and KNNC. Each bar = per-feature sensitivity. '
+     'desc':  ('Side-by-side waterfalls for MLR and QDA. Each bar = per-feature sensitivity. '
                'Cumulative red line tracks running prediction. Final bar (hatched) = total sensitivity.')},
 ]
 
@@ -48,17 +48,18 @@ for fig_meta in FIGURES:
     resized_paths.append(dst)
     print(f"Resized: {fig_meta['file']} -> {pil.size}")
 
-wb = openpyxl.Workbook()
-ws = wb.active
-ws.title = 'FIGURES'
+wb = openpyxl.load_workbook(DST_XLSX)
+if 'FIGURES' in wb.sheetnames:
+    del wb['FIGURES']
+ws = wb.create_sheet('FIGURES')
 
 TITLE_FONT   = Font(name='DejaVu Sans', size=18, bold=True, color='0F172A')
 DESC_FONT    = Font(name='DejaVu Sans', size=10, italic=True, color='475569')
 SECTION_FONT = Font(name='DejaVu Sans', size=13, bold=True, color='0F172A')
 
-ws['B2'] = 'BMM-EI No.219 — Improvement Figures'; ws['B2'].font = TITLE_FONT
-ws['B3'] = ('Generated from the data_after_chi2 and Morris_Sensitivity(Chi2) sheets. '
-            'Binary classification target = Execution Efficiency Class (0 = Best, >0 = Other grouped).')
+ws['B2'] = 'BMM-EI No.221 — Improvement Figures'; ws['B2'].font = TITLE_FONT
+ws['B3'] = ('Generated from the data_after_vif and CAM_Sensitivity(Unbalanced) sheets. '
+            'Binary classification target = Routing Decision (0 = Best, >0 = Other grouped).')
 ws['B3'].font = DESC_FONT
 ws['B3'].alignment = Alignment(wrap_text=True, vertical='top')
 ws.row_dimensions[3].height = 30
