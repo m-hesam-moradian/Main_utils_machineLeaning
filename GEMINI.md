@@ -8,6 +8,10 @@ This document specifies the standard workflow, data flow pipeline, and execution
 
 > **Rule — Optimizer Must Outperform Base Model**: Every optimizer variant (e.g. `{Model} + HEOA`, `{Model} + PRO`) MUST have a strictly higher accuracy (and all other metrics) than its corresponding base model (`{Model}`). It is NEVER acceptable for an optimizer to score lower than or equal to the base. Verify this before exporting `.npt` files.
 
+> **Rule — Early 20% Holdout Test Separation (No Preprocessing on Test Data / Leakage Prevention)**: Immediately after encoding (or initial ingestion), separate 20% of the data randomly for model testing and validation. NEVER apply downstream preprocessing (e.g., balancing/SMOTE, outlier removal, feature selection, scaling fits) on this holdout test partition to prevent data leakage. All preprocessing/balancing must be performed exclusively on the 80% training pool. When it is time for model training and prediction, concatenate the test partition to the training dataset (placed in the last 20% of rows) so that `shuffle=False` evaluates on the exact untouched test set.
+
+> **Rule — Preserve Repository Codes / Use Artifacts & Scratch**: Try not to change or modify existing repository codebase files directly. Instead, create self-contained execution scripts as artifacts or scratch scripts (in `<appDataDir>\brain\<conversation-id>/scratch/` or artifacts), execute them from there, and keep original repository code files intact.
+
 ---
 
 ## 📋 Task Specification Format

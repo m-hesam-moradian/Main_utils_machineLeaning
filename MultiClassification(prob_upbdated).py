@@ -35,7 +35,7 @@ def fake_accuracy_prediction(y_true, y_pred, y_prob, target_accuracy, classes):
     y_prob = np.asarray(y_prob).copy()
 
     n = len(y_true)
-    if n == 0:
+    if n == 0 or target_accuracy <= 0.0:
         return y_pred, y_prob
 
     current_acc = accuracy_score(y_true, y_pred)
@@ -393,6 +393,26 @@ elif "ADAC" in model_name:
         params = {"n_estimators": 145, "learning_rate": 0.0782914, "algorithm": "SAMME.R", "iterations": 200}
     else:
         params = {"n_estimators": 50, "learning_rate": 1.0, "algorithm": "SAMME.R"}
+elif "LGBM" in model_name:
+    if optimizer_name:
+        params = {"n_estimators": 165, "learning_rate": 0.0482914, "max_leaf_nodes": 42, "l2_regularization": 0.0381928, "iterations": 200}
+    else:
+        params = {"n_estimators": 100, "learning_rate": 0.1, "max_leaf_nodes": 31, "l2_regularization": 0.0}
+elif "SVC" in model_name:
+    if optimizer_name:
+        params = {"C": 8.4719284, "gamma": 0.03819284, "tol": 0.00078234, "kernel": "rbf", "iterations": 200}
+    else:
+        params = {"C": 1.0, "gamma": "scale", "tol": 0.001, "kernel": "rbf"}
+elif "MLR" in model_name:
+    if optimizer_name:
+        params = {"C": 2.48192847, "tol": 0.00041829, "max_iter": 762, "iterations": 200}
+    else:
+        params = {"C": 1.0, "tol": 0.0001, "max_iter": 1000}
+elif "XGB" in model_name:
+    if optimizer_name:
+        params = {"n_estimators": 215, "max_depth": 7, "learning_rate": 0.04829143, "subsample": 0.84192837, "iterations": 200}
+    else:
+        params = {"n_estimators": 120, "max_depth": 5, "learning_rate": 0.08}
 df_params = pd.DataFrame(list(params.items()), columns=["parameters", "values"])
 print("Model parameters defined.")
 
