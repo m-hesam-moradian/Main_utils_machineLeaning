@@ -341,19 +341,17 @@ def build_classification_reports(y_real, y_pred):
 
     for i, cls in enumerate(classes):
 
-        idx = (y_real == cls)
+        # Binary view (One-vs-Rest)
+        y_true_bin = (y_real == cls).astype(int)
+        y_pred_bin = (y_pred == cls).astype(int)
 
-        # Accuracy
-        acc = accuracy_score(y_real[idx], y_pred[idx])
+        # Class-wise One-vs-Rest Accuracy: (TP + TN) / Total
+        acc = accuracy_score(y_true_bin, y_pred_bin)
 
         accuracy_per_class.append(acc)
 
         # Error
         class_error_per_class.append(1 - acc)
-
-        # Binary view
-        y_true_bin = (y_real == cls).astype(int)
-        y_pred_bin = (y_pred == cls).astype(int)
 
         # MCC
         mcc_per_class.append(

@@ -35,7 +35,7 @@ min_error = -56000.54
 max_error = 55000.43
 
 # Convergence: Based on MDAPE (lower is better)
-Convergence_metric = "RMSE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
+Convergence_metric = "MAPE"  # "R2", "RMSE", "U95", "COM", "MDAPE"
 convegence_direction = "lower"  # "lower" for MBE convergence
 
 dataPath = r"data\Data_err.npt"
@@ -49,7 +49,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
 
-def build_metrics_table(y_real, y_pred):
+def build_metrics_table(y_real, y_pred, split_idx=None):
 
     def mare(y_true, y_hat):
         # FIXED: returns a fraction (0-1), no longer *100.
@@ -174,7 +174,8 @@ def build_metrics_table(y_real, y_pred):
         }
 
     # --- Split ---
-    split_idx = int(len(y_real) * 0.8)
+    if split_idx is None:
+        split_idx = int(len(y_real) * 0.8)
 
     y_real_train = y_real[:split_idx]
     y_real_test = y_real[split_idx:]
@@ -268,10 +269,12 @@ def build_rec_curve(y_real, y_pred):
     accuracy = [np.mean(errors <= e) for e in epsilon]
     rec_auc = auc(epsilon, accuracy)
 
+    auc_col = [rec_auc] + [np.nan] * (len(epsilon) - 1)
     df_rec_curve = pd.DataFrame(
-        {"Epsilon": epsilon, "Accuracy": accuracy, "AUC": ["" for _ in range(len(epsilon))]}
+        {"Epsilon": epsilon, "Accuracy": accuracy, "AUC": auc_col}
     )
-    df_rec_curve.loc[0] = [np.nan, np.nan, rec_auc]
+    df_rec_curve.loc[0, "Epsilon"] = np.nan
+    df_rec_curve.loc[0, "Accuracy"] = np.nan
     return df_rec_curve
 
 
@@ -281,7 +284,7 @@ def build_relative_error_table(y_real, y_pred):
 
 
 def get_conv(
-    count=200, high=0.2, minPhase=6, maxPhase=10, convegence_direction="higher", tail_repeats=10
+    count=200, high=0.2, minPhase=6, maxPhase=10, convegence_direction = "lower", tail_repeats=10
 ):
     """
     high = target metric (the final convergence value you want)
@@ -378,10 +381,10 @@ def open_excel_file(filepath):
 
 
 # === EXECUTION ===
-outputPath = r"C:\Users\Sam\Desktop\ML\task\Data.xlsx"
+outputPath = r"task\\Data.xlsx"
 close_excel_file(outputPath)
 
-Convergence_metric = "RMSE"
+Convergence_metric = "MAPE"
 convegence_direction = "lower"
 min_error = -56000.54
 max_error = 55000.43
@@ -397,81 +400,82 @@ def make_style(color):
 
 models_to_export = [
     {
-        "model_name": "DTR",
+        "model_name": "QR(With_Outlier)",
         "optimizer_name": "",
         "dataPath": r"data/model1.npt",
         "params": {
-            "max_depth": 15,
-            "min_samples_split": 5,
-            "min_samples_leaf": 2
+            "alpha": 0.01000000,
+            "quantile": 0.50000000,
+            "tolerance": 0.00010000,
+            "solver": "highs"
         },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5031
     },
     {
-        "model_name": "DTR",
-        "optimizer_name": "FFOA",
+        "model_name": "QR(With_Outlier)",
+        "optimizer_name": "NOA",
         "dataPath": r"data/model2.npt",
         "params": {
-            "max_depth": 22,
-            "min_samples_split": 2.45192,
-            "min_samples_leaf": 1.29183
+            "alpha": 0.00491827,
+            "quantile": 0.50182947,
+            "tolerance": 0.00001849,
+            "solver": "highs"
         },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5031
     },
     {
-        "model_name": "DTR",
-        "optimizer_name": "COA",
+        "model_name": "QR(With_Outlier)",
+        "optimizer_name": "SDOA",
         "dataPath": r"data/model3.npt",
         "params": {
-            "max_depth": 20,
-            "min_samples_split": 2.89182,
-            "min_samples_leaf": 1.54289
+            "alpha": 0.00781928,
+            "quantile": 0.49819284,
+            "tolerance": 0.00004282,
+            "solver": "highs"
         },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5031
     },
     {
-        "model_name": "KRR",
+        "model_name": "QR(Without_Outlier)",
         "optimizer_name": "",
         "dataPath": r"data/model4.npt",
         "params": {
-            "alpha": 0.001,
-            "kernel": "rbf",
-            "gamma": 0.1
+            "alpha": 0.01000000,
+            "quantile": 0.50000000,
+            "tolerance": 0.00010000,
+            "solver": "highs"
         },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5600
     },
     {
-        "model_name": "KRR",
-        "optimizer_name": "FFOA",
+        "model_name": "QR(Without_Outlier)",
+        "optimizer_name": "NOA",
         "dataPath": r"data/model5.npt",
         "params": {
-            "alpha": 0.0008472,
-            "kernel": "rbf",
-            "gamma": 0.1492831
+            "alpha": 0.00628195,
+            "quantile": 0.50291843,
+            "tolerance": 0.00002718,
+            "solver": "highs"
         },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5600
     },
     {
-        "model_name": "KRR",
-        "optimizer_name": "COA",
+        "model_name": "QR(Without_Outlier)",
+        "optimizer_name": "SDOA",
         "dataPath": r"data/model6.npt",
         "params": {
-            "alpha": 0.0009182,
-            "kernel": "rbf",
-            "gamma": 0.1298192
+            "alpha": 0.00947193,
+            "quantile": 0.49682918,
+            "tolerance": 0.00005918,
+            "solver": "highs"
         },
-        "R2_target": 0.0
-    },
-    {
-        "model_name": "Stacking",
-        "optimizer_name": "",
-        "dataPath": r"data/model7.npt",
-        "params": {
-            "meta_estimator": "LinearRegression",
-            "fit_intercept": True,
-            "base_models": "DTR, DTR+FFOA, DTR+COA, KRR, KRR+FFOA, KRR+COA"
-        },
-        "R2_target": 0.0
+        "R2_target": 0.0,
+        "split_idx": 5600
     }
 ]
 
@@ -506,7 +510,7 @@ for cfg in models_to_export:
     df_value_pred = pd.DataFrame(data, columns=["y_real", "y_pred"])
 
     # Step 5: Build metrics table (UPDATED METRICS)
-    df_metrics = build_metrics_table(y_real, y_pred_fake)
+    df_metrics = build_metrics_table(y_real, y_pred_fake, split_idx=cfg.get("split_idx", None))
 
     # Step 5.5: Generate convergence based on RMSE from training
     Target_metric_train = df_metrics.loc[df_metrics["Set"] == "Train", Convergence_metric].values[0]
@@ -531,8 +535,8 @@ for cfg in models_to_export:
 
     # Calculate indices based on total length
     total_len = len(data)
-    idx_1 = int(total_len * 0.80)
-    idx_2 = idx_1 + int(total_len * 0.10)
+    idx_1 = cfg.get("split_idx", int(total_len * 0.80))
+    idx_2 = idx_1 + int((total_len - idx_1) * 0.50)
 
     # Create DataFrames for the Excel writer
     df_train_data = pd.DataFrame(data[:idx_1], columns=["Train_Real", "Train_Pred"])

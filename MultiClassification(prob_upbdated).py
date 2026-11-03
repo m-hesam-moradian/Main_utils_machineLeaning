@@ -266,11 +266,12 @@ def build_classification_reports(y_real, y_pred, y_pred_prob):
 
     acc_pc, err_pc, brier_pc = [], [], []
     for i, cls in enumerate(classes):
-        idx = np.array(y_real) == cls
-        acc = accuracy_score(np.array(y_real)[idx], np.array(y_pred)[idx])
+        y_real_bin = (np.array(y_real) == cls).astype(int)
+        y_pred_bin = (np.array(y_pred) == cls).astype(int)
+        # Class-wise One-vs-Rest accuracy: (TP + TN) / Total
+        acc = accuracy_score(y_real_bin, y_pred_bin)
         acc_pc.append(acc)
         err_pc.append(1 - acc)
-        y_real_bin = (np.array(y_real) == cls).astype(int)
         if i < y_pred_prob.shape[1]:
             brier_pc.append(brier_score_loss(y_real_bin, y_pred_prob[:, i]))
         else:
