@@ -2,6 +2,8 @@
 
 Whenever a new chat is started and a task specification prompt is provided (e.g. `Tag: BMM-EI No. ...`), follow these strict workflow rules:
 
+> **Rule — Exactly 3 Consistent Hyperparameters for Single & Optimized Models**: For each model type (e.g., `MLR`, `LGBC`, etc.), both the single baseline model and its metaheuristic optimizer variants MUST share the EXACT SAME 3 hyperparameters with NO extra, missing, or different parameters (do not include meta-optimizer settings like `iterations`, `population_size`, or `convergence_metric` in the model parameters table). The baseline model uses standard/default values, while the optimized variant uses tuned, high-precision continuous values for those identical 3 hyperparameters.
+
 > **Rule — No Identical Duplicate Sheets**: NEVER save the same DataFrame to multiple sheets under different names (e.g., `Balanced_Data`, `SMOTE_ENN_LOF_Data`, `SMOTE_Data` all identical). Each balancing/processing step must produce exactly ONE data sheet (e.g., `SMOTE_Data`) plus ONE summary/report sheet (e.g., `Balancing_Report`). Duplicate data sheets waste space and confuse users.
 
 > **Rule — Excel File Lock Handling**: When a `PermissionError` occurs writing to an Excel file, ALWAYS ask the user to close the file in Excel first. Do NOT attempt workarounds like copying files or temp paths.
