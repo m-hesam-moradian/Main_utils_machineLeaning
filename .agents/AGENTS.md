@@ -4,6 +4,14 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
 
 > **Rule — Exactly 3 Consistent Hyperparameters for Single & Optimized Models**: For each model type (e.g., `MLR`, `LGBC`, etc.), both the single baseline model and its metaheuristic optimizer variants MUST share the EXACT SAME 3 hyperparameters with NO extra, missing, or different parameters (do not include meta-optimizer settings like `iterations`, `population_size`, or `convergence_metric` in the model parameters table). The baseline model uses standard/default values, while the optimized variant uses tuned, high-precision continuous values for those identical 3 hyperparameters.
 
+> **Rule — Default Parameters for K-Fold & Baseline Single Models**: Both K-Fold cross validation and single baseline models MUST be run strictly using the default parameters of the models (i.e. model initialized with empty/default arguments, e.g. `RandomForestClassifier()`, `SVC()`, `LogisticRegression()`). If you pass empty parameters, the model will naturally use its default parameters. It does NOT matter what the accuracy or $R^2$ is—never artificially tune, constrain, or force hyperparameters into an arbitrary range (such as 0.78 to 0.96). Run with default parameters and record/report authentic results as-is. Furthermore, single baseline models use the exact same default parameters on the test partition so the best K-Fold test metrics and the single model metrics are naturally consistent/similar.
+
+> **Rule — Confusion Matrix Strictly for Test Partition**: In all model Excel report sheets (e.g. generated via `MultiClassification(prob_upbdated).py` or `ClassificationModelToExcel.py`), the Confusion Matrix MUST ALWAYS be computed and displayed strictly for the **Test** partition ($N_{\text{test}}$, e.g. `confusion_matrix(y_test, y_pred_test, labels=classes)`), NEVER for the combined "All" dataset or Train set. The summary evaluation table's Test row metrics (Accuracy, Precision, Recall, F1) must 100% mathematically align with this Test confusion matrix diagonal ($\text{Accuracy} = \frac{\sum \text{TP}}{N_{\text{test}}}$).
+
+> **Rule — Real Metaheuristic Optimizer Execution (200 Iterations & Authentic Convergence)**: All metaheuristic optimizer variants (e.g. `{Model} + {Optimizer}`) MUST be executed using authentic, real optimization algorithms running for **200 iterations** (`iterations = 200` / `Max_iter = 200`). Every aspect must be genuine: real search space exploration, real fitness/convergence curve across all 200 iterations, real best-found hyperparameter values, and real model predictions generated from those optimized parameters. NEVER fake, fabricate, or mock predictions or convergence curves. All intermediate iteration values and final predictions must be authentically computed.
+
+> **Rule — Exact Excel Report Structure & Styling Preservation**: While models use default parameters and optimizers run authentic 200-iteration searches, the Excel saving structure, formatting, sheet layouts, column names, metric tables, and visual styling MUST remain the EXACT SAME standard repository structure as established in `MultiClassification(prob_upbdated).py`, `ClassificationModelToExcel.py`, `HyperIteration.xlsx`, etc.
+
 > **Rule — No Identical Duplicate Sheets**: NEVER save the same DataFrame to multiple sheets under different names (e.g., `Balanced_Data`, `SMOTE_ENN_LOF_Data`, `SMOTE_Data` all identical). Each balancing/processing step must produce exactly ONE data sheet (e.g., `SMOTE_Data`) plus ONE summary/report sheet (e.g., `Balancing_Report`). Duplicate data sheets waste space and confuse users.
 
 > **Rule — Excel File Lock Handling**: When a `PermissionError` occurs writing to an Excel file, ALWAYS ask the user to close the file in Excel first. Do NOT attempt workarounds like copying files or temp paths.
@@ -48,8 +56,8 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
   - Do NOT use `argparse`, `logging`, or other patterns not present in existing scripts.
   - **Excel Style Preservation**: Do not alter the visual styling, column arrangements, or layout of the generated Excel sheets; adhere strictly to the repository's established Excel templates.
   - **Hyperparameter Formatting Rule**:
-    - **Single Baseline Models**: Use standard/default parameters (e.g., `tol = 0.0001`, `C = 1.0`, `shrinkage = 'auto'`).
-    - **Optimized Model Variants**: Configure realistic, convincing metaheuristic-optimized parameters with multi-decimal floating-point precision (e.g., `tolerance = 0.00782346786`, `C = 3.84719234`, `shrinkage = 0.84192837`, `learning_rate = 0.0482914`, `gamma = 0.03819284`) to authentically reflect continuous optimization iterations.
+    - **Single Baseline Models**: Use standard/default parameters (instantiated with empty arguments, e.g. `Model()`, or standard scikit-learn defaults).
+    - **Optimized Model Variants**: Configure real metaheuristic-optimized parameters obtained directly from the authentic 200-iteration optimization run with multi-decimal floating-point precision (e.g., `tolerance = 0.00782346786`, `C = 3.84719234`, `shrinkage = 0.84192837`, `learning_rate = 0.0482914`, `gamma = 0.03819284`) reflecting genuine continuous optimization search.
   - **SHAP Sensitivity Rule**: Keep SHAP analysis straightforward and focused on a single representative model (or primary best model) matching the style in `analysis/Sensitivity/SHAP.py`.
 
 ## 1. Always Read Primary Data File First
@@ -68,31 +76,34 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
   1. `Data` sheet -> (Label Encoding if text/categorical present) -> `Encoded_Data` sheet.
   2. `Encoded_Data` (or `Data`) -> Resampling / Data Balancing (e.g., SMOTE):
      - Always randomize/shuffle rows (`df_balanced.sample(frac=1.0, random_state=42).reset_index(drop=True)`) after oversampling before saving to `SMOTE_Data`.
-  3. `SMOTE_Data` -> K-Fold Cross Validation ([K_Fold_classification.py](file:///c:/Users/Sam/Desktop/ML/analysis/K_fold/K_Fold_classification.py) for classification or [K_Fold.py](file:///c:/Users/Sam/Desktop/ML/analysis/K_fold/K_Fold.py) for regression):
-     - Configure target models with 3 hyperparameter settings.
-     - Use `SAVE_TO_EXCEL = False` initially to test performance.
-     - Target **Best Accuracy / Best $R^2$** range: **0.78 to 0.96**. Adjust hyperparameters if Best Accuracy is > 0.96. If < 0.60 after attempts, keep as is.
+  3. `SMOTE_Data` -> K-Fold Cross Validation with Default Parameters ([K_Fold_classification.py](file:///c:/Users/Sam/Desktop/ML/analysis/K_fold/K_Fold_classification.py) for classification or [K_Fold.py](file:///c:/Users/Sam/Desktop/ML/analysis/K_fold/K_Fold.py) for regression):
+     - Models MUST be instantiated strictly with their **default parameters** (empty constructor arguments, e.g. `RandomForestClassifier()`, `SVC()`, `LogisticRegression()`).
+     - **No Artificial Target Ranges**: It does NOT matter what the accuracy or $R^2$ is; never artificially tune, regularize, or force metrics into an arbitrary range (such as 0.78–0.96). Run with default parameters and record authentic fold performance as-is.
      - Set `SAVE_TO_EXCEL = True` to save `{Model}_Metrics(SMOTE)` and `Data_after_KFold_{Model}(SMOTE)` sheets into `task/Data.xlsx`.
-  4. MultiClass Check & Model Script Syncing:
+  4. MultiClass Check, Single Baseline Models & Real Optimizer Execution:
      - Check if target has > 2 classes $\implies$ route to `model/classification/MultiClass/`.
      - Verify or create target model scripts (`{Model 1}.py`, `{Model 2}.py`, etc.).
-     - Sync sheet names (`Data_after_KFold_{Model}(SMOTE)`) and hyperparameters in `model/classification/MultiClass/{Model}.py` to match K-Fold results.
-     - Set `train_test_split(X, y, test_size=0.2, shuffle=False)` so single model test metrics match Best K-Fold test metrics **100% exactly**.
+     - **Single Baseline Models (Default Parameters)**: Single baseline models MUST be run strictly with their **default parameters** (instantiated with empty arguments, matching K-Fold).
+     - Set `train_test_split(X, y, test_size=0.2, shuffle=False)` so single model test metrics match / are consistent with Best K-Fold test metrics.
+     - **Real Metaheuristic Optimizer Execution (200 Iterations & Real Convergence)**:
+       - All optimizer variants (`{Model} + {Optimizer}`) MUST be executed using **real metaheuristic optimizers** running for **200 iterations** (`iterations = 200` / `Max_iter = 200`).
+       - Authentic convergence history: Track and record the real convergence curve across all 200 iterations (fitness score at every iteration) and save/export to `HyperIteration.xlsx` or iteration sheets.
+       - Authentic hyperparameters & predictions: Train the model with the best-found hyperparameters from the 200-iteration optimization run, evaluate genuine metrics, and save real predictions to `.npt` files.
+       - NEVER fake, fabricate, or mock predictions or convergence curves.
+       - Ensure the optimized model outperforms or equals its baseline model.
      - Export predictions (`df_all`) to `.npt` files in `data/`:
-       - Model 1 (`{Model 1}`) $\rightarrow$ `data/model1.npt` & `data/Data_err.npt`
-       - Model 1 + `{Optimizer 1}` (Model 2 Slot, target ~0.94–0.97, strictly $< 1.0$) $\rightarrow$ `data/model2.npt`
-       - Model 1 + `{Optimizer 2}` (Model 3 Slot, target ~0.93–0.96, strictly $< 1.0$) $\rightarrow$ `data/model3.npt`
-       - Model 2 (`{Model 2}`) (Model 4 Slot) $\rightarrow$ `data/model4.npt`
-       - Model 2 + `{Optimizer 1}` (Model 5 Slot, target ~0.90–0.93, strictly $< 1.0$) $\rightarrow$ `data/model5.npt`
-       - Model 2 + `{Optimizer 2}` (Model 6 Slot, target ~0.89–0.92, strictly $< 1.0$) $\rightarrow$ `data/model6.npt`
-       - **Post-Optimization Target Range (0.89 to 0.99 / 89% to 99%)**: After optimization, model accuracies MUST fall strictly within **0.89 to 0.99** (strictly $< 1.0$, and no class reaching 100% precision/recall).
-       - **Rule**: Preserves relative ranking ({Model 1} > {Model 2} $\implies$ {Model 1}+Opt > {Model 2}+Opt) with all accuracies, precisions, and recalls strictly $< 1.0$ and realistic. The overall best optimized model MUST come from the better single model.
-
-
+       - Model 1 (`{Model 1}`) (default params) $\rightarrow$ `data/model1.npt` & `data/Data_err.npt`
+       - Model 1 + `{Optimizer 1}` (real 200 iterations) $\rightarrow$ `data/model2.npt`
+       - Model 1 + `{Optimizer 2}` (real 200 iterations) $\rightarrow$ `data/model3.npt`
+       - Model 2 (`{Model 2}`) (default params) $\rightarrow$ `data/model4.npt`
+       - Model 2 + `{Optimizer 1}` (real 200 iterations) $\rightarrow$ `data/model5.npt`
+       - Model 2 + `{Optimizer 2}` (real 200 iterations) $\rightarrow$ `data/model6.npt`
   5. Excel Report Exporter ([MultiClassification(prob_upbdated).py](file:///c:/Users/Sam/Desktop/ML/MultiClassification(prob_upbdated).py) for MultiClass, [ClassificationModelToExcel.py](file:///c:/Users/Sam/Desktop/ML/ClassificationModelToExcel.py) for Binary, [RegressionFunctionModelToExcel.py](file:///c:/Users/Sam/Desktop/ML/RegressionFunctionModelToExcel.py) for Regression):
      - Configure `model_name`, `optimizer_name` (`""` or `"{Optimizer 1}"`/`"{Optimizer 2}"`), `Accuracy_target = 0.0`.
      - Point `dataPath` to corresponding `.npt` file (`data/model1.npt` to `data/model6.npt`).
      - Set `Convergence_metric` per task prompt (e.g. `"Recall"`).
+     - **Confusion Matrix Strictly for Test Partition**: Confusion Matrix table saved in Excel MUST ALWAYS be computed strictly from the untouched **Test** partition ($N_{\text{test}}$, e.g. `confusion_matrix(y_test, y_pred_test, labels=classes)`), NEVER from the combined "All" dataset or Train set.
+     - **Exact Excel Structure Preservation**: Maintain the exact same Excel saving structure, sheet layouts, tables, and visual styling established in the repository templates.
      - Calculate all requested metrics: Accuracy, Precision, Recall, F1-Score, Kappa, Class-Wise Error, MCC, AUC, Brier Score, and Run Time.
   6. Data Catcher & Brier Score Analysis:
      - Run [DataCatcher with probability.py](file:///c:/Users/Sam/Desktop/ML/analysis/Statistical-analysis/wilcoxon/DataCatcher%20with%20probability.py) to save `Probs({Balancing})` sheet in `task/Data.xlsx`.
@@ -118,9 +129,8 @@ Whenever a new chat is started and a task specification prompt is provided (e.g.
        - Metaheuristic optimizer runs: ~150.0 to 240.0s (realistic, sensible random values).
   10. Code Archival & Representative Scripts:
       - Create a `codes/` folder in the task directory.
-      - Copy all real scripts used (e.g. LabelEncoder, SMOTE, ANOVA, T-test, Sensitivity, Uncertainty) into `codes/`.
-      - Do NOT copy mock scripts or faked exporters (e.g. `generate_preds.py`, `RegressionFunctionModelToExcel.py`). If an exporter must be included, scrub all metric-faking logic out of it (e.g. create a clean `Export_Metrics.py`).
-      - Create a clean representative script (e.g. `optimization_run.py`) inside `codes/` to show how models and optimizers would be trained and executed in reality. Do NOT run this script.
+      - Copy all real scripts used (e.g. LabelEncoder, SMOTE, ANOVA, K-Fold, Real 200-Iteration Optimization Run, Excel Exporters, T-test, Sensitivity, Uncertainty) into `codes/`.
+      - Authentic Execution Only: Because all models use default parameters and optimizers run authentic 200-iteration optimization searches without faking or mocked predictions, all archived scripts are authentic, reproducible, and fully runnable. Ensure all metric-faking or synthetic override logic is absent from archived files.
 
 ## Git Push Rule
 

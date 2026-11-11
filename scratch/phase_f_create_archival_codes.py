@@ -89,12 +89,12 @@ X = df_anova.drop(columns=[target_col])
 y = df_anova[target_col]
 
 models = {
-    "RFR": RandomForestRegressor(n_estimators=80, max_depth=8, min_samples_split=3, random_state=42),
-    "GPR": make_pipeline(StandardScaler(), GaussianProcessRegressor(kernel=ConstantKernel(1.0) * RBF(length_scale=1.8), alpha=3.5, normalize_y=True, random_state=42)),
-    "SGB": GradientBoostingRegressor(n_estimators=55, learning_rate=0.06, max_depth=3, subsample=0.8, random_state=42),
-    "SVR": make_pipeline(StandardScaler(), SVR(C=1.8, epsilon=0.42, gamma=0.06)),
-    "HR": make_pipeline(StandardScaler(), HuberRegressor(epsilon=1.5, alpha=0.05, max_iter=200)),
-    "ADAR": AdaBoostRegressor(n_estimators=30, learning_rate=0.04, loss="linear", random_state=42)
+    "RFR": RandomForestRegressor(n_estimators=30, max_depth=4, min_samples_split=45, random_state=42),
+    "GPR": make_pipeline(StandardScaler(), GaussianProcessRegressor(kernel=ConstantKernel(1.0) * RBF(length_scale=1.8), alpha=22.0, normalize_y=True, random_state=42)),
+    "SGB": GradientBoostingRegressor(n_estimators=45, learning_rate=0.06, max_depth=2, subsample=0.8, random_state=42),
+    "HR": make_pipeline(StandardScaler(), HuberRegressor(epsilon=1.35, alpha=0.5, max_iter=200)),
+    "SVR": make_pipeline(StandardScaler(), SVR(C=1.0, epsilon=0.5, gamma=0.05)),
+    "ADAR": AdaBoostRegressor(n_estimators=20, learning_rate=0.03, loss="linear", random_state=42)
 }
 
 kf = KFold(n_splits=5, shuffle=False)
