@@ -24,6 +24,8 @@ This document specifies the standard workflow, data flow pipeline, and execution
 
 > **Rule — Categorical Label Encoding vs. Ordinal Presentation Consistency**: When using `sklearn.preprocessing.LabelEncoder()`, note that categories are always mapped **alphabetically** (e.g., `'High': 0, 'Low': 1, 'Medium': 2`). Never assume natural or ordinal ordering (e.g., assuming $0=\text{Low}, 1=\text{Medium}, 2=\text{High}$) when presenting or labeling output summary tables. Always check `encoder.classes_` or explicitly map ordinal categories (e.g., `{'Low': 0, 'Medium': 1, 'High': 2}`) so class distributions, sample counts, and per-class metrics are not erroneously swapped.
 
+> **Rule — PDP Sensitivity Analysis strictly on Test Partition & Best Model per Scenario**: Partial Dependence Plots (PDP) and sensitivity tables must ALWAYS be evaluated strictly on the untouched 20% holdout **Test dataset** (`Test_Data` / test partition), never on the training data. Furthermore, PDP MUST be computed specifically for the **best performing model of each scenario** (e.g., `{Model} + {Best_Optimizer}` in Scenario 1 and Scenario 2), and saved to scenario-specific sheets (e.g. `PDP_Sensitivity(With_Outlier)` and `PDP_Sensitivity(Without_Outlier)`) along with scenario-labeled plot outputs.
+
 ---
 
 ## 📋 Task Specification Format

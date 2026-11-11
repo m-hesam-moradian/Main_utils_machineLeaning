@@ -1,3 +1,11 @@
+# ==============================================================================
+# MANDATORY RULE: PDP Sensitivity Analysis Guidelines
+# 1. PDP is ALWAYS evaluated strictly on the holdout TEST partition (Test_Data),
+#    NEVER on the training data.
+# 2. PDP is ALWAYS based on the BEST performing model of each scenario
+#    (e.g., Best Optimizer in Scenario 1 and Best Optimizer in Scenario 2).
+# ==============================================================================
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
